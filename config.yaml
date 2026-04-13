@@ -1,0 +1,19 @@
+# AutoDev 插件配置
+# 每个插件可以独立升级版本
+
+planner:
+  version: v1          # v1=固定模板分解, v2=LLM动态分解
+
+executor:
+  version: v1          # v1=Claude Code, v2=Claude Code + OpenHands
+  model: claude-opus-4
+
+evaluator:
+  version: v1          # v1=跑测试, v2=跑测试+Lighthouse+AI review
+
+evolver:
+  version: v1          # v1=写learnings, v2=自动修订prompt+生成skill
+
+loop:
+  max_iterations: 10
+  stop_on_score: 0.9   # 评分达到 90% 停止
