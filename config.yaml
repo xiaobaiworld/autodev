@@ -24,18 +24,24 @@ projects:
 agents:                   # 可插拔，新增 Agent 在此加一项
   claude-opus:
     cli: claude
+    vendor: anthropic
     model: opus
   codex:
     cli: codex
+    vendor: openai
     model: null
+  agy:                    # Antigravity CLI，herdr kind=agy
+    cli: agy
+    vendor: google        # agy 也能跑 Claude 模型，vendor 以实际所选模型为准
+    model: gemini-4-argon-high
 
-roles:                    # 审查角色必须与作者使用不同 Agent
+roles:                    # 审查角色与作者的模型厂商必须不同
   analyst:         { agent: claude-opus }
   designer:        { agent: claude-opus }
   design_reviewer: { agent: codex }
   coder:           { agent: codex }
   code_reviewer:   { agent: claude-opus }
-  acceptor:        { agent: codex }
+  acceptor:        { agent: agy }
 
 limits:
   design_review_rounds: 3

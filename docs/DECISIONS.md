@@ -63,3 +63,13 @@
 - 选择：编码不要求最强模型，以能力够用、性价比高为准；S5 确定性检查与 S6 Opus 代码审查兜底。当前绑定 Codex（见 D005）。
 - 观察指标：S5、S6 的回修轮次和超限次数。
 - 重开条件：编码阶段回修轮次持续偏高，或频繁超限交给用户。
+
+## D008 接入第三个 Agent：agy；独立性约束按模型厂商判断
+
+- 日期：2026-11-02 ｜ 状态：已接受（用户新增 agy），约束细化为提议中
+- 事实（本机核实）：`agy` 1.4.12 位于 `~/.local/bin/agy`，支持 `--print`、`--model`、`--effort`、`--output-format json`；`agy models` 列出 Gemini 4 Argon、Gemini 3.8 Flash、Claude Opus/Sonnet 5.5、GPT-OSS 120B；herdr 0.9.5 的 `agent start --kind` 原生支持 `agy`。均未实际跑过任务。
+- 选择：agy 作为可插拔 Agent 加入配置，默认模型 `gemini-4-argon-high`。
+- 约束细化：原约束「审查者与作者 Agent 不同」改为「模型厂商不同」。理由：agy 能跑 Claude 模型，只比较 CLI 名称会让 Claude 审 Claude 漏过校验。
+- 重开条件：某个厂商的模型在审查中长期漏报，或需要同厂商不同模型做审查。
+- 随之调整（用户同意）：S8 验收由 Codex 改为 agy（Gemini），避免 Codex 验收自己编写的代码。
+- 原则（用户确认）：所有角色到 Agent、模型的绑定都可插拔、可更改，统一写在 `config.yaml`，本文件记录的只是当前默认值。

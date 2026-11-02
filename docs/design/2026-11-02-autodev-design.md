@@ -32,7 +32,7 @@ AutoDev 在本机运行。用户提出功能修改类需求，系统把它变成
 | S5 确定性检查 | 程序 | 无 | `check.log` | 通过进 S6；失败回 S4 |
 | S6 代码审查 | code_reviewer | Claude Opus | `review.md` | PASS 进 S7；REWORK 回 S4 |
 | S7 发布候选 | 程序 | 无 | 候选版本、`release.log` | 进 S8 |
-| S8 验收 | acceptor | Codex（可用 computer use 等手段） | `acceptance.md` | PASS 进 S9；REWORK 回 S4 或 S2 |
+| S8 验收 | acceptor | agy（Gemini，可用 computer use 等手段） | `acceptance.md` | PASS 进 S9；REWORK 回 S4 或 S2 |
 | S9 正式发布 | 程序 | 无 | 版本标签、CHANGELOG 条目 | 终态 done |
 
 说明：
@@ -57,6 +57,9 @@ agents:
   codex:
     cli: codex
     model: null        # 具体模型待定
+  agy:
+    cli: agy           # Antigravity CLI
+    model: gemini-4-argon-high
 
 roles:
   analyst:         { agent: claude-opus }
@@ -64,10 +67,12 @@ roles:
   design_reviewer: { agent: codex }
   coder:           { agent: codex }
   code_reviewer:   { agent: claude-opus }
-  acceptor:        { agent: codex }
+  acceptor:        { agent: agy }
 ```
 
-约束：每个审查角色的 Agent 都必须与它所审产物的作者不同。程序启动时校验，不满足则拒绝运行。
+约束：每个审查角色所用模型的厂商，必须与它所审产物作者的模型厂商不同。按厂商而不按 CLI 判断，因为同一个 CLI 可以运行不同厂商的模型（例如 agy 既能跑 Gemini 也能跑 Claude）。程序启动时校验，不满足则拒绝运行。
+
+当前可用 Agent：Claude Code（Anthropic）、Codex（OpenAI）、agy（Antigravity，默认 Gemini）。三者都是 herdr 原生支持的 kind。
 
 新增 Agent 只需在 `agents` 下加一项，并提供 adapter（如何启动、如何发送提示、如何判断完成）。
 
@@ -230,8 +235,7 @@ autodev/
 
 ## 10. 待定问题
 
-1. S8 验收由 Codex 执行，而 S4 编码也是 Codex，违反「审查者与作者不同」的约束。需决定：验收改用 Claude，或把该约束限定为只适用于 S3、S6 的产物审查。
-2. S7 发布候选的具体含义：只打候选标签，还是部署到某个可运行环境供 S8 验收。这取决于 personagent 的运行形态。
-3. S8 验收的手段：computer use、浏览器自动化、CLI 测试，取决于 personagent 是什么类型的应用。
-4. 流程程序的实现语言。
-5. 用户入口：直接在 `inbox/` 建文件，还是提供一个命令。
+1. S7 发布候选的具体含义：只打候选标签，还是部署到某个可运行环境供 S8 验收。这取决于 personagent 的运行形态。
+2. S8 验收的手段：computer use、浏览器自动化、CLI 测试，取决于 personagent 是什么类型的应用。
+3. 流程程序的实现语言。
+4. 用户入口：直接在 `inbox/` 建文件，还是提供一个命令。
