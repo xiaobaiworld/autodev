@@ -1,49 +1,34 @@
-# AutoDev — 自动化代码生成系统
+# AutoDev
 
-给定目标，自动完成代码生成、测试、自我优化的循环系统。
+AutoDev 是一个在本机运行的需求驱动编程流程。用户在 `workspace/requests/inbox/` 放一条需求，主 Agent 按目录状态分派执行 Agent 和独立的审查 Agent，循环到审查通过或交由人工决定。
 
-## 核心设计
+## 当前阶段
 
-```
-goal.md（你写，不可变）
-  → planner：分解任务
-  → executor：调用 Claude Code / OpenHands 执行
-  → evaluator：跑测试打分
-  → evolver：更新 prompt + 积累 learnings
-  → 下一轮循环
-```
+第一阶段只跑通一个目标项目，第一个目标是 `personagent`。多项目模型已经在设计中预留（见 `config.yaml` 的 `projects` 注册表），但暂不作为本阶段的验收内容。
 
-## 架构
+## 核心流程
 
 ```
-autodev/
-├── core/loop.py          # 核心驱动循环
-├── plugins/
-│   ├── planner.py        # 任务分解插件
-│   ├── executor.py       # 代码执行插件
-│   ├── evaluator.py      # 结果评分插件
-│   └── evolver.py        # 自我进化插件
-├── workspace/
-│   ├── goal.md           # 目标（只读）
-│   ├── plan.md           # 当前计划（planner 生成）
-│   ├── learnings.jsonl   # 执行记录与经验积累
-│   └── system_prompt.md  # executor 的 prompt（evolver 会优化它）
-└── config.yaml           # 插件版本配置
+inbox → active → review → done
+                  │  ↑
+                  ↓  │
+                rework
+                  │
+                  ↓
+              needs-human
 ```
 
-## 借鉴来源
+- 主 Agent：扫描目录、生成 spec、建 worktree、运行确定性检查、记录事件
+- 执行 Agent：在 worktree 中按 spec 修改代码
+- 审查 Agent：只读 spec、diff 和测试日志，给出 PASS、REWORK 或 BLOCK
 
-- [AutoResearch](https://github.com/karpathy/autoresearch) — goal.md 作为唯一接口
-- [Aider](https://github.com/Aider-AI/aider) — repo map 给 LLM 全局上下文
-- [MetaGPT](https://github.com/FoundationAgents/MetaGPT) — 发布-订阅消息传递
-- [OpenHands](https://github.com/OpenHands/OpenHands) — 沙箱执行环境
-- [EvoAgentX](https://github.com/EvoAgentX/EvoAgentX) — 进化式 workflow 优化
+每个文件只有一个写者。审查 Agent 不看执行 Agent 的对话，只看产物。
 
-## 支持的应用类型
+## 文档
 
-- **静态网站** — 成功标准：构建通过 + Lighthouse ≥ 90 + 无死链
-- **Agent 工作台** — 成功标准：单元测试通过 + 核心 E2E 流程跑通
+- `docs/design/2026-11-02-autodev-design.md`：流程设计（草稿）
+- `docs/DECISIONS.md`：关键决策记录
 
 ## 状态
 
-🚧 设计阶段 — spec 进行中
+设计阶段，尚无可运行代码。待定问题见设计文档第 8 节。

@@ -1,19 +1,29 @@
-# AutoDev 插件配置
-# 每个插件可以独立升级版本
+# AutoDev 流程配置
+# 设计依据：docs/design/2026-11-02-autodev-design.md
+# 待定项（executor.agent、reviewer.agent 等）尚未决定，保持 null
 
-planner:
-  version: v1          # v1=固定模板分解, v2=LLM动态分解
+projects:
+  - name: personagent
+    repo: ~/code/personagent
+    base_branch: master
+    worktree_root: ~/code/.worktrees/personagent
+    exclude:
+      - .git/
+      - ".env*"
+      - "*.lock"
+      - .local-backups/
+      - config.yaml
+
+rounds:
+  max: 3                # 超过即进入 needs-human
 
 executor:
-  version: v1          # v1=Claude Code, v2=Claude Code + OpenHands
-  model: claude-opus-4
+  agent: null           # 待定：Claude Code / Codex / 两者都支持
+  model: null
 
-evaluator:
-  version: v1          # v1=跑测试, v2=跑测试+Lighthouse+AI review
+reviewer:
+  agent: null           # 待定：是否与执行 Agent 强制不同模型
+  model: null
 
-evolver:
-  version: v1          # v1=写learnings, v2=自动修订prompt+生成skill
-
-loop:
-  max_iterations: 10
-  stop_on_score: 0.9   # 评分达到 90% 停止
+scheduler:
+  runner: herdr         # 后续用 herdr 管理各 Agent 的 pane
