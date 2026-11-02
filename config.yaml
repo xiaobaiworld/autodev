@@ -1,6 +1,6 @@
 # AutoDev 流程配置
 # 设计依据：docs/design/2026-11-02-autodev-design.md
-# 待定项（executor.agent、reviewer.agent 等）尚未决定，保持 null
+# null 表示尚未决定
 
 projects:
   - name: personagent
@@ -13,17 +13,38 @@ projects:
       - "*.lock"
       - .local-backups/
       - config.yaml
+    checks: []            # S5 确定性检查命令，待定
+    context:              # S1 需求分析时内联的文件
+      - AGENTS.md
+      - CLAUDE.md
+      - docs/PROJECT_STATE.md
+      - docs/DECISIONS.md
+      - next.md
 
-rounds:
-  max: 3                # 超过即进入 needs-human
+agents:                   # 可插拔，新增 Agent 在此加一项
+  claude-opus:
+    cli: claude
+    model: opus
+  codex:
+    cli: codex
+    model: null
 
-executor:
-  agent: null           # 待定：Claude Code / Codex / 两者都支持
-  model: null
+roles:                    # 审查角色必须与作者使用不同 Agent
+  analyst:         { agent: claude-opus }
+  designer:        { agent: claude-opus }
+  design_reviewer: { agent: codex }
+  coder:           { agent: codex }
+  code_reviewer:   { agent: claude-opus }
+  acceptor:        { agent: codex }
 
-reviewer:
-  agent: null           # 待定：是否与执行 Agent 强制不同模型
-  model: null
+limits:
+  design_review_rounds: 3
+  check_rounds: 3
+  code_review_rounds: 3
+  acceptance_rounds: 2
+  step_retries: 2
+  step_timeout_minutes: 60
 
 scheduler:
-  runner: herdr         # 后续用 herdr 管理各 Agent 的 pane
+  runner: herdr
+  poll_seconds: 15
