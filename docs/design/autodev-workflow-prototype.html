@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>AutoDev｜需求工作流</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202a3b;
+      --muted: #718096;
+      --line: #e5eaf0;
+      --paper: #f5f7fa;
+      --blue: #4269d4;
+      --blue-soft: #edf2ff;
+      --green: #278768;
+      --green-soft: #eaf7f1;
+      --amber: #a56d19;
+      --amber-soft: #fff6e7;
+      --violet: #7757c5;
+      --violet-soft: #f1edfc;
+      --red: #ba5e68;
+      --shadow: 0 16px 45px rgba(31, 48, 78, .07);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button { color: inherit; font: inherit; }
+    .shell { max-width: 1480px; margin: auto; padding: 26px clamp(16px, 3vw, 42px) 48px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+    .brand { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:750; letter-spacing:.01em; }
+    .brand-mark { display:grid; place-items:center; width:30px; height:30px; color:white; background:#283d70; border-radius:9px; font-size:15px; }
+    .top-meta { display:flex; align-items:center; gap:10px; color:var(--muted); font-size:12px; }
+    .local-pill { padding:5px 9px; border:1px solid #dce8df; background:#f2f8f3; border-radius:999px; color:#4b795f; }
+    .crumb { color:#91a0b3; font-size:12px; margin-bottom:8px; }
+    .heading { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:21px; }
+    h1 { margin:0; font-size:27px; letter-spacing:-.035em; line-height:1.25; }
+    .lead { margin:7px 0 0; color:var(--muted); }
+    .demo-tag { flex:none; border:1px solid #e5d7b7; border-radius:8px; padding:6px 10px; color:#8b6b35; background:#fffaf0; font-size:11px; }
+    .request-card { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:17px 20px; background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:0 4px 16px rgba(31,48,78,.025); }
+    .request-main { min-width:0; }
+    .request-label { color:#8a96a8; font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
+    .request-title { margin-top:4px; font-size:16px; font-weight:700; }
+    .request-desc { margin-top:3px; color:var(--muted); font-size:12px; }
+    .request-state { flex:none; display:flex; align-items:center; gap:8px; color:#886128; font-size:12px; }
+    .pulse { width:8px; height:8px; background:#e4a941; border-radius:50%; box-shadow:0 0 0 4px #fff3dc; }
+    .overview { display:grid; grid-template-columns:repeat(4, 1fr); margin:15px 0 22px; background:#fff; border:1px solid var(--line); border-radius:12px; }
+    .metric { padding:13px 17px; border-right:1px solid var(--line); }
+    .metric:last-child { border:0; }
+    .metric-label { color:#8793a4; font-size:11px; }
+    .metric-value { margin-top:3px; font-weight:700; font-size:14px; }
+    .workspace { display:grid; grid-template-columns:minmax(420px, 1.06fr) minmax(340px, .94fr); gap:18px; align-items:start; }
+    .panel { background:#fff; border:1px solid var(--line); border-radius:15px; box-shadow:var(--shadow); }
+    .panel-head { display:flex; justify-content:space-between; align-items:center; padding:17px 19px 13px; }
+    .panel-title { margin:0; font-size:14px; font-weight:750; }
+    .panel-sub { color:#8b97a8; font-size:11px; }
+    .stages { padding:2px 14px 15px 19px; }
+    .stage-row { position:relative; display:grid; grid-template-columns:31px minmax(0,1fr); gap:10px; width:100%; border:0; padding:0; text-align:left; background:transparent; cursor:pointer; }
+    .stage-row:not(:last-child) { padding-bottom:8px; }
+    .stage-row:not(:last-child)::before { content:""; position:absolute; left:14px; top:31px; bottom:0; width:1px; background:#e4e9f0; }
+    .stage-marker { z-index:1; display:grid; place-items:center; width:29px; height:29px; border:1px solid #dfe5ec; border-radius:50%; color:#8a96a7; background:white; font-size:10px; font-weight:700; }
+    .stage-content { min-width:0; margin-bottom:1px; border:1px solid transparent; border-radius:10px; padding:7px 10px 8px; transition:.15s ease; }
+    .stage-row:hover .stage-content { background:#f8faff; }
+    .stage-row.selected .stage-content { border-color:#d7e1fb; background:#f5f8ff; }
+    .stage-row.done .stage-marker { border-color:#b9dfcf; color:var(--green); background:var(--green-soft); }
+    .stage-row.current .stage-marker { border-color:#bdcdf8; color:var(--blue); background:var(--blue-soft); box-shadow:0 0 0 4px #f4f6ff; }
+    .stage-row.waiting .stage-marker { border-color:#f0d9ad; color:var(--amber); background:var(--amber-soft); }
+    .stage-topline { display:flex; align-items:center; gap:8px; }
+    .stage-name { font-size:13px; font-weight:700; }
+    .stage-id { color:#98a3b1; font-size:10px; font-weight:700; letter-spacing:.04em; }
+    .status { margin-left:auto; flex:none; border-radius:999px; padding:2px 7px; font-size:10px; color:#738094; background:#f1f3f6; }
+    .status.complete { color:var(--green); background:var(--green-soft); }
+    .status.running { color:var(--blue); background:var(--blue-soft); }
+    .status.pending { color:#8390a0; background:#f2f4f7; }
+    .status.paused { color:var(--amber); background:var(--amber-soft); }
+    .stage-summary { margin-top:3px; color:#8490a1; font-size:11px; }
+    .stage-tags { display:flex; gap:5px; margin-top:5px; }
+    .tag { padding:2px 6px; border-radius:5px; color:#768397; background:#f1f4f7; font-size:9px; }
+    .tag.review { color:var(--violet); background:var(--violet-soft); }
+    .tag.human { color:var(--amber); background:var(--amber-soft); }
+    .right-column { position:sticky; top:16px; display:grid; gap:14px; }
+    .detail { padding:19px 20px; min-height:373px; }
+    .detail-overline { display:flex; align-items:center; gap:8px; color:#8793a4; font-size:10px; font-weight:700; letter-spacing:.08em; }
+    .detail h2 { margin:5px 0 5px; font-size:20px; letter-spacing:-.025em; }
+    .detail-intro { margin:0; color:var(--muted); font-size:12px; }
+    .detail-status { display:inline-flex; margin-top:12px; padding:4px 8px; border-radius:999px; background:var(--blue-soft); color:var(--blue); font-size:10px; }
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:18px; }
+    .detail-block { border-top:1px solid #edf0f4; padding-top:11px; }
+    .detail-block.full { grid-column:1/-1; }
+    .detail-label { margin-bottom:5px; color:#97a1af; font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; }
+    .detail-text { color:#4e5a6c; font-size:12px; }
+    .detail-text ul { margin:0; padding-left:16px; }
+    .detail-text li + li { margin-top:3px; }
+    .loopback { padding:9px 11px; border-radius:8px; color:#685b91; background:#f5f2fc; font-size:11px; }
+    .human-panel { border-color:#ecdcbf; background:linear-gradient(130deg, #fffdf9, #fffaf0); overflow:hidden; }
+    .human-header { display:flex; justify-content:space-between; align-items:center; padding:15px 17px 11px; border-bottom:1px solid #f0e6d4; }
+    .human-title { display:flex; align-items:center; gap:8px; margin:0; color:#76551e; font-size:13px; font-weight:750; }
+    .human-count { padding:3px 7px; color:#90621c; background:#f8e9ca; border-radius:999px; font-size:10px; }
+    .human-body { padding:14px 17px 16px; }
+    .human-request-title { font-weight:700; font-size:13px; }
+    .human-context { margin-top:5px; color:#796d59; font-size:11px; }
+    .human-options { display:grid; gap:7px; margin-top:12px; }
+    .option { display:flex; align-items:flex-start; gap:8px; border:1px solid #ebdfc9; border-radius:8px; padding:8px 9px; color:#66583f; background:rgba(255,255,255,.65); font-size:11px; }
+    .radio { flex:none; width:13px; height:13px; margin-top:1px; border:1px solid #c8b58f; border-radius:50%; }
+    .human-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:12px; color:#96876e; font-size:10px; }
+    .detail-link { color:#80602a; text-decoration:none; border-bottom:1px dotted #b89b6c; }
+    .human-empty { color:#6d887a; background:#f6fbf7; border-color:#d6e8dc; }
+    .human-empty .human-header { border-color:#e2eee6; }
+    .human-empty .human-title { color:#44745a; }
+    .empty-copy { padding:16px 17px; color:#64806f; font-size:12px; }
+    .legendline { display:flex; gap:15px; flex-wrap:wrap; padding:12px 19px; border-top:1px solid #edf0f4; color:#8692a2; font-size:10px; }
+    .legend-item { display:flex; align-items:center; gap:5px; }
+    .legend-dot { width:7px; height:7px; background:#8bbba5; border-radius:50%; }
+    .legend-dot.now { background:#6f8fe3; }
+    .legend-dot.later { background:#c3cad3; }
+    .legend-dot.ask { background:#dfa73c; }
+    .footnote { margin-top:15px; text-align:center; color:#9aa4b1; font-size:10px; }
+    @media(max-width:980px) { .workspace { grid-template-columns:minmax(340px,1fr) minmax(300px,.88fr); gap:12px; } .stage-summary { max-width:340px; } }
+    @media(max-width:760px) { .workspace { grid-template-columns:1fr; } .right-column { position:static; grid-row:1; } .detail { min-height:0; } .human-panel { grid-row:2; } .workspace > .panel:first-child { grid-row:3; } .overview { grid-template-columns:1fr 1fr; } .metric:nth-child(2) { border-right:0; } .metric:nth-child(-n+2) { border-bottom:1px solid var(--line); } }
+    @media(max-width:500px) { .shell { padding:16px 12px 32px; } .top-meta .updated { display:none; } .heading { display:block; } .demo-tag { display:inline-block; margin-top:12px; } h1 { font-size:23px; } .request-card { align-items:flex-start; padding:14px; } .request-state { font-size:0; } .request-state .pulse { width:9px; height:9px; } .metric { padding:11px 12px; } .detail-grid { grid-template-columns:1fr; } .detail-block.full { grid-column:auto; } .panel-head { padding-left:15px; padding-right:15px; } .stages { padding-left:12px; padding-right:9px; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <nav class="topbar" aria-label="主导航">
+      <div class="brand"><span class="brand-mark">A</span><span>AutoDev 工作台</span></div>
+      <div class="top-meta"><span class="local-pill">● 本机运行</span><span class="updated">流程草图 · 设计讨论中</span></div>
+    </nav>
+
+    <div class="crumb">工作流　/　需求任务　/　R-2026-011</div>
+    <header class="heading">
+      <div>
+        <h1>需求处理流程</h1>
+        <p class="lead">按阶段查看进展，选择任一环节了解它的工作内容与交付结果。</p>
+      </div>
+      <span class="demo-tag">界面原型 · 示例任务数据</span>
+    </header>
+
+    <section class="request-card">
+      <div class="request-main">
+        <div class="request-label">当前需求 · R-2026-011</div>
+        <div class="request-title">为项目工作台增加批量归档能力</div>
+        <div class="request-desc">提交于 2026-11-04 09:32　·　目标项目 personagent　·　分支 feature/batch-archive</div>
+      </div>
+      <div class="request-state"><i class="pulse"></i>等待你确认需求范围</div>
+    </section>
+
+    <section class="overview" aria-label="任务概览">
+      <div class="metric"><div class="metric-label">当前进度</div><div class="metric-value">需求分析 · 第 2 轮</div></div>
+      <div class="metric"><div class="metric-label">已完成阶段</div><div class="metric-value">0 / 9</div></div>
+      <div class="metric"><div class="metric-label">当前执行</div><div class="metric-value">暂停，等待人工决定</div></div>
+      <div class="metric"><div class="metric-label">最近更新</div><div class="metric-value">09:46 · 分析审核提出疑问</div></div>
+    </section>
+
+    <section class="workspace">
+      <section class="panel" aria-labelledby="workflow-heading">
+        <div class="panel-head">
+          <div><h2 class="panel-title" id="workflow-heading">处理步骤</h2><div class="panel-sub">点击阶段查看详细说明</div></div>
+          <span class="panel-sub">共 9 个阶段</span>
+        </div>
+        <div class="stages" id="stage-list">
+          <button class="stage-row current selected" data-stage="S1" aria-expanded="true">
+            <span class="stage-marker">01</span><span class="stage-content"><span class="stage-topline"><span class="stage-name">需求分析</span><span class="stage-id">S1</span><span class="status paused">等待决定</span></span><span class="stage-summary">理解目标、范围、约束和验收条件</span><span class="stage-tags"><span class="tag review">审核往返</span><span class="tag human">需要你确认</span></span></span>
+          </button>
+          <button class="stage-row" data-stage="S2" aria-expanded="false">
+            <span class="stage-marker">02</span><span class="stage-content"><span class="stage-topline"><span class="stage-name">方案设计与任务分解</span><span class="stage-id">S2</span><span class="status pending">待开始</span></span><span class="stage-summary">形成设计稿、任务顺序和开发计划</span><span class="stage-tags"><span class="tag review">进入设计审查</span></span></span>
+          </button>
+          <button class="stage-row" data-stage="S3" aria-expanded="false">
+            <span class="stage-marker">03</span><span class="stage-content"><span class="stage-topline"><span class="stage-name">设计审查</span><span class="stage-id">S3</span><span class="status pending">待开始</span></span><span class="stage-summary">独立审查方案、拆分和验证方式</span><span class="stage-tags"><span class="tag review">可多轮修订</span></span></span>
+          </button>
+          <button class="stage-row" data-stage="S4" aria-expanded="false">
+            <span class="stage-marker">04</span><span class="stage-content"><span class="stage-topline"><span class="stage-name">编码实现</span><span class="stage-id">S4</span><span class="status pending">待开始</span></span><span class="stage-summary">按已审查的开发计划逐项实现</span></span>
+          </button>
+          <button class="stage-row" data-stage="S5" aria-expanded="false">
+            <span class="stage-marker">05</span><span class="stage-content"><span class="stage-topline"><span class="stage-name">自动检查</span><span class="stage-id">S5</span><span class="status pending">待开始</span></span><span class="stage-summary">运行项目配置的测试、构建和静态检查</span></span>
+          </button>
+          <button class="stage-row" data-stage="S6" aria-expanded="false">
+            <span class="stage-marker">06</span><span class="stage-content"><span class="stage-topline"><span class="stage-name">代码审查</span><span class="stage-id">S6</span><span class="status pending">待开始</span></span><span class="stage-summary">由独立审查者检查变更、边界和回归风险</span><span class="stage-tags"><span class="tag review">可多轮修订</span></span></span>
+          </button>
+          <button class="stage-row" data-stage="S7" aria-expanded="false">
+            <span class="stage-marker">07</span><span class="stage-content"><span class="stage-topline"><span class="stage-name">生成发布候选</span><span class="stage-id">S7</span><span class="status pending">待开始</span></span><span class="stage-summary">整理候选版本和交付证据</span></span>
+          </button>
+          <button class="stage-row" data-stage="S8" aria-expanded="false">
+            <span class="stage-marker">08</span><span class="stage-content"><span class="stage-topline"><span class="stage-name">验收</span><span class="stage-id">S8</span><span class="status pending">待开始</span></span><span class="stage-summary">按需求验收标准核对实际结果</span><span class="stage-tags"><span class="tag review">可退回实现或设计</span></span></span>
+          </button>
+          <button class="stage-row" data-stage="S9" aria-expanded="false">
+            <span class="stage-marker">09</span><span class="stage-content"><span class="stage-topline"><span class="stage-name">正式发布</span><span class="stage-id">S9</span><span class="status pending">待开始</span></span><span class="stage-summary">记录版本、变更和最终交付状态</span></span>
+          </button>
+        </div>
+        <div class="legendline"><span class="legend-item"><i class="legend-dot now"></i>当前阶段</span><span class="legend-item"><i class="legend-dot"></i>已完成</span><span class="legend-item"><i class="legend-dot later"></i>待开始</span><span class="legend-item"><i class="legend-dot ask"></i>等待你参与</span></div>
+      </section>
+
+      <aside class="right-column">
+        <section class="panel detail" id="stage-detail" aria-live="polite">
+          <div class="detail-overline"><span id="detail-code">S1 · 需求阶段</span><span>›</span><span id="detail-role">分析与审核</span></div>
+          <h2 id="detail-title">需求分析</h2>
+          <p class="detail-intro" id="detail-intro">先把用户想解决的问题整理成清楚、可检查的需求，再交给独立审核者核对。</p>
+          <span class="detail-status" id="detail-state">当前暂停 · 等待你确认</span>
+          <div class="detail-grid">
+            <div class="detail-block"><div class="detail-label">这个阶段会做什么</div><div class="detail-text" id="detail-work">—</div></div>
+            <div class="detail-block"><div class="detail-label">会读取什么</div><div class="detail-text" id="detail-input">—</div></div>
+            <div class="detail-block"><div class="detail-label">会产出什么</div><div class="detail-text" id="detail-output">—</div></div>
+            <div class="detail-block"><div class="detail-label">怎样算通过</div><div class="detail-text" id="detail-exit">—</div></div>
+            <div class="detail-block full"><div class="detail-label">审核退回时怎么走</div><div class="loopback" id="detail-loop">—</div></div>
+          </div>
+        </section>
+
+        <section class="panel human-panel" aria-labelledby="human-heading">
+          <div class="human-header"><h2 class="human-title" id="human-heading"><span>◉</span>需要你参与</h2><span class="human-count">1 项待决定</span></div>
+          <div class="human-body">
+            <div class="human-request-title">确认本次需求的归档范围</div>
+            <div class="human-context">分析审核发现“批量归档”可能指批量移动，也可能包含批量删除。删除属于高影响操作，流程先暂停并保留当前分析。</div>
+            <div class="human-options">
+              <div class="option"><i class="radio"></i><span><strong>只做批量移动</strong><br>归档到指定项目或文件夹，不删除原资料。</span></div>
+              <div class="option"><i class="radio"></i><span><strong>还要包含批量删除</strong><br>需要另外明确删除条件和确认方式。</span></div>
+            </div>
+            <div class="human-foot"><span>回复后从 S1 继续分析</span><a class="detail-link" href="#decision-note">查看决策说明 ↗</a></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+    <p class="footnote" id="decision-note">此页面是 AutoDev 流程的可交互界面草图。任务内容为虚构示例；阶段职责依当前设计文档整理，S1 审核的具体角色和轮次仍待确定。</p>
+  </main>
+  <script>
+    const stages = {
+      S1: { role:"分析与审核", title:"需求分析", state:"当前暂停 · 等待你确认", intro:"先把用户想解决的问题整理成清楚、可检查的需求，再交给独立审核者核对。", work:"<ul><li>梳理用户目标、使用场景和限制</li><li>明确范围、验收标准、风险和未决问题</li><li>由审核者核对理解是否忠实、完整</li></ul>", input:"<ul><li>用户提交的原始需求</li><li>目标项目规则、状态和历史决策</li><li>相关代码结构与最近变更</li></ul>", output:"<ul><li>需求分析稿与审核意见</li><li>逐项回应和修订后的版本</li><li>必要时生成待用户决定的问题</li></ul>", exit:"审核通过且关键范围明确后进入 S2。分析者不能只凭自评直接放行。", loop:"审核提出问题 → 分析者修订或逐条回应 → 再次审核。遇到关键歧义、冲突或需要你定范围时，暂停并在此处显示待决定事项。" },
+      S2: { role:"方案设计", title:"方案设计与任务分解", state:"待开始", intro:"把已确认的需求转成有边界、能执行、能验收的开发方案。", work:"<ul><li>比较可行方案并说明取舍</li><li>划定模块和数据边界</li><li>拆成有依赖顺序的小任务</li><li>给每项任务写明验证方式</li></ul>", input:"<ul><li>已审核通过的需求分析</li><li>项目架构、规则和相关决策</li><li>目标项目当前状态</li></ul>", output:"<ul><li>设计稿与开发计划</li><li>任务依赖和阶段验收条件</li><li>需要提前解决的风险与未知项</li></ul>", exit:"设计审查确认方案覆盖需求、任务可执行、依赖清楚且每步可验证后进入 S4。", loop:"S3 审查不通过 → 回到 S2 修改设计或任务拆分 → 再次送审。范围或产品方向需要你判断时，暂停并创建决策请求。" },
+      S3: { role:"独立设计审查", title:"设计审查", state:"待开始", intro:"由不同于设计者的审查者检查方案，尽早发现遗漏、过度设计和不可验证的步骤。", work:"<ul><li>对照需求与验收标准逐项核查</li><li>检查任务顺序、边界和依赖</li><li>检查异常路径、恢复方式和风险</li></ul>", input:"<ul><li>S1 需求分析及相关回复</li><li>S2 设计稿与开发计划</li><li>项目约束和适用规则</li></ul>", output:"<ul><li>通过/返工结论</li><li>带严重度、位置和依据的审查意见</li><li>设计者逐项回应</li></ul>", exit:"审查通过后进入编码。审查者与作者使用不同厂商模型。", loop:"提出问题 → 设计者修改或说明 → 审查者复核。达到轮次上限仍未解决，或遇到产品取舍时，转入人工决策。" },
+      S4: { role:"编码实现", title:"编码实现", state:"待开始", intro:"按审查通过的开发计划逐步修改目标项目，保留每步产物和变更证据。", work:"<ul><li>读取目标项目规则和相关代码</li><li>按任务顺序实现，控制每步范围</li><li>为改动补充或更新验证</li></ul>", input:"<ul><li>已审查的设计和开发计划</li><li>目标项目当前分支与规则</li><li>本步骤任务和完成条件</li></ul>", output:"<ul><li>代码变更与小步提交</li><li>执行记录和验证结果</li><li>遇到阻塞时提交具体问题</li></ul>", exit:"当前编码步骤完成，进入 S5 执行项目检查。", loop:"检查或代码审查发现问题 → 回到对应编码任务修复 → 重跑检查和审查。若实现需要改变设计或范围，先退回 S2 或请求你决定。" },
+      S5: { role:"确定性程序", title:"自动检查", state:"待开始", intro:"由程序按目标项目配置运行明确的检查命令，避免把可机械判断的工作交给模型。", work:"<ul><li>执行配置的测试、构建和静态检查</li><li>收集退出码、输出和运行环境</li><li>区分产品失败与工具/环境故障</li></ul>", input:"<ul><li>当前实现提交</li><li>目标项目配置的 checks 命令</li><li>本次需求的验证要求</li></ul>", output:"<ul><li>结构化检查结果与日志</li><li>失败项、命令和相关输出</li><li>通过后交由独立代码审查</li></ul>", exit:"所有必需检查通过后进入 S6；不把未覆盖的场景描述为已通过。", loop:"失败 → 把失败信息交给 S4 修复 → 重新执行对应检查。命令缺失、环境异常或达到回修上限时暂停并说明原因。" },
+      S6: { role:"独立代码审查", title:"代码审查", state:"待开始", intro:"由未参与编码的审查者对照需求、设计和实际 diff 检查变更。", work:"<ul><li>检查功能正确性、边界和回归风险</li><li>核对测试是否覆盖验收标准</li><li>只报告有证据支撑的问题</li></ul>", input:"<ul><li>需求、设计与开发计划</li><li>代码 diff、提交和检查结果</li><li>适用的审查与安全规则</li></ul>", output:"<ul><li>通过或返工意见</li><li>问题位置、影响、依据和建议</li><li>复审结论及往返轮次</li></ul>", exit:"审查通过后生成发布候选；有实现问题退回 S4。", loop:"作者修复 → 检查重跑 → 独立复审。若问题来自设计缺口，退回 S2；高风险取舍交由你决定。" },
+      S7: { role:"确定性程序", title:"生成发布候选", state:"待开始", intro:"把通过检查和代码审查的变更整理成待验收的候选版本。", work:"<ul><li>记录候选提交和版本标识</li><li>整理改动摘要和验证证据</li><li>准备验收所需的环境和步骤</li></ul>", input:"<ul><li>通过的审查结果</li><li>当前需求分支和提交记录</li><li>目标项目发布候选规则</li></ul>", output:"<ul><li>候选版本与变更清单</li><li>验收步骤和可追溯证据</li></ul>", exit:"候选信息齐备后进入 S8 验收。候选不等于正式发布。", loop:"发现候选打包或记录不一致时由程序停止，不推进到验收，修正后重新生成候选。" },
+      S8: { role:"独立验收", title:"验收", state:"待开始", intro:"按用户需求和验收标准检查候选结果是否真的解决了问题。", work:"<ul><li>逐条执行验收场景</li><li>检查用户可见结果和异常状态</li><li>记录实际观察与证据</li></ul>", input:"<ul><li>原始需求与已确认范围</li><li>验收标准和候选版本</li><li>测试结果、截图或运行记录</li></ul>", output:"<ul><li>通过、返工或阻塞结论</li><li>实际结果与证据</li><li>明确返工目标阶段</li></ul>", exit:"验收通过后进入正式发布；未经授权不合并到目标项目主分支。", loop:"实现问题退回 S4，设计/需求理解问题退回 S2 或 S1。影响范围的变化需要先由你确认。" },
+      S9: { role:"确定性程序 + 用户确认", title:"正式发布", state:"待开始", intro:"按已确认的交付边界完成版本记录和发布收口。", work:"<ul><li>写入用户可理解的变更记录</li><li>记录版本与验收证据位置</li><li>按项目约定完成正式交付</li></ul>", input:"<ul><li>验收通过结论</li><li>候选提交、变更摘要和证据</li><li>已确认的发布授权和项目流程</li></ul>", output:"<ul><li>正式版本与变更记录</li><li>最终交付状态</li><li>必要时更新目标项目决策记录</li></ul>", exit:"发布和文档同步完成，需求进入 done。", loop:"合并主分支、发布生产或其他高影响动作遵循项目授权关口；如果尚未获批，停在待确认状态。" }
+    };
+    const rows = [...document.querySelectorAll('.stage-row')];
+    const fields = { code:'detail-code', role:'detail-role', title:'detail-title', state:'detail-state', intro:'detail-intro', work:'detail-work', input:'detail-input', output:'detail-output', exit:'detail-exit', loop:'detail-loop' };
+    function selectStage(code) {
+      const data = stages[code];
+      rows.forEach(row => { const active = row.dataset.stage === code; row.classList.toggle('selected', active); row.setAttribute('aria-expanded', String(active)); });
+      document.getElementById(fields.code).textContent = `${code} · ${code === 'S1' ? '需求阶段' : '处理阶段'}`;
+      for (const [key, id] of Object.entries(fields)) if (!['code','role'].includes(key)) document.getElementById(id)[key === 'work' || key === 'input' || key === 'output' ? 'innerHTML' : 'textContent'] = data[key];
+      document.getElementById(fields.role).textContent = data.role;
+    }
+    rows.forEach(row => row.addEventListener('click', () => selectStage(row.dataset.stage)));
+    selectStage('S1');
+  </script>
+</body>
+</html>
