@@ -20,6 +20,7 @@
 | --- | --- | --- |
 | `docs/design/2026-11-02-autodev-design.md` | 流程、阶段、状态、管理界面及规则设计 | 当前设计基线；含未验证与待定事项 |
 | `docs/design/2026-11-05-cockpit.md` | Herdr 四窗格驾驶舱：需求、设计、实施计划 P0 到 P5 | 提议；用户已确认方向，P0 实验未做 |
+| `docs/design/2026-11-05-autoloop-foundation.md` | 以 agent-autoloop 为地基的融合方案：冒烟验证、目标结构、F0 到 F6 步骤、界面共用数据、待决事项 | 提议；用户已决定用它做地基，冒烟已通过，F1 起未做 |
 | `docs/plans/2026-11-05-cockpit-dev-plan.md` | 驾驶舱开发计划：P0 实验到 P5，含三个停点 | 提议；可在新 space 中直接接手 |
 | `docs/design/autodev-workflow-prototype.html` | 可展开查看阶段详情的自动化工作流界面原型 | 静态讨论稿；示例任务数据，不代表可运行系统 |
 | `docs/MODELS.md` | 模型名规则：只写完整 ID、magpie 映射原因、各 CLI 指定方式、程序校验要求 | 规则；改 `config.yaml` 的 `agents` 或写启动命令前必读 |

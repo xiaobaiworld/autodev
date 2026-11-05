@@ -35,7 +35,9 @@
 
 ## 下一步（顺序可按新机器实况调整）
 
-0. **当前主线**：驾驶舱，开发计划见 `docs/plans/2026-11-05-cockpit-dev-plan.md`，需求与设计见 `docs/design/2026-11-05-cockpit.md`。P0（L004、L005）和 P1（窗格认领，`src/cockpit/`）已完成并推送。语言定为 Python 3 标准库，认领为标签主、手填地址备用。下一步 P2 状态区。
+0. **当前主线（2026-11-05 改）**：以 agent-autoloop 为地基，方案与步骤 F0 到 F6 见 `docs/design/2026-11-05-autoloop-foundation.md`，冒烟已通过，下一步 F0（固定检出位置、冒烟脚本入 `tests/`）与 F1（真实 Agent 无界面）。驾驶舱窗格方案暂停，其代码保留到 F6 再清理。
+
+   原驾驶舱记录：驾驶舱，开发计划见 `docs/plans/2026-11-05-cockpit-dev-plan.md`，需求与设计见 `docs/design/2026-11-05-cockpit.md`。P0（L004、L005）和 P1（窗格认领，`src/cockpit/`）已完成并推送。语言定为 Python 3 标准库，认领为标签主、手填地址备用。下一步 P2 状态区。
 
 1. 按 [`AGENT_HANDOFF.md`](AGENT_HANDOFF.md) 获取 AutoDev 公共仓库和 personagent 私有仓库，并核对分支、提交与工作区。先处理 personagent 两份未提交文档的转移或保留方式。
 2. 阅读 personagent 项目规则和状态。当前检查显示其处于需求与设计阶段、没有产品代码；确认这在新机器上仍成立。
