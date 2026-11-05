@@ -4,3 +4,6 @@
 # cockpit runtime pane binding
 workspace/cockpit.json
 __pycache__/
+workspace/runs/
+workspace/requests/
+workspace/.lock

@@ -23,9 +23,8 @@ def _read_done(path):
         d = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return _fail("invalid_output")
-    if not isinstance(d, dict):
-        return _fail("invalid_output")
-    return {"ok": True, "reason": None} if d.get("ok") is True else _fail("command_failed")
+    # 这里只判断"完成标记存在且是 JSON 对象"；字段与产物由调用方按 DATA_SPEC 7.2 校验
+    return {"ok": True, "reason": None} if isinstance(d, dict) else _fail("invalid_output")
 
 
 def _exit_agent(hc, pane, exit_keys, clock, sleep, wait_s=10, poll=1):
@@ -54,6 +53,13 @@ def invoke(hc, pane, run_dir, launch_tmpl, prompt, timeout_s, exit_keys,
     run_dir = Path(run_dir)
     done = run_dir / "done.json"
     done.unlink(missing_ok=True)  # 重入安全：旧的完成标记不能算本次
+    info = hc.get(pane)
+    if info is None:
+        return _fail("pane_lost")
+    if not at_shell(info):  # 主控崩溃重启后，窗格里可能还留着上次的 Agent
+        bad = _exit_agent(hc, pane, exit_keys, clock, sleep)
+        if bad:
+            return _fail(bad)
     hc.send(pane, "clear && " + launch_tmpl.format(input=run_dir / "input.md"))
     hc.send(pane, prompt)
 
