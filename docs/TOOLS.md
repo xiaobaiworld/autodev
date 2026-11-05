@@ -5,8 +5,8 @@
 ## 0. 怎么查
 
 1. 先看本文。
-2. 本文没有，查该工具的在线最新文档（第 1 节的链接）。
-3. 再用工具自带的手册核对版本是否一致：`hc --skill`、`herdr-app --skill`、`herdr-app commands`。
+2. 本文没有，看全局的 `agent/tools/SYSTEM_CAPABILITY_INDEX.md`（iCloud，机器级能力；不含 herdr、hc、autoloop）。
+3. 都没有，查该工具的在线最新文档（第 1 节的链接），再用工具自带的手册核对版本是否一致：`hc --skill`、`herdr-app --skill`、`herdr-app commands`。
 4. 不要用 `herdr --help` 或 `herdr pane/workspace ...`。本机的 `herdr` 是终端版 0.9.5，连的是旧服务，和桌面应用不是一个产品（L001、L011）。
 5. 查到新用法或踩到坑，补进本文和 `docs/lessons.md`。
 
