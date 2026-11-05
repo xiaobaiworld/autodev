@@ -22,8 +22,9 @@
 | `docs/design/2026-11-05-cockpit.md` | Herdr 四窗格驾驶舱：需求、设计、实施计划 P0 到 P5 | 提议；用户已确认方向，P0 实验未做 |
 | `docs/plans/2026-11-05-cockpit-dev-plan.md` | 驾驶舱开发计划：P0 实验到 P5，含三个停点 | 提议；可在新 space 中直接接手 |
 | `docs/design/autodev-workflow-prototype.html` | 可展开查看阶段详情的自动化工作流界面原型 | 静态讨论稿；示例任务数据，不代表可运行系统 |
+| `docs/MODELS.md` | 模型名规则：只写完整 ID、magpie 映射原因、各 CLI 指定方式、程序校验要求 | 规则；改 `config.yaml` 的 `agents` 或写启动命令前必读 |
 | `docs/DATA_SPEC.md` | 数据目录、实体与文件格式 | 设计规范；实现前可随决策更新 |
-| `docs/lessons.md` | 已踩的坑与验证过的做法（L001 `hc` 接口，L002 测试设计，L003 完成判断） | 经验记录；开始新功能前先读 |
+| `docs/lessons.md` | 已踩的坑与验证过的做法（L001 `hc` 接口，L002 测试设计，L003 完成判断，L004 驾驶舱 P0 实验，L005 模型映射） | 经验记录；开始新功能前先读 |
 | `docs/spikes/` | autoloop 验证：v1 计划与报告、v2 补测计划 | 验证记录；结论未采纳为决策 |
 | `docs/DECISIONS.md` | 重要方向及决策依据 | 决策事实源；以各条状态为准 |
 

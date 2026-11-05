@@ -52,17 +52,19 @@ AutoDev 在本机运行。用户提出功能修改类需求，系统把它变成
 
 流程只认角色（analyst、designer、design_reviewer、coder、code_reviewer、acceptor），不认具体 Agent。每个角色绑定哪个 Agent、哪个模型、哪个推理深度，都写在 `config.yaml`，改一行就能替换。
 
+模型一律写完整 ID，不用别名；本机模型名经 magpie 映射，规则与查法见 `docs/MODELS.md`，实际取值以 `config.yaml` 为准。下面只示意结构：
+
 ```yaml
 agents:
   claude-opus:
     cli: claude
-    model: opus
+    model: <完整模型 ID>   # 见 config.yaml 与 docs/MODELS.md
   codex:
     cli: codex
-    model: null        # 具体模型待定
+    model: <完整模型 ID>
   agy:
     cli: agy           # Antigravity CLI
-    model: gemini-4-argon-high
+    model: <完整模型 ID>
 
 roles:
   analyst:         { agent: claude-opus }
