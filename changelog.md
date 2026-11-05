@@ -13,3 +13,4 @@
 - F0：agent-autoloop 检出锁定在 ~/code/agent-autoloop（8f8e2ee），冒烟脚本 tests/smoke_autoloop.py（10 项，正反向都验证过）；融合文档补 F0、F1 通过标准
 - F1：真实 Claude/Codex/agy 无界面各跑一轮并通过（实际模型名：Claude 通过，Codex、agy 未验证）；权限探针被拒绝而非挂起；记入 L009 与 F1 报告
 - F2（进行中）：src/driver/hub.py（发事件、读事实流、RunTracker）、runner.py（把一次 Agent 调用换成发事件等中台那一轮结束）；write_input 与 check_vendors 提到 pipeline.py
+- F2：流水线驱动跑在 autoloop 上，真实 Agent 跑通 S1 到 S3（约 157 秒），REWORK 轮次上限在真实中台上验证；报告与 L010

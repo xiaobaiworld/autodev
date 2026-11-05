@@ -18,8 +18,8 @@ def event_id(state):
 
 
 def subject_of(state):
-    """步骤目录（相对 runs 目录）。只含字母数字和 - / .，符合中台对 subject 的限制，长度 < 100。"""
-    return f"{state['id']}/{state['step']['dir']}"
+    """步骤目录（相对 workspace 目录，规则的 cwd 就是 workspace）。只含字母数字和 - / .，符合中台对 subject 的限制，长度 < 100。"""
+    return f"runs/{state['id']}/{state['step']['dir']}"
 
 
 def make_invoke(hub, step_retries, tracker=None, clock=time.monotonic, sleep=time.sleep, poll_s=30):

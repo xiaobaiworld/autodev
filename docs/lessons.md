@@ -91,3 +91,12 @@
 - 验证脚本自己也会错：读错文件、把 `"usage": null` 当成有用量。判定逻辑要先用已知结果跑一遍，不能默认正确。
 - 运行目录的命名是 `<轮次>-<尝试>`（`home/worker/runs/1-1/`），完成后 `entry.json` 不在，日志在 `stdout-<n>.log`。
 - 无界面的 Codex 读了本机全局规范文件，如需隔离要另行设计（见 F1 报告）。
+
+## L010 F2：驱动放在 autoloop 外面（2026-11-05）
+
+- 中台对失败的轮次不是终态：`retryLater` 把它放回 `queued` 并记 `attempts`、`error`，退避从 5 分钟翻倍到 60 分钟，连续 10 次后才 `cancelled`。判终点要分清 `done/nothing/cancelled`（终点）和 `queued` 带 `attempts`（重试中），不能看到 `failed` 就当结束。
+- 同一来源同一事件 id 只记一次。驱动重试一个步骤要换新 id，否则拿不到新的一轮。
+- 事件的 `subject` 只允许字母数字和 `# . _ : / @ -`，会进提示词；`summary`、`detail` 不进。所以用 subject 传步骤目录路径，不传任何自由文字。
+- `/v1/stream` 的事实里能拼出"事件 → 轮次 → 状态"（`events`、`run_events`、`runs` 三张表），驱动不需要轮询 `why`。
+- macOS 没有 `timeout`；zsh 不会展开变量里的通配符、也不拆分变量里的命令；`python3 -I` 会忽略 `PYTHONPATH`。这些在本轮各撞过一次。
+- 用假 Agent（`tests/fake_stage_agent.py`）加真实中台，可以零成本测流转、轮次上限这类确定性逻辑，真实 Agent 只留给"能不能干活"的检验。

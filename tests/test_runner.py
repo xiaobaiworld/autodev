@@ -75,7 +75,7 @@ class RunnerTest(unittest.TestCase):
 
     def test_subject_and_event_id_shape(self):
         s = subject_of(Run(self.run_dir).read())
-        self.assertEqual(s, "R20261105-001/S1-analysis/round-1")
+        self.assertEqual(s, "runs/R20261105-001/S1-analysis/round-1")
         self.assertRegex(s, r"^[A-Za-z0-9#._:/@-]{1,100}$")
         self.assertEqual(event_id(STATE), "R20261105-001-S1-r1-a1")
 
