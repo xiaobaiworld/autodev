@@ -83,3 +83,11 @@
 - 处理原则：能在不影响整体运行的前提下继续往下走，就直接处理并继续（例如放行只写步骤目录的 `done.json` 之类确认）；会影响其他部分、涉及删除数据、凭证、权限、对外发送、花钱的，不自动放行，转 needs-human。
 - 本次的三次卡住（读取确认、Bash 确认、窗格被杀）都是巡检能提前发现的。Monitor 靠我手动盯，不能当成产品功能。
 - 还没做，详见 `docs/design/2026-11-05-cockpit.md` 新增的 2.6 节。
+
+## L009 F1：autoloop 无界面跑真实 Agent（2026-11-05）
+
+- 无界面模式下没有"卡住等弹窗"：Claude `-p --permission-mode acceptEdits` 遇到不放行的 Bash 直接拒绝（日志 `permission_denials`），约 11 秒结束。L008 的两次卡住是交互界面特有的，这是换底座的实证依据之一。只测了两条命令，不能推广到所有 Bash。
+- 完整模型 ID 下，Claude 的 opus 与 sonnet 能得到不同的实际模型名；判定模型靠 stream-json 开头的 `"model"` 字段，Codex `exec --json` 和 agy 没有，只能记"未验证"。
+- 验证脚本自己也会错：读错文件、把 `"usage": null` 当成有用量。判定逻辑要先用已知结果跑一遍，不能默认正确。
+- 运行目录的命名是 `<轮次>-<尝试>`（`home/worker/runs/1-1/`），完成后 `entry.json` 不在，日志在 `stdout-<n>.log`。
+- 无界面的 Codex 读了本机全局规范文件，如需隔离要另行设计（见 F1 报告）。

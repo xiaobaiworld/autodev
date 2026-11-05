@@ -35,7 +35,7 @@
 
 ## 下一步（顺序可按新机器实况调整）
 
-0. **当前主线（2026-11-05 改）**：以 agent-autoloop 为地基，方案与步骤 F0 到 F6 见 `docs/design/2026-11-05-autoloop-foundation.md`，冒烟已通过，下一步 F0（固定检出位置、冒烟脚本入 `tests/`）与 F1（真实 Agent 无界面）。驾驶舱窗格方案暂停，其代码保留到 F6 再清理。
+0. **当前主线（2026-11-05 改）**：以 agent-autoloop 为地基，方案与步骤 F0 到 F6 见 `docs/design/2026-11-05-autoloop-foundation.md`，F0、F1 已完成（冒烟脚本 `tests/smoke_autoloop.py`，F1 报告 `docs/spikes/2026-11-05-f1-agents-report.md`），下一步 F2（流水线驱动）。Codex、agy 的实际模型名未验证，用量 agy 无。驾驶舱窗格方案暂停，其代码保留到 F6 再清理。
 
    原驾驶舱记录：驾驶舱，开发计划见 `docs/plans/2026-11-05-cockpit-dev-plan.md`，需求与设计见 `docs/design/2026-11-05-cockpit.md`。P0（L004、L005）和 P1（窗格认领，`src/cockpit/`）已完成并推送。语言定为 Python 3 标准库，认领为标签主、手填地址备用。下一步 P2 状态区。
 
