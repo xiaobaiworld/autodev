@@ -38,3 +38,14 @@
 - E7 清屏：`clear` 有效，`hc keys ctrl+l` 无效。
 
 教训：对交互式程序发文本前，先确认它在等什么输入。窗格关闭不可由程序恢复，因此启动 Agent 的命令要先在 `/tmp` 目录试通，不要在真实窗格里试错。
+
+## L005 模型选择与 magpie 映射（2026-11-05）
+
+本机所有 Agent 经 magpie 网关（`127.0.0.1:3425`），模型名被映射，和标准名不一致。
+
+- 坑 1：`~/.claude/settings.json` 里 `ANTHROPIC_DEFAULT_SONNET_MODEL` 指向 `ai-code-with/claude-opus-5-5`，所以 `claude --model sonnet` 实际是 Opus（L004 里"横幅模型名不一致"即此因）。别名 sonnet、opus 不可靠。
+- 做法：启动时写完整 ID。Claude：`--model ai-code-with/claude-sonnet-5-5`，横幅显示 Sonnet 5.5，已验证。可用 ID 见 `~/.claude/settings.json` 的 `CLAUDE_CODE_MODEL_CAPABILITIES`。
+- Codex：`-m gpt-6-sol -c model_reasoning_effort=low` 生效，横幅显示 `GPT-6-Sol low`。可用模型与强度档位见 `~/.codex/magpie-desktop-models.json`。
+- agy：`agy models` 列出可选 ID，`agy --model claude-sonnet-5-5-low -p '...' --dangerously-skip-permissions` 成功退出码 0。L004 的地区限制只出现在默认模型上，指定模型后可用。
+- `magpie ls` 看各 Agent 当前默认模型；`magpie <agent> <model>` 会改全局默认，调度程序不要用它，只用启动参数，避免影响用户日常使用。
+- 坑 2：在 Agent 窗格（如主控 t14）里 `hc send` 到已跑过 Agent 的 shell 窗格（`reported=true`），文本会被包成 `<hc from="t14">…</hc>`，zsh 解析失败。做法：用 `hc exec hc send <t> "<命令>"` 发送，文本不被包装。已在 t18、t1b 验证。主控程序若不是 Agent 进程，需另行确认是否也会包装。
