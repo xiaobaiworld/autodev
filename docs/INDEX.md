@@ -9,6 +9,8 @@
 | 路径 | 职责 | 状态与权威性 |
 | --- | --- | --- |
 | `README.md` | 项目简介与入口 | 当前项目入口 |
+| `AGENTS.md`、`CLAUDE.md` | 给 Agent 的项目说明；第一步是先查 `docs/TOOLS.md`（`CLAUDE.md` 只引用 `AGENTS.md`） | 每次开始任务先读 |
+| `docs/TOOLS.md` | 已确定的工具、在线文档链接、跑通过的命令、环境坑 | 找任何功能之前先查这里；查到新用法要补回 |
 | `next.md` | 当前阶段、已验证事项、下一步、仍然开放的问题 | 当前工作状态，每个阶段结束后更新 |
 | `AGENT_HANDOFF.md` | 换机器时的仓库获取方式、personagent 本地补丁的转移方法 | 只在换机器时读；其中的“当前状态”以 `next.md` 为准 |
 | `config.yaml` | 项目、Agent、角色绑定、轮次上限、cockpit 段 | 配置；模型名规则见 `docs/MODELS.md` |
@@ -22,7 +24,7 @@
 | `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D014 | 决策事实源 |
 | `docs/DATA_SPEC.md` | 数据目录、实体与文件格式 | 设计规范；`state.json`、`done.json` 已在代码里使用 |
 | `docs/MODELS.md` | 模型名规则：只写完整 ID、magpie 映射原因、各 CLI 的指定方式 | 规则；改 `config.yaml` 的 `agents` 或写启动命令前必读 |
-| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L011 | 开始新功能前先读 |
+| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L012 | 开始新功能前先读 |
 | `docs/design/autodev-workflow-prototype.html` | 工作流界面原型 | 静态讨论稿，示例数据，不代表可运行系统 |
 
 ## 验证记录

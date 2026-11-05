@@ -16,3 +16,4 @@
 - F2：流水线驱动跑在 autoloop 上，真实 Agent 跑通 S1 到 S3（约 157 秒），REWORK 轮次上限在真实中台上验证；报告与 L010
 - F3（进行中）：在 Herdr 桌面应用里用 herdr-app 新建“autodev 看板”标签页并分出两个窗格（t1g 看板、t1h 日志）；src/dashboard/ 命令行看板读中台 /v1/state 与 state.json，真实窗格里验证通过
 - 文档清理：归档被取代的驾驶舱设计与计划、autoloop 测试计划 v1/v2、空 goal.md 模板到 docs/archive/；重写 README、next.md、docs/INDEX.md；精简 AGENT_HANDOFF；设计文档 3.2/3.3/5 节加过时说明；新增 D014
+- 新增 docs/TOOLS.md（工具手册）、AGENTS.md 与 CLAUDE.md（第一步先查工具手册）、L012
