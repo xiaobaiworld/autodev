@@ -1,12 +1,14 @@
+> **已归档（2026-11-06）**：被 `docs/design/2026-11-05-autoloop-foundation.md` 取代。P0 到 P4 已做完（结论在 `docs/lessons.md` L004 到 L008），P5 不再做。保留供追溯，不再维护。
+
 # 驾驶舱开发计划（2026-11-05）
 
-> 给在新 Herdr space 里接手的 Agent 和用户：本文自成一体，按顺序读完即可开工。需求与设计在 `docs/design/2026-11-05-cockpit.md`，本文只讲怎么做、做到什么算完、哪里要停下来问人。
+> 给在新 Herdr space 里接手的 Agent 和用户：本文自成一体，按顺序读完即可开工。需求与设计在 `docs/archive/2026-11-05-cockpit.md`，本文只讲怎么做、做到什么算完、哪里要停下来问人。
 
 ## 0. 先读什么（按顺序）
 
 1. `~/.claude/CLAUDE.md` 和 iCloud 全局规范入口（见该文件开头）。
 2. `docs/lessons.md`：L001 到 L003，尤其是 `hc` 与 `herdr` 的区别。
-3. `docs/design/2026-11-05-cockpit.md`：需求 R1 到 R6、布局、窗格认领、一次调用、状态区。
+3. `docs/archive/2026-11-05-cockpit.md`：需求 R1 到 R6、布局、窗格认领、一次调用、状态区。
 4. `docs/design/2026-11-02-autodev-design.md` 第 3、5 节：角色与 Agent、流程控制程序原则。
 5. `config.yaml`、`docs/DATA_SPEC.md` 中 `state.json` 的字段。
 6. `next.md`。

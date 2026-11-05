@@ -1,4 +1,4 @@
-# AutoDev 跨机器 Agent 交接（2026-11-03）
+# AutoDev 跨机器 Agent 交接（2026-11-03 起草，2026-11-06 精简）
 
 ## 用途
 
@@ -53,12 +53,7 @@ git apply --check /path/to/personagent-local-docs-2026-11-03.patch
 
 ## AutoDev 当前状态
 
-- 阶段：设计，尚无可运行代码。仓库有设计、数据规范、决策和配置；没有控制程序、CLI、Web 管理界面、schemas、`rules/`、`docs/DEV_PLAN.md` 或测试。
-- 设计方向：本机运行的需求驱动九阶段流水线。确定性程序负责状态流转和持久化；Agent 产出可审查文件；人工决定使用 `decision-K.md` / `reply-K.md` 文件对。
-- 首期唯一目标项目是 personagent（D002）。
-- 角色与 Agent 解耦，在 `config.yaml` 绑定并由 Herdr（`hc`）调度。当前配置为：Claude Opus 负责分析、设计、代码审查和复盘；Codex 负责设计审查、编码和复盘审查；agy 使用 Gemini 负责验收。
-- 计划中的 Web 界面只监听 `127.0.0.1`。AutoDev 当前设计明确不包含 GitHub PR 和 CI。
-- 原 `goal.md` 自迭代循环已由需求驱动流水线取代。
+以 `next.md` 为准。本文件只保留换机器时需要的内容：仓库获取方式、personagent 本地补丁的转移方法、尚未协调的规则冲突。
 
 ## 实现前必须协调的冲突
 
@@ -66,46 +61,19 @@ AutoDev 设计暂不含 GitHub PR；personagent 的 `AGENTS.md` 则要求开发�
 
 首个里程碑也要明确验收路径：AutoDev 设计允许纯文档需求跳过 S7、S8，而旧版 `next.md` 曾写成用文档需求跑 S1→S9。需要确定演示是验证按规则跳过阶段的路径，还是选择必须经过 S7、S8 的需求。
 
-## 已记录的方向
+## 换机器后要重新核对
 
-- 固定的需求驱动流程取代旧自迭代循环（D001、D005）。
-- 第一阶段只接 personagent（D002）。
-- 状态由确定性程序驱动并落盘，以支持中断恢复（D004）。
-- 角色与 Agent 分开定义，映射放在 `config.yaml`，进程由 Herdr（`hc`）管理（D003）。
-- 审查者与作者所用模型厂商必须不同；当前验收角色绑定 agy/Gemini（D008）。
-- 人工参与通过文件对完成；管理界面计划只监听本机（D009、D010）。
-- 复盘围绕动作、拆分、信息三个杠杆，改进建议须经审查和用户批准（D011）。
-- 规则分为全局规范、AutoDev `rules/`、目标项目规则三层（D012）。
+工具版本与安装位置不能沿用旧记录：重新检查 `node --version`（要 24 以上）、`claude`、`codex`、`agy`、`hc`、`herdr-app` 是否存在，agent-autoloop 是否检出在 `~/code/agent-autoloop` 并位于提交 `8f8e2ee`，然后跑 `python3 -I tests/smoke_autoloop.py`。模型名要重新核对（`docs/MODELS.md`），不同网关下完整 ID 不同。
 
-详细内容以 `docs/DECISIONS.md` 和设计文档为准。部分机制仍是设计提议，尚未通过实际运行验证。
-
-## 待办
-
-1. 检查目标项目当前文件、规则、运行形态和实际检查命令。原机器快照显示 personagent 尚无产品代码，因此无法从运行中的应用确定 S7、S8 和 `checks`；`config.yaml` 当前为 `checks: []`。
-2. 确定 S7 是只打候选标签，还是部署候选供 S8 验收。设计第 8 节已描述候选标签，第 13 节仍将标签或部署列为未决。
-3. 按目标项目将来的运行形态确定 S8 验收证据与方式。
-4. 选择流程程序语言、Web 技术栈及进程边界。
-5. 决定“需求变更”视图对比原文、结构化分析字段，还是两者都显示。
-6. 协调 AutoDev 不做 PR 与 personagent 要求 Issue/TASK/PR 的流程差异。
-7. 补写全局规范未覆盖的 AutoDev 规则，再写 `docs/DEV_PLAN.md`，列出小步骤、大阶段和用户确认合并的关口。
-8. 明确首个演示是否按设计跳过纯文档需求的 S7、S8。
-9. 补测 `hc` 的跨机器 `--on`、`keep` 丢失检测，以及 Claude 与 agy 的启动；本机 Codex 的基本流程已实测（`docs/lessons.md` L001）。
-
-## 原机器环境记录
-
-2026-11-02 记录的工具有 herdr 0.9.5、codex、claude、agy 1.4.12；`herdr agent start --kind` 帮助列出三个 Agent kind。当时没有实际运行任务。新机器需自行检查 `command -v`、版本和帮助信息，不要假定工具或版本相同。
-
-开始实现前，遵守新机器上的全局 `AGENTS.md` 入口：等待 iCloud 主规范同步，读取该文件并核对末尾固定标识。原机器 `next.md` 记录 2026-11-02 读到标识「你好老板03」；新机器要核对当前文件，不要只依赖旧快照。
+开始实现前，遵守新机器上的全局 `AGENTS.md` 入口，等待 iCloud 主规范同步后再读。
 
 ## 阅读顺序
 
-1. `AGENT_HANDOFF.md`（本文件）
-2. `next.md`
-3. `docs/design/2026-11-02-autodev-design.md`
-4. `docs/DATA_SPEC.md`
-5. `docs/DECISIONS.md`
-6. `config.yaml`
-7. 在 personagent 仓库中，先读 `AGENTS.md`、`CLAUDE.md`、`docs/PROJECT_STATE.md`、`docs/DEV_GUIDE.md`、`docs/INDEX.md`、`docs/DECISIONS.md` 和 `next.md`。
+1. `next.md`
+2. `docs/design/2026-11-05-autoloop-foundation.md`
+3. `docs/DECISIONS.md`、`docs/lessons.md`、`docs/MODELS.md`
+4. `docs/design/2026-11-02-autodev-design.md`、`docs/DATA_SPEC.md`、`config.yaml`
+5. 在 personagent 仓库中，先读 `AGENTS.md`、`CLAUDE.md`、`docs/PROJECT_STATE.md`、`docs/DEV_GUIDE.md`、`docs/INDEX.md`、`docs/DECISIONS.md` 和 `next.md`。
 
 ## 交接边界
 

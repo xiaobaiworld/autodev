@@ -1,58 +1,45 @@
 # next.md
 
-更新：2026-11-05 ｜ 阶段：设计（尚无可运行代码）
+更新：2026-11-06 ｜ 阶段：以 agent-autoloop 为地基的集成（F0 到 F2 完成，F3 进行中）
 
 ## 恢复上下文时先读
 
-1. `AGENT_HANDOFF.md`：跨机器恢复说明、仓库位置、外部项目未提交状态
-2. 本文件
-3. `docs/design/2026-11-02-autodev-design.md`：流程设计 v2
-4. `docs/DATA_SPEC.md`：数据结构规范
-5. `docs/DECISIONS.md`：D001–D012
-6. `config.yaml`：项目、Agent、角色绑定、轮次上限
-7. 全局规范：`~/Library/Mobile Documents/com~apple~CloudDocs/agent/coding/AI编程全局规范/GLOBAL_DEV_WORKFLOW.md`（新机器须等待 iCloud 同步，并核对文件末尾固定标识）
+1. 本文件
+2. `docs/design/2026-11-05-autoloop-foundation.md`：当前主线方案（F0 到 F6 步骤、结构、待决）
+3. `docs/DECISIONS.md`：D001 到 D014（D014 是用 autoloop 做地基）
+4. `docs/lessons.md`：L001 到 L011，开始新功能前先扫一遍
+5. `docs/MODELS.md`：模型名只写完整 ID
+6. `docs/design/2026-11-02-autodev-design.md`：流程设计（第 3.2、3.3、5 节已被地基方案部分取代，见各节顶部说明）
+7. `docs/DATA_SPEC.md`、`config.yaml`
+8. 全局规范：`~/Library/Mobile Documents/com~apple~CloudDocs/agent/coding/AI编程全局规范/GLOBAL_DEV_WORKFLOW.md`
+9. 换机器时另读 `AGENT_HANDOFF.md`
 
 ## 当前状态
 
-- AutoDev 仓库：`https://github.com/xiaobaiworld/autodev.git`，公开；当前分支 `main`。2026-11-03 创建交接前，工作区干净且 `main` 与 `origin/main` 一致（`4840d5b`）。交接文档将产生新提交；恢复时以 `git status` 和最新提交为准。
-- AutoDev 仍是设计阶段：没有可运行代码、CLI、Web 管理界面、schemas、`rules/`、`docs/DEV_PLAN.md` 或测试。
-- `personagent` 是另一个私有仓库：`https://github.com/xiaobaiworld/personagent.git`，当前机器路径 `/Users/bai/code/personagent`，分支 `master`。2026-11-03 检查时 HEAD 与 `origin/master` 同为 `1d39d5f`，但 `docs/DECISIONS.md` 和 `docs/PROJECT_STATE.md` 有未提交改动。新机器克隆不会带上这些本地改动；需要时须从原机器另行转移。补丁保存在原机器的 `/Users/bai/Downloads/personagent-local-docs-2026-11-03.patch`，不能放入公开的 AutoDev 仓库。
-- AutoDev 明确暂不做 GitHub PR/CI；personagent 开发规则要求 Issue、TASK、任务分支和 PR。启动首个流水线前要解决两套规则的衔接。
-- 当前本机工具版本只在 2026-11-02 做过记录，不能推定新机器相同；`hc` 的启动、发送、等待、读取、关闭已在本机实测（L001）；跨机器 `--on`、`keep` 丢失检测、Claude 与 agy 经 `hc` 启动尚未测。
-- 已定：
-  - 需求驱动的九阶段流水线，取代原 goal.md 自迭代循环（D001、D005）
-  - 第一阶段只接 `personagent`（D002）
-  - 角色与 Agent 解耦，绑定写在 `config.yaml`，经 Herdr（`hc`）调度（D003）
-  - 三个 Agent：Claude Code、Codex、agy。审查者与作者的模型厂商必须不同（D008）
-  - 当前绑定：分析、设计、代码审查、复盘用 Opus；设计审查、编码、复盘审查用 Codex；验收用 agy
-  - 流程由确定性程序驱动，状态全部落盘，可崩溃恢复（D004）
-  - 人工参与通过 `decision-K.md` / `reply-K.md` 文件对完成（D009）
-  - 本地 Web 管理界面，只监听 127.0.0.1（D010）
-  - 复盘围绕动作、拆分、信息三个杠杆，改动须审查加用户批准（D011）
-  - 规则分三层：全局规范、AutoDev `rules/`、项目规则（D012）
-  - 需求分析与需求分解均需审核和多轮修订；必要时通过决策请求邀请用户参与（D013）。S1 审核角色、结论协议和轮次上限待设计。
-- 原机器于 2026-11-02 核实：herdr 0.9.5、codex、claude、agy 1.4.12 已安装；herdr `agent start --kind` 帮助列出三种 Agent。只看过帮助文本，没有实际跑过任务；新机器须重新核对。
+- 地基：agent-autoloop 检出在 `~/code/agent-autoloop`，锁定提交 `8f8e2ee`。中台管派活、排队、重试、租约、事实日志、卡片；Agent 以无界面进程运行（Claude `-p`、Codex `exec`、agy `-p`）。
+- 我们的部分放在中台外面：`src/driver/` 向中台发事件、读事实流；`src/cockpit/pipeline.py`、`controller.py`、`store.py` 管阶段、轮次上限、厂商不同检查、产物校验与状态落盘。
+- 已验证：F0 冒烟（`tests/smoke_autoloop.py`）；F1 三个 Agent 各跑一轮；F2 真实 Agent 跑通 S1 到 S3（Opus、Opus、Codex，约 157 秒），REWORK 轮次上限在真实中台上验证。
+- F3 界面：`src/dashboard/` 命令行看板读中台 `/v1/state` 与 `state.json`；在 Herdr 桌面应用的 `pro2` 空间里用 `herdr-app` 建了三格布局（左主窗格、右上看板、右下日志）。看板还没接真实流水线。
+- 测试：88 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
 
-## 下一步（顺序可按新机器实况调整）
+## 下一步
 
-0. **当前主线（2026-11-05 改）**：以 agent-autoloop 为地基，方案与步骤 F0 到 F6 见 `docs/design/2026-11-05-autoloop-foundation.md`，F0、F1 已完成（冒烟脚本 `tests/smoke_autoloop.py`，F1 报告 `docs/spikes/2026-11-05-f1-agents-report.md`），F2 已完成（报告 `docs/spikes/2026-11-05-f2-pipeline-report.md`，驱动在 `src/driver/`），下一步 F3（界面）。Codex、agy 的实际模型名未验证，用量 agy 无。驾驶舱窗格方案暂停，其代码保留到 F6 再清理。
+1. F3：把看板接到真实 S1 到 S3 流水线；左边主窗格确认显示什么（待用户选：当前步骤的日志，或中台里该轮的摘要）；Web 界面后做。
+2. 写 `pro2` 布局重建脚本（用户问过“能否保存”，桌面应用没有保存命令，建议用脚本重建）。
+3. F4 模板：角色模板与规则从一处生成。
+4. F5 崩溃与卡住：强杀中台、强杀 worker、Agent 超时、中台重试在真实环境触发。
+5. F6 清理：移除不再需要的窗格驱动代码（`src/cockpit/` 的 `claim.py`、`invoke.py`、`config.py`、`main.py`、`status.py` 中不再用的部分），回写设计文档第 3、5、9 节。
+6. 未验证项：agy 的实际模型名与用量；真实审查者给出 REWORK 并回应意见；强度参数在 Claude 启动参数里的写法；`/v1/stream` 从序号 0 重放在历史很大时的开销。
 
-   原驾驶舱记录：驾驶舱，开发计划见 `docs/plans/2026-11-05-cockpit-dev-plan.md`，需求与设计见 `docs/design/2026-11-05-cockpit.md`。P0（L004、L005）和 P1（窗格认领，`src/cockpit/`）已完成并推送。语言定为 Python 3 标准库，认领为标签主、手填地址备用。下一步 P2 状态区。
+## 仍然开放的问题（来自早期设计，与地基无关）
 
-1. 按 [`AGENT_HANDOFF.md`](AGENT_HANDOFF.md) 获取 AutoDev 公共仓库和 personagent 私有仓库，并核对分支、提交与工作区。先处理 personagent 两份未提交文档的转移或保留方式。
-2. 阅读 personagent 项目规则和状态。当前检查显示其处于需求与设计阶段、没有产品代码；确认这在新机器上仍成立。
-3. 解决 AutoDev 的 GitHub 协作范围与 personagent 项目规则冲突，之后再决定是否可把 personagent 作为首个自动化目标。
-4. 定义首个演示需求的验收路径。纯文档需求按设计可以跳过 S7/S8，所以不要把“跑通 S1→S9”理解为一定要执行这两个阶段。
-5. 结合目标项目实际情况，确定 S7（候选标签或部署）、S8 验收方式，以及 `config.yaml` 中的 `checks` 命令。目前 `checks: []`，personagent 尚无可运行应用。
-6. 确定流程程序语言和 Web 技术栈/进程边界，并决定“需求变更”视图对比文本、结构化字段或两者。
-7. 补写 AutoDev `rules/` 中全局规范未覆盖的条文，再写 `docs/DEV_PLAN.md`；计划要列出小步骤、大阶段及用户确认合并的关口。
-8. 之后实现第一个里程碑：流程骨架（锁、`state.json`、`events.jsonl`、原子写、主循环），并按第 4 步定好的跳阶段规则跑通文档需求。
-9. 补测 `hc`：跨机器 `--on homemac`、`keep` 丢失检测、Claude 与 agy 启动。本机 Codex 的启动、发送、等待、读取、关闭已通过。
-10. autoloop v2 补测已完成（`docs/spikes/2026-11-05-autoloop-test-report-v2.md`，结论见 `docs/lessons.md` L006）：只确认 G5 方式 A，G3、G4、G5h、G7 未测。是否写 D014（底座改用 autoloop）待用户决定；驾驶舱本阶段不依赖它。若要继续，需补测 G3（先用完整模型 ID，见 `docs/MODELS.md`）、G4、G7、熔断，轮数上限要调高或拆成多次。
+- 目标项目 personagent 目前没有可运行的产品代码，S7 发布候选和 S8 验收的具体做法、`config.yaml` 的 `checks` 都还定不了。
+- AutoDev 暂不含 GitHub PR，与 personagent 要求 Issue、TASK、PR 的规则需先协调。
+- 设计文档第 8 节与第 13 节对 S7 “只打标签还是部署”表述不一致。
+- “需求变更”视图对比原文、结构化字段还是两者，未定。
+- 需求分析的审核角色、结论协议和轮次上限待设计（D013）。
+- 跨机器 `hc --on homemac` 与 `keep` 丢失检测未测；autoloop 的 G4 提问续接、G7 外部文字隔离、熔断也未在我们的集成里测过。
 
-## 设计文档中的待协调点
+## 已归档（不再维护，保留追溯）
 
-- 第 8 节描述 S7 产出候选标签，第 13 节仍在讨论只打标签还是部署，需统一表述。
-- 第 13 节第 2 项的 S8 方法取决于 personagent 应用形态；当前仓库还没有产品代码。
-- AutoDev 暂不含 GitHub PR，与 personagent 的 Issue/TASK/PR 开发规则需先协调。
-- 第 13 节第 5 项仍未决定“需求变更”视图的对比粒度。
+`docs/archive/`：驾驶舱设计与开发计划、autoloop 测试计划 v1 与 v2、空的 `goal.md` 模板。

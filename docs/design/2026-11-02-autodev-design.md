@@ -83,6 +83,8 @@ roles:
 
 ### 3.2 Herdr（`hc`）的作用
 
+> **部分过时（2026-11-06）**：Agent 的启动与等待改由 autoloop 的无界面进程完成（D014，`docs/design/2026-11-05-autoloop-foundation.md`），Herdr 只做显示。下面的 `hc` 实测记录仍然准确，作为历史依据保留。
+
 Herdr 只负责 Agent 进程的生命周期：启动终端、发送提示、等待状态、读取屏幕、关闭终端。流程状态不存放在 Herdr 中，Herdr 重启或终端丢失不影响流程状态的正确性。
 
 调用接口是 `hc`（herdr-core 的命令行，配置 `~/.config/herdr-core/config.toml`）。旧的 `herdr agent/pane` 命令连的是另一个 socket，在桌面应用下报 `server_not_running`，不要使用。2026-11-05 在本机实测（`docs/lessons.md` L001）：
@@ -99,6 +101,8 @@ Herdr 只负责 Agent 进程的生命周期：启动终端、发送提示、等�
 完成判断以 `hc wait` 的状态加产物文件 `done.json` 为准，不以屏幕内容为准。跨机器用 `--on <机器名>`，未测。丢失检测靠 `keep` 标志，未测。Claude 与 agy 经 `hc run` 启动，未测。
 
 ### 3.3 一次 Agent 调用的约定
+
+> **部分过时（2026-11-06）**：第 2 步“通过 `hc run --bg` 启动”和第 4 步“`hc kill`”已被取代：驱动向 autoloop 中台发事件，等事实流里那一轮结束。第 1、3 步（`input.md`、以 `done.json` 判断完成）不变。
 
 每次调用都是一次性任务，不复用对话：
 
@@ -130,6 +134,8 @@ analyst 的产物 `analysis.md` 必须包含：结论（ACCEPT、REJECT、CLARIF
 S1 的审核必须检查上述字段是否有证据支撑、是否忠实反映原始需求，并指出遗漏或矛盾。审核意见和 analyst 的逐项回应按轮次保存，不覆盖前轮。审核结论类型、独立审核角色及具体轮次上限仍待设计；在定稿前，`ACCEPT` 不应仅由 analyst 自我声明触发阶段迁移。
 
 ## 5. 流程控制程序
+
+> **部分过时（2026-11-06）**：原则（5.1）、状态记录（5.2）、重入安全（5.4）仍然有效，实现在 `src/cockpit/`。巡检和卡住检测（5.5）由 autoloop 内核的租约、心跳和连续失败上限承担，不再自己做。
 
 ### 5.1 原则
 

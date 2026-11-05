@@ -66,7 +66,7 @@ scheduler:
   runner: hc            # herdr-core 命令行，见设计文档 3.2
   poll_seconds: 15
 
-cockpit:                # 驾驶舱，见 docs/design/2026-11-05-cockpit.md
+cockpit:                # 驾驶舱，见 docs/archive/2026-11-05-cockpit.md
   claim: label          # 认领主方式：label（标签）或 address（手填，读 workspace/cockpit.json）
   refresh_seconds: 2
   panes: [claude-opus, codex, agy]   # 需要认领的角色，与 agents 的键一致

@@ -6,7 +6,7 @@
 
 | 路径 | 来源与日期 | 摘要 | 适用阶段 | 状态 |
 | --- | --- | --- | --- | --- |
-| `agent-autoloop/README.md` | [KKKKhazix/agent-autoloop](https://github.com/KKKKhazix/agent-autoloop)，核对日期 2026-11-04，提交 `8f8e2ee` | 记录上游仓库目录职责、端到端事件处理流程、内核边界及对 AutoDev 可进一步评估的结构思路；引用上游文件链接，不复制其实现。真机验证计划见 `docs/spikes/2026-11-04-autoloop-test-plan.md` | 架构设计、流程建模、实现前对照 | 当前参考；未采纳为项目决策，待验证报告 |
+| `agent-autoloop/README.md` | [KKKKhazix/agent-autoloop](https://github.com/KKKKhazix/agent-autoloop)，核对日期 2026-11-04，提交 `8f8e2ee` | 记录上游仓库目录职责、端到端事件处理流程、内核边界及对 AutoDev 可进一步评估的结构思路；引用上游文件链接，不复制其实现。真机验证计划见 `docs/archive/2026-11-04-autoloop-test-plan.md` | 架构设计、流程建模、实现前对照 | 当前参考；未采纳为项目决策，待验证报告 |
 | `帖子离线存档.html` | 卡兹克《折腾了整整1年，毫无保留地分享一下我这套Agent自动化系统》，2026-11-02，离线存档 | 自动化中台、CI 中台、跨模型审查、"批奏折"式人工决策；agent-autoloop 是作者对应的开源实现 | 设计探索 | 外部参考 |
 | `Super-agent设计探索-离线存档.html` | DeepSeek《Super-agent 设计探索：迈向更自主的 Agent 系统》，离线存档 | Router/Worker 分离、连续会话等架构思路 | 设计探索 | 外部参考 |
 

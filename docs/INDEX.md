@@ -1,43 +1,60 @@
 # 文档与关键文件索引
 
-更新日期：2026-11-05
+更新日期：2026-11-06
 
-本索引按用途列出当前项目的入口、设计与参考资料。状态描述的是 AutoDev 自身资料的权威性；外部参考不能覆盖项目决策。
+本索引按用途列出当前有效的入口、设计与参考资料。状态描述的是 AutoDev 自身资料的权威性；外部参考不能覆盖项目决策。已被取代的文档在 `docs/archive/`，只供追溯。
 
 ## 项目入口与状态
 
 | 路径 | 职责 | 状态与权威性 |
 | --- | --- | --- |
 | `README.md` | 项目简介与入口 | 当前项目入口 |
-| `AGENT_HANDOFF.md` | 跨机器恢复上下文及阅读顺序 | 当前交接记录；恢复时需重新核实机器状态 |
-| `next.md` | 当前阶段、已知事项和下一步 | 当前工作状态记录 |
-| `workspace/goal.md` | AutoDev 目标与定位 | 项目目标来源 |
-| `config.yaml` | 项目、Agent、角色绑定等配置草案 | 设计阶段配置，尚未由程序校验 |
+| `next.md` | 当前阶段、已验证事项、下一步、仍然开放的问题 | 当前工作状态，每个阶段结束后更新 |
+| `AGENT_HANDOFF.md` | 换机器时的仓库获取方式、personagent 本地补丁的转移方法 | 只在换机器时读；其中的“当前状态”以 `next.md` 为准 |
+| `config.yaml` | 项目、Agent、角色绑定、轮次上限、cockpit 段 | 配置；模型名规则见 `docs/MODELS.md` |
 
 ## 设计与决策
 
 | 路径 | 职责 | 状态与权威性 |
 | --- | --- | --- |
-| `docs/design/2026-11-02-autodev-design.md` | 流程、阶段、状态、管理界面及规则设计 | 当前设计基线；含未验证与待定事项 |
-| `docs/design/2026-11-05-cockpit.md` | Herdr 四窗格驾驶舱：需求、设计、实施计划 P0 到 P5 | 提议；用户已确认方向，P0 实验未做 |
-| `docs/design/2026-11-05-autoloop-foundation.md` | 以 agent-autoloop 为地基的融合方案：冒烟验证、目标结构、F0 到 F6 步骤、界面共用数据、待决事项 | 提议；用户已决定用它做地基，冒烟已通过，F1 起未做 |
-| `docs/plans/2026-11-05-cockpit-dev-plan.md` | 驾驶舱开发计划：P0 实验到 P5，含三个停点 | 提议；可在新 space 中直接接手 |
-| `docs/design/autodev-workflow-prototype.html` | 可展开查看阶段详情的自动化工作流界面原型 | 静态讨论稿；示例任务数据，不代表可运行系统 |
-| `docs/MODELS.md` | 模型名规则：只写完整 ID、magpie 映射原因、各 CLI 指定方式、程序校验要求 | 规则；改 `config.yaml` 的 `agents` 或写启动命令前必读 |
-| `docs/DATA_SPEC.md` | 数据目录、实体与文件格式 | 设计规范；实现前可随决策更新 |
-| `docs/lessons.md` | 已踩的坑与验证过的做法（L001 `hc` 接口，L002 测试设计，L003 完成判断，L004 驾驶舱 P0 实验，L005 模型映射，L006 autoloop v2 结论） | 经验记录；开始新功能前先读 |
-| `docs/spikes/` | autoloop 验证：v1 计划与报告、v2 补测计划与报告 | 验证记录；v2 只确认 G5 方式 A，结论未采纳为决策 |
-| `docs/DECISIONS.md` | 重要方向及决策依据 | 决策事实源；以各条状态为准 |
+| `docs/design/2026-11-05-autoloop-foundation.md` | 以 agent-autoloop 为地基的方案：结构、F0 到 F6、界面共用数据、待决事项 | 当前主线 |
+| `docs/design/2026-11-02-autodev-design.md` | 九阶段流水线、角色、产物、人工参与、Web 界面、复盘、规则 | 当前设计基线；第 3.2、3.3、5 节的执行与调度部分已被地基方案部分取代，各节顶部有说明 |
+| `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D014 | 决策事实源 |
+| `docs/DATA_SPEC.md` | 数据目录、实体与文件格式 | 设计规范；`state.json`、`done.json` 已在代码里使用 |
+| `docs/MODELS.md` | 模型名规则：只写完整 ID、magpie 映射原因、各 CLI 的指定方式 | 规则；改 `config.yaml` 的 `agents` 或写启动命令前必读 |
+| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L011 | 开始新功能前先读 |
+| `docs/design/autodev-workflow-prototype.html` | 工作流界面原型 | 静态讨论稿，示例数据，不代表可运行系统 |
+
+## 验证记录
+
+| 路径 | 内容 |
+| --- | --- |
+| `docs/spikes/2026-11-04-autoloop-test-report.md` | autoloop v1 验证报告：G1、G2、G6 可信，G3、G4、G7 判定不可靠，G5 未跑 |
+| `docs/spikes/2026-11-05-autoloop-test-report-v2.md` | v2 补测：只确认 G5 方式 A |
+| `docs/spikes/2026-11-05-f1-agents-report.md` | F1：Claude、Codex、agy 无界面各跑一轮 |
+| `docs/spikes/2026-11-05-f2-pipeline-report.md` | F2：我们的流水线跑在 autoloop 上，S1 到 S3 跑通 |
+
+## 代码与测试
+
+| 路径 | 内容 |
+| --- | --- |
+| `src/driver/` | 向 autoloop 中台发事件、读事实流、判断一轮是否结束 |
+| `src/cockpit/` | 阶段表与校验（`pipeline.py`）、主循环（`controller.py`）、状态落盘（`store.py`）；`claim.py`、`invoke.py`、`config.py`、`main.py` 是窗格驱动的旧方案，F6 清理 |
+| `src/dashboard/` | 命令行看板 |
+| `tests/` | 单元测试；`smoke_autoloop.py`、`f1_agents.py`、`f2_pipeline.py` 是联机验证脚本，后两个花额度 |
 
 ## 参考资料
 
 | 路径 | 职责 | 状态与权威性 |
 | --- | --- | --- |
 | `reference/INDEX.md` | 外部资料目录、来源与使用边界 | 外部参考索引，不是产品规范 |
-| `reference/agent-autoloop/README.md` | 上游项目结构、流程机制及对 AutoDev 的候选借鉴点 | 基于上游公开资料的分析，不代表采纳 |
-| `reference/帖子离线存档.html` | 已保存的外部参考文章 | 外部原始资料 |
-| `reference/Super-agent设计探索-离线存档.html` | 已保存的外部参考文章 | 外部原始资料 |
+| `reference/agent-autoloop/README.md` | 上游项目结构与流程机制分析 | 基于上游公开资料；已采纳为地基（D014） |
+| `reference/帖子离线存档.html`、`reference/Super-agent设计探索-离线存档.html` | 已保存的外部文章 | 外部原始资料 |
+
+## 已归档
+
+`docs/archive/`：驾驶舱设计与开发计划、autoloop 测试计划 v1 与 v2、空的 `goal.md` 模板。每份文件顶部有被谁取代的说明。
 
 ## 索引维护
 
-新增或移动重要项目文件时更新本索引。外部参考另在 `reference/INDEX.md` 登记来源、日期、摘要和适用阶段；分析结论若被采纳，须进入项目设计或决策记录。
+新增或移动重要项目文件时更新本索引。外部参考另在 `reference/INDEX.md` 登记；分析结论若被采纳，须进入项目设计或决策记录。

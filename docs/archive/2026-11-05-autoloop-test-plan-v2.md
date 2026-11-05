@@ -1,3 +1,5 @@
+> **已归档（2026-11-06）**：计划已执行，结果见 `docs/spikes/2026-11-05-autoloop-test-report-v2.md`。保留供追溯，不再维护。
+
 # agent-autoloop 补测计划 v2（2026-11-05）
 
 > 给执行 Agent：只做本文的补测，结果写入 `docs/spikes/2026-11-05-autoloop-test-report-v2.md`。不要修改 AutoDev 仓库的其他文件，不要推送到 GitHub 以外的地方。
