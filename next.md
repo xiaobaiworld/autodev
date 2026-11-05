@@ -20,11 +20,11 @@
 - 我们的部分放在中台外面：`src/driver/` 向中台发事件、读事实流；`src/cockpit/pipeline.py`、`controller.py`、`store.py` 管阶段、轮次上限、厂商不同检查、产物校验与状态落盘。
 - 已验证：F0 冒烟（`tests/smoke_autoloop.py`）；F1 三个 Agent 各跑一轮；F2 真实 Agent 跑通 S1 到 S3（Opus、Opus、Codex，约 157 秒），REWORK 轮次上限在真实中台上验证。
 - F3 界面：`src/dashboard/` 命令行看板读中台 `/v1/state` 与 `state.json`；在 Herdr 桌面应用的 `pro2` 空间里用 `herdr-app` 建了三格布局（左主窗格、右上看板、右下日志）。看板还没接真实流水线。
-- 测试：88 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
+- 测试：111 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
 
 ## 下一步
 
-1. F3：把看板接到真实 S1 到 S3 流水线；左边主窗格确认显示什么（待用户选：当前步骤的日志，或中台里该轮的摘要）；Web 界面后做。
+1. F3：把看板和日志窗格接到真实 S1 到 S3 流水线，验证真实 Agent 运行时日志是否实时滚动（现在只用假 Agent 验证过）；Web 界面后做。主窗格已定为显示当前步骤的日志（`src/dashboard/logpane.py`）。
 2. 写 `pro2` 布局重建脚本（用户问过“能否保存”，桌面应用没有保存命令，建议用脚本重建）。
 3. F4 模板：角色模板与规则从一处生成。
 4. F5 崩溃与卡住：强杀中台、强杀 worker、Agent 超时、中台重试在真实环境触发。

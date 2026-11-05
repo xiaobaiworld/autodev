@@ -18,3 +18,4 @@
 - 文档清理：归档被取代的驾驶舱设计与计划、autoloop 测试计划 v1/v2、空 goal.md 模板到 docs/archive/；重写 README、next.md、docs/INDEX.md；精简 AGENT_HANDOFF；设计文档 3.2/3.3/5 节加过时说明；新增 D014
 - 新增 docs/TOOLS.md（工具手册）、AGENTS.md 与 CLAUDE.md（第一步先查工具手册）、L012
 - AGENTS.md 补充项目目的、原则、与全局规范的关系；TOOLS.md 查找顺序与之对齐
+- F3：主窗格日志视图 src/dashboard/logview.py、logpane.py（按真实 Claude、Codex 日志格式解析），假 Agent 在 pro2 左窗格验证；真实 Agent 实时滚动未验证

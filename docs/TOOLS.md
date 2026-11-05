@@ -35,6 +35,9 @@ herdr-app shot /tmp/x.png   # 截取窗口，用 Read 看图确认画面
 - 命令返回新建的 `space`、`tab`、`pane`、`terminal` id。分屏时显式传 `--pane`，不依赖焦点。
 - 新建后用 `hc label <t> role=xxx` 打标签，用 `hc exec hc send <t> "<命令>"` 往里发命令（原因见第 3 节）。
 - 现行布局：`pro2` 空间，左主窗格、右上看板、右下中台日志。
+  - 左：`python3 -m dashboard.logpane --home <autoloop 数据目录>`，跟着最新一轮 Agent 的日志（Claude、Codex 的事件转成“工具/命令/说/想/完成”几行，agy 纯文本原样显示）。
+  - 右上：`python3 -m dashboard --home <autoloop 数据目录> --root <AutoDev 根目录>`，看板。
+  - 右下：中台自己的日志（`agent-autoloop up` 的输出）。
 - 没有“保存布局”命令。空间、标签页、分屏由 herdr-core 保存，关窗口不丢；关掉整个空间会结束它的终端。要重建就写脚本（待写）。
 - 窗格标题栏显示的是启动它的命令，没找到给单个窗格改名的命令。
 - 窗口外观是 `layouts/<名>.json`，用 `layout.clone` 复制出自己的一份再改。
