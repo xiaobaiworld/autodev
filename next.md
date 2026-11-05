@@ -4,10 +4,10 @@
 
 ## 恢复上下文时先读
 
-1. 本文件
+1. 本文件（尤其是下面的“换窗口接手时要知道”）
 2. `docs/design/2026-11-05-autoloop-foundation.md`：当前主线方案（F0 到 F6 步骤、结构、待决）
 3. `docs/DECISIONS.md`：D001 到 D014（D014 是用 autoloop 做地基）
-4. `docs/lessons.md`：L001 到 L011，开始新功能前先扫一遍
+4. `docs/lessons.md`：L001 到 L012，开始新功能前先扫一遍
 5. `docs/MODELS.md`：模型名只写完整 ID
 6. `docs/design/2026-11-02-autodev-design.md`：流程设计（第 3.2、3.3、5 节已被地基方案部分取代，见各节顶部说明）
 7. `docs/DATA_SPEC.md`、`config.yaml`
@@ -33,6 +33,22 @@
 4. F5 崩溃与卡住：强杀中台、强杀 worker、Agent 超时、中台重试在真实环境触发。
 5. F6 清理：移除不再需要的窗格驱动代码（`src/cockpit/` 的 `claim.py`、`invoke.py`、`config.py`、`main.py`、`status.py` 中不再用的部分），回写设计文档第 3、5、9 节。
 6. 未验证项：agy 的实际模型名与用量；真实审查者给出 REWORK 并回应意见；强度参数在 Claude 启动参数里的写法；`/v1/stream` 从序号 0 重放在历史很大时的开销。
+
+## 换窗口接手时要知道（仓库里没有的东西）
+
+- 演示用中台在 `/tmp/autodev-demo`（`home/` 是 autoloop 数据目录，`al` 是带环境变量的包装脚本）。它跑在 Herdr `pro2` 空间右下窗格（`hc` 地址 `t1n`，标签 `autodev-log`），端口 3399。`/tmp` 重启后会没，丢了就重建：`init --command '<假 Agent> {prompt}' --no-service --port 3399`，再 `up`。
+- `pro2` 空间三格：左 `t1k`（日志窗格 `python3 -m dashboard.logpane --home /tmp/autodev-demo/home`）、右上 `t1m`（看板 `python3 -m dashboard --home /tmp/autodev-demo/home --root ~/code/autodev`，都要加 `PYTHONPATH=src`）、右下 `t1n`（中台）。窗格丢了用 `herdr-app` 重建，见 `docs/TOOLS.md` 第 2 节；布局重建脚本还没写。
+- `pro1` 是用户自己的空间，不要动。
+- 跑真实流水线：`PYTHONPATH=src python3 -m driver.run --home /tmp/autodev-demo/home --root ~/code/autodev --request <需求.md> --effort low`（花额度）。
+- `workspace/runs/` 在 gitignore 里：`R20261105-001` 是 P4 调试留下的旧失败记录（看板里显示“等你”），`R20261106-001` 是 F3 真实跑通的那次，两条都没有 `kind`，显示“未分类”。
+- 线上 autoloop 的最新只读副本在 `/tmp/aal-latest`（`d3e6d26`），本机锁定的 `~/code/agent-autoloop` 仍是 `8f8e2ee`，没升级。
+- 已知小问题：`docs/INDEX.md` 里 `src/cockpit/` 一行没提 `kinds.py`；窗格驱动的旧代码还没清（F6）。
+
+## 刚做完 / 马上做
+
+- 刚做完：需求加了 `kind` 字段（`src/cockpit/kinds.py`，现只登记 `pipeline/design`，路径写法，以后分子类只多登记一行）。
+- 马上做：F4 模板（角色模板与规则从一处生成，模板里要有“适用于哪个 kind”的字段）。
+- 等用户：`docs/design/2026-11-06-ticket-model.md` 第 5 节的 6 个待讨论问题；Agent 做分类和拆解与 D004 的协调方式（我的提议是 Agent 只提方案文件，程序校验后才执行，没确认过）。
 
 ## 仍然开放的问题（来自早期设计，与地基无关）
 

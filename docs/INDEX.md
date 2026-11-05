@@ -43,7 +43,7 @@
 | 路径 | 内容 |
 | --- | --- |
 | `src/driver/` | 向 autoloop 中台发事件、读事实流（`hub.py`、`runner.py`）；生成并安装规则（`setup.py`）；正式入口 `run.py` |
-| `src/cockpit/` | 阶段表与校验（`pipeline.py`）、主循环（`controller.py`）、状态落盘（`store.py`）；`claim.py`、`invoke.py`、`config.py`、`main.py` 是窗格驱动的旧方案，F6 清理 |
+| `src/cockpit/` | 需求类型登记（`kinds.py`）；阶段表与校验（`pipeline.py`）、主循环（`controller.py`）、状态落盘（`store.py`）；`claim.py`、`invoke.py`、`config.py`、`main.py` 是窗格驱动的旧方案，F6 清理 |
 | `src/dashboard/` | 命令行看板 |
 | `tests/` | 单元测试；`smoke_autoloop.py`、`f1_agents.py`、`f2_pipeline.py` 是联机验证脚本，后两个花额度 |
 

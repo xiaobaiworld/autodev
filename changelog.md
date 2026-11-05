@@ -24,3 +24,4 @@
 - 看板列出全部需求并带状态，等待人工的需求计入“待你决定”（原来漏算 human.waiting）；较早的已结束需求折叠
 - 新增 reference/agent-autoloop-classification.md：autoloop 作者自己怎么给任务分类（读线上 main d3e6d26）
 - state.json 加 kind 字段（路径写法 大类/子类，现仅 pipeline/design），未登记的类型在写文件前被拒绝；看板显示 kind 并按窗格宽度截断每行
+- next.md 补“换窗口接手时要知道”；INDEX 补 kinds.py
