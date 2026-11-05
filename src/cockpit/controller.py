@@ -77,7 +77,8 @@ class Controller:
             f"---\nschema_version: 1\nid: {rid}\nstage: {st}\nround: {rnd}\nrole: {step['role']}\n"
             f"output_dir: {out}\nrequired_outputs: {spec['outputs'] + ['done.json']}\n---\n\n"
             f"## 任务\n{spec['task']}\n\n## 输入文件\n" + "\n".join(files) + "\n\n"
-            f"## 输出要求\n产物与 done.json 都写到 {out}。最后写 done.json，内容为 JSON 对象，字段：\n"
+            f"## 输出要求\n产物与 done.json 都写到 {out}，一律用文件写入工具，不要用 shell 命令写文件。"
+            f"最后写 done.json，内容为 JSON 对象，字段：\n"
             f'id="{rid}"，stage="{st}"，round={rnd}，role="{step["role"]}"，'
             f"outputs=产物文件名列表（须包含 {spec['outputs']}），"
             f"verdict 取 {spec['verdicts']} 之一，且与产物 frontmatter 的 verdict 一致，finished_at 为 ISO 时间。\n\n"
@@ -123,7 +124,7 @@ class Controller:
         agent = self.agents[step["agent"]]
         res = self.invoke_fn(
             self.hc, step["pane_id"], sd,
-            launch_cmd(agent, sd, writable=True),
+            launch_cmd(agent, sd, writable=True, add_dirs=[self.root / "workspace"]),
             f"请读取 {inp}，按其中要求把产物和 done.json 写到 {sd}，做完后只回复 DONE。",
             timeout_s=self.limits["step_timeout_minutes"] * 60, exit_keys=EXIT_KEYS)
         if res["ok"]:
@@ -143,7 +144,8 @@ class Controller:
 
     def _after_failure(self, run, state):
         step = state["step"]
-        if step["attempt"] <= self.limits["step_retries"]:
+        # 窗格丢了，重试只会立刻再失败，要人恢复窗格
+        if step["fail_reason"] != "pane_lost" and step["attempt"] <= self.limits["step_retries"]:
             new = self._new_step(state, step["attempt"] + 1)
             run.commit(dict(state, step=new), "step.retried", data={"reason": step["fail_reason"]})
             return f"{state['stage']} 重试第 {new['attempt']} 次"

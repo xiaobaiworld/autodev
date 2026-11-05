@@ -112,6 +112,18 @@ class ControllerTest(unittest.TestCase):
         self.assertIn("step.retried", types)
         self.assertEqual(Run(rd).read()["status"], "done")
 
+    def test_pane_lost_goes_to_needs_human_without_retry(self):
+        calls = []
+
+        def lost(hc, pane, sd, launch, prompt, timeout_s, exit_keys):
+            calls.append(pane)
+            return {"ok": False, "reason": "pane_lost"}
+        ctrl = self.make(lost)
+        _, rd = self.go(ctrl)
+        ctrl.run_all(rd, log=lambda m: None)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(Run(rd).read()["status"], "needs-human")
+
     def test_crash_mid_step_then_restart_continues(self):
         ag = FakeAgent({"S1": ["ACCEPT"], "S2": ["DONE"], "S3": ["PASS"]}, crash_on=("S2", 1))
         ctrl = self.make(ag)

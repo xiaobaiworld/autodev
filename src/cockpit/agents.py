@@ -34,8 +34,9 @@ def parse_roles(text):
     return out
 
 
-def launch_cmd(agent, workdir, writable=True):
-    """agent: parse_agents 的一项。审查类角色 writable=False 时 Codex 用只读沙箱。"""
+def launch_cmd(agent, workdir, writable=True, add_dirs=()):
+    """agent: parse_agents 的一项。审查类角色 writable=False 时 Codex 用只读沙箱。
+    add_dirs: Claude 只能读工作目录，input.md 引用的目录外文件要靠 --add-dir 放行（L008）。"""
     cli, model, effort = agent["cli"], agent["model"], agent.get("effort")
     if "/" in model and cli == "codex" and model.split("/")[0] not in ("codex", "ai-code-with"):
         raise ValueError(f"可疑的 Codex 模型名 {model}")
@@ -47,6 +48,8 @@ def launch_cmd(agent, workdir, writable=True):
         cmd += f"--sandbox {sandbox} --ask-for-approval never"
     elif cli == "claude":
         cmd = f"claude --permission-mode acceptEdits --model {shlex.quote(model)}"
+        for d in add_dirs:
+            cmd += f" --add-dir {shlex.quote(str(d))}"
     else:
         raise ValueError(f"P4 暂不支持 {cli}（agy 见 P5）")
     return f"cd {shlex.quote(str(workdir))} && {cmd}"

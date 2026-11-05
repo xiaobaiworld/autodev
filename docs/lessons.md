@@ -68,3 +68,18 @@
 - 实测：假 Agent 约 11 秒；真 Codex（`-m gpt-6-sol -c model_reasoning_effort=low --sandbox workspace-write --ask-for-approval never`）25.4 秒，写出 `out.txt` 与 `done.json`，`ctrl+c ctrl+c` 退出后窗格回到 shell。
 - 发送统一走 `hc exec hc send`（L005）。主控是普通进程时是否还需要 exec 没测，保持 exec 无副作用。
 - 提示词里要明确让 Agent 写 `done.json`，否则只能等到超时。
+
+## L008 P4 真实跑 S1 到 S3 的坑，以及主控需要巡检（2026-11-05）
+
+- 坑 1：Claude 只能读自己的工作目录。`input.md` 引用的需求和上阶段产物在目录外，会弹读取确认，窗格空等了约 6 分钟，主控毫无察觉。做法：启动加 `--add-dir <workspace>`（`launch_cmd` 的 `add_dirs`）。
+- 坑 2：`--permission-mode acceptEdits` 只放行文件编辑，不放行 Bash。Claude 用 shell 写 `done.json` 会再弹确认。做法：`input.md` 要求一律用文件写入工具；弹窗仍可能出现，所以不能只靠提示词。
+- 坑 3：旧的退出逻辑在 10 秒内没回到 shell 就 `hc kill`。t1b 在 S1 完成的同一秒被杀（`reason: killed`，时间与旧逻辑吻合，推断是它杀的），S2 启动时窗格已不存在，三次重试都立刻 `pane_lost`，转 needs-human。被杀的窗格程序恢复不了，只能由用户重新分屏。做法：退出改为逐档升级（配置的退出键、`esc` 加退出键、`ctrl+d`），仍退不出就报 `agent_blocked`，不 kill。窗格丢失不再重试，直接转 needs-human。
+- 坑 4：续跑时 `started_at`、`deadline_at` 没有刷新，状态区用时和超时时刻按第一次启动算。尚未修。
+
+### 原则：主控要有巡检，卡住由专门的处理者接手（用户 2026-11-05 提出）
+
+- 主控除了推进步骤，还要每隔一段时间检查各窗格的运行状态：`hc get` 的 `status.state`（blocked、working、idle）、距上次进展多久、`started_at` 距今多久。
+- 长时间无进展（卡在权限确认、对话框、无输出）时，不由主流程硬等，交给一个专门处理这类事的角色，建议叫 watchdog。
+- 处理原则：能在不影响整体运行的前提下继续往下走，就直接处理并继续（例如放行只写步骤目录的 `done.json` 之类确认）；会影响其他部分、涉及删除数据、凭证、权限、对外发送、花钱的，不自动放行，转 needs-human。
+- 本次的三次卡住（读取确认、Bash 确认、窗格被杀）都是巡检能提前发现的。Monitor 靠我手动盯，不能当成产品功能。
+- 还没做，详见 `docs/design/2026-11-05-cockpit.md` 新增的 2.6 节。

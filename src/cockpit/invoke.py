@@ -29,18 +29,19 @@ def _read_done(path):
 
 def _exit_agent(hc, pane, exit_keys, clock, sleep, wait_s=10, poll=1):
     """发退出键，等前台回到 shell。返回 None=已回到 shell，或失败原因。"""
-    hc.keys(pane, *exit_keys)
-    start = clock()
-    while True:
-        info = hc.get(pane)
-        if info is None:
-            return "pane_lost"
-        if at_shell(info):
-            return None
-        if clock() - start >= wait_s:
-            hc.kill(pane)  # 退不出：杀掉，调用方把窗格恢复成 shell（风险 1）
-            return "agent_blocked"
-        sleep(poll)
+    # 逐档升级：先发配置的退出键；Agent 可能还在回复或停在对话框，再 esc 加退出键；最后 ctrl+d。
+    # 不 kill：杀掉的窗格程序恢复不了（只能由用户重新分屏），退不出就报 agent_blocked 交给人。
+    for keys in (tuple(exit_keys), ("esc", *exit_keys), ("ctrl+d",)):
+        hc.keys(pane, *keys)
+        start = clock()
+        while clock() - start < wait_s:
+            info = hc.get(pane)
+            if info is None:
+                return "pane_lost"
+            if at_shell(info):
+                return None
+            sleep(poll)
+    return "agent_blocked"
 
 
 def invoke(hc, pane, run_dir, launch_tmpl, prompt, timeout_s, exit_keys,

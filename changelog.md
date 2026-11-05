@@ -8,3 +8,4 @@
 - 驾驶舱 P3（假 Agent 部分）：一次 Agent 调用（启动、发提示、等 done.json、退出并确认回到 shell），用 pid 判断是否回到 shell
 - 驾驶舱 P3：真实 Codex 一轮通过（25.4 秒），记入 L007
 - 驾驶舱 P4（代码部分）：store（原子写、锁、事件先于状态）、pipeline（S1 到 S3）、controller（单步推进、重试、崩溃恢复）、入口 --start/--resume
+- 驾驶舱 P4：真实跑 S1 通过；修复读取权限（--add-dir）、退出逐档升级不 kill、pane_lost 不重试；记入 L008，设计加 2.6 巡检

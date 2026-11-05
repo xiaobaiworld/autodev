@@ -26,6 +26,10 @@ class AgentsTest(unittest.TestCase):
         cmd = launch_cmd(parse_agents(self.text)["claude-opus"], "/x")
         self.assertIn("--model ai-code-with/claude-opus-5-5", cmd)
 
+    def test_claude_can_read_added_dir(self):
+        cmd = launch_cmd(parse_agents(self.text)["claude-opus"], "/x", add_dirs=["/w s"])
+        self.assertIn("--add-dir '/w s'", cmd)
+
     def test_unknown_cli(self):
         with self.assertRaises(ValueError):
             launch_cmd({"cli": "agy", "model": "m"}, "/x")

@@ -94,11 +94,24 @@ class InvokeTest(unittest.TestCase):
         r = run(hc, self.d)
         self.assertEqual(r, {"ok": False, "reason": "pane_lost"})
 
-    def test_cannot_exit_kills(self):
+    def test_cannot_exit_escalates_but_never_kills(self):
         hc = FakeHc(self.d, exits=False)
         r = run(hc, self.d)
         self.assertEqual(r, {"ok": False, "reason": "agent_blocked"})
-        self.assertTrue(hc.killed)
+        self.assertFalse(hc.killed)
+        self.assertEqual(hc.keyed, [("ctrl+c", "ctrl+c"), ("esc", "ctrl+c", "ctrl+c"), ("ctrl+d",)])
+
+    def test_exits_on_second_escalation(self):
+        hc = FakeHc(self.d, exits=False)
+        orig = hc.keys
+
+        def keys(pane, *k):
+            orig(pane, *k)
+            if k[0] == "esc":
+                hc.fg = "zsh"
+        hc.keys = keys
+        self.assertEqual(run(hc, self.d), {"ok": True, "reason": None})
+        self.assertEqual(len(hc.keyed), 2)
 
     def test_agent_named_bash_is_not_a_shell(self):
         hc = FakeHc(self.d, exits=False)
