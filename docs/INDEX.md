@@ -52,6 +52,7 @@
 | 路径 | 职责 | 状态与权威性 |
 | --- | --- | --- |
 | `reference/INDEX.md` | 外部资料目录、来源与使用边界 | 外部参考索引，不是产品规范 |
+| `reference/agent-autoloop-classification.md` | autoloop 作者自己怎么给任务分类（七个场景、权限与问人红线、GitHub 标签） | 基于线上 `main` 的归纳，部分是推断，文中已标明 |
 | `reference/agent-autoloop/README.md` | 上游项目结构与流程机制分析 | 基于上游公开资料；已采纳为地基（D014） |
 | `reference/帖子离线存档.html`、`reference/Super-agent设计探索-离线存档.html` | 已保存的外部文章 | 外部原始资料 |
 
