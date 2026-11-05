@@ -65,6 +65,10 @@ class ClaimTest(unittest.TestCase):
         with self.assertRaisesRegex(ClaimError, "不一致"):
             run(fallback=fb)
 
+    def test_terminal_without_where_does_not_crash(self):
+        ls = LS + [{"address": "t1d", "state": "live"}]
+        self.assertEqual(run(ls=ls), {"claude-opus": "t1b", "codex": "t18", "agy": "t19"})
+
     def test_fallback_never_claims_self(self):
         fb = {"claude-opus": "t14", "codex": "t18", "agy": "t19"}
         with self.assertRaisesRegex(ClaimError, "t14"):

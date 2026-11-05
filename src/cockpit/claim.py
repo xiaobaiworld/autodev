@@ -17,10 +17,10 @@ def claim_panes(terminals, get_labels, self_addr, roles, fallback=None):
     me = by_addr.get(self_addr)
     if me is None:
         raise ClaimError(f"主控窗格 {self_addr} 不在 hc ls 里")
-    space = me["where"]
-    # 只在同一空间内认领，且不认领自己
+    space = me.get("where")
+    # 只在同一空间内认领，且不认领自己；没有 where 的是程序新建的无界面终端，不属于任何窗格布局
     cand = [a for a, t in by_addr.items()
-            if t["where"] == space and a != self_addr and t.get("state") == "live"]
+            if t.get("where") == space and a != self_addr and t.get("state") == "live"]
 
     found = {}
     for addr in cand:
