@@ -42,18 +42,47 @@ def _run_row(r, now):
     return f" #{r['id']:<4}{_pad(r.get('rule') or '-', 20)}{_pad(r.get('agent') or '-', 13)}{_pad(st, 8)}{_pad(used, 8)}{note}".rstrip()
 
 
-def render(state, pipelines, now, error=None, max_runs=12, width=70):
+STATUS_WORD = {"active": "进行中", "needs-human": "等你", "done": "已完成", "rejected": "已拒绝"}
+LIVE = ("active", "needs-human")
+
+
+def _when(p):
+    t = _parse(p.get("updated_at"))
+    return t.timestamp() if t else 0
+
+
+def _pick_requests(pipelines, max_requests):
+    """进行中、等你的需求一个都不折叠；已结束的按最近更新排序，只留剩下的名额，其余折成一个数。"""
+    newest_first = sorted(pipelines, key=_when, reverse=True)
+    ordered = sorted(newest_first, key=lambda p: {"active": 0, "needs-human": 1}.get(p.get("status"), 2))
+    live = [p for p in ordered if p.get("status") in LIVE]
+    finished = [p for p in ordered if p.get("status") not in LIVE]
+    slots = max(0, max_requests - len(live))
+    return live + finished[:slots], max(0, len(finished) - slots)
+
+
+def _request_line(p):
+    word = STATUS_WORD.get(p.get("status"), p.get("status") or "?")
+    line = f" {p.get('id', '?')}  {p.get('stage', '-')}  第 {p.get('round', '-')} 轮  {word}"
+    if p.get("status") in LIVE:
+        step = p.get("step") or {}
+        line += f"  {step.get('role') or '-'} / {step.get('agent') or '-'}：{step.get('state') or '-'}"
+    return line
+
+
+def render(state, pipelines, now, error=None, max_runs=12, width=70, max_requests=6):
     out = [f"AutoDev 看板  {now.astimezone().strftime('%H:%M:%S')}", "─" * max(10, min(width, 70))]
     if error:
         out.append(f"读取失败（将继续重试）：{error}")
     out.append("")
-    if pipelines:
-        for p in pipelines:
-            step = p.get("step") or {}
-            who = f"{step.get('role') or '-'} / {step.get('agent') or '-'}：{step.get('state') or '-'}"
-            out.append(f" {p['id']}  {p['stage']}  第 {p['round']} 轮  {who}")
+    shown, hidden = _pick_requests(pipelines, max_requests)
+    if shown:
+        out += [_request_line(p) for p in shown]
     else:
         out.append(" 没有进行中的需求")
+    if hidden:
+        out.append(f" 另有 {hidden} 个需求（已完成或已拒绝，较早的）")
+    waiting = [p for p in pipelines if (p.get("human") or {}).get("waiting")]
     if state is None:
         return "\n".join(out) + "\n"
     t = state.get("totals", {})
@@ -67,8 +96,9 @@ def render(state, pipelines, now, error=None, max_runs=12, width=70):
         out.append(f" Agent {a.get('name') or a['id']} 离线（上次 {a.get('seenAt') or '-'}）")
     open_cards = [c for c in state.get("cards", []) if c.get("state") == "open"]
     asks = [c for c in open_cards if c.get("kind") == "ask"]
-    out += ["", f" 待你决定：{len(asks)}"]
+    out += ["", f" 待你决定：{len(asks) + len(waiting)}"]
     out += [f"   [{c['id']}] {c.get('title') or ''}" for c in open_cards]
+    out += [f"   {p.get('id', '?')} 等你处理（{p.get('stage', '-')}）" for p in waiting]
     sp = (state.get("spending") or {}).get("today") or {}
     out.append(f" 今天 {sp.get('rounds', 0)} 轮" + ("（费用部分未上报）" if sp.get("missingCost") else ""))
     return "\n".join(out) + "\n"

@@ -21,6 +21,14 @@ def run(rid, rule, agent, st, **kw):
     return r
 
 
+def pipe(rid, status, stage="S3", rnd=1, waiting=False, updated="2026-11-05T16:00:00+00:00", **kw):
+    d = {"id": rid, "status": status, "stage": stage, "round": rnd, "updated_at": updated,
+         "step": {"state": "finished", "role": "design_reviewer", "agent": "codex"},
+         "human": {"waiting": waiting}}
+    d.update(kw)
+    return d
+
+
 PIPE = {"id": "R20261105-001", "status": "active", "stage": "S3", "round": 2,
         "step": {"state": "running", "role": "design_reviewer", "agent": "codex"},
         "counters": {"design_review_rounds": 1}, "human": {"waiting": False}}
@@ -117,3 +125,47 @@ class FrameHeightTest(unittest.TestCase):
         self.assertLessEqual(len(out.splitlines()), 14)
         self.assertIn("AutoDev 看板", out.splitlines()[0])
         self.assertIn("待你决定", out)
+
+
+class AllRequestsTest(unittest.TestCase):
+    def test_finished_request_is_still_listed_with_status(self):
+        out = render(state(), [pipe("R1", "done")], NOW)
+        self.assertIn("R1", out)
+        self.assertIn("已完成", out)
+
+    def test_status_words(self):
+        for status, word in (("active", "进行中"), ("needs-human", "等你"), ("done", "已完成"), ("rejected", "已拒绝")):
+            with self.subTest(status):
+                self.assertIn(word, render(state(), [pipe("R1", status)], NOW))
+
+    def test_waiting_requests_count_toward_decisions(self):
+        out = render(state(), [pipe("R1", "needs-human", waiting=True), pipe("R2", "done")], NOW)
+        self.assertIn("待你决定：1", out)
+
+    def test_hub_cards_and_waiting_requests_add_up(self):
+        cards = [{"id": 5, "title": "问题", "kind": "ask", "state": "open"}]
+        out = render(state(cards=cards), [pipe("R1", "needs-human", waiting=True)], NOW)
+        self.assertIn("待你决定：2", out)
+
+    def test_order_active_first_then_waiting_then_newest_finished(self):
+        ps = [pipe("R1", "done", updated="2026-11-05T10:00:00+00:00"),
+              pipe("R2", "needs-human", waiting=True, updated="2026-11-05T09:00:00+00:00"),
+              pipe("R3", "active", updated="2026-11-05T08:00:00+00:00"),
+              pipe("R4", "done", updated="2026-11-05T12:00:00+00:00")]
+        out = render(state(), ps, NOW)
+        pos = {r: out.index(r) for r in ("R1", "R2", "R3", "R4")}
+        self.assertLess(pos["R3"], pos["R2"])
+        self.assertLess(pos["R2"], pos["R4"])
+        self.assertLess(pos["R4"], pos["R1"])
+
+    def test_old_finished_folded_into_a_count(self):
+        ps = [pipe(f"R{i}", "done", updated=f"2026-11-05T{i:02d}:00:00+00:00") for i in range(1, 9)]
+        out = render(state(), ps, NOW, max_requests=3)
+        self.assertEqual(sum(1 for i in range(1, 9) if f"R{i} " in out or f"R{i}\n" in out), 3)
+        self.assertIn("另有 5 个需求", out)
+
+    def test_never_folds_active_or_waiting(self):
+        ps = [pipe(f"A{i}", "active") for i in range(5)] + [pipe("W1", "needs-human", waiting=True)]
+        out = render(state(), ps, NOW, max_requests=2)
+        for name in ("A0", "A4", "W1"):
+            self.assertIn(name, out)

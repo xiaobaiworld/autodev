@@ -21,8 +21,7 @@ def pipelines(root):
             d = json.loads(f.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        if d.get("status") in ("active", "needs-human"):
-            out.append(d)
+        out.append(d)  # 已完成、已拒绝的也要列出，由 render 决定折叠
     return out
 
 

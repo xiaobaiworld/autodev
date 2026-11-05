@@ -21,11 +21,12 @@
 - 已验证：F0 冒烟（`tests/smoke_autoloop.py`）；F1 三个 Agent 各跑一轮；F2 真实 Agent 跑通 S1 到 S3（Opus、Opus、Codex，约 157 秒），REWORK 轮次上限在真实中台上验证。
 - F3 界面：`src/dashboard/` 命令行看板读中台 `/v1/state` 与 `state.json`；在 Herdr 桌面应用的 `pro2` 空间里用 `herdr-app` 建了三格布局（左主窗格、右上看板、右下日志）。看板还没接真实流水线。
 - F3 已用真实 Agent 验证：三格里实时显示（`docs/spikes/2026-11-06-f3-real-run-report.md`）。入口 `python3 -m driver.run`。
-- 测试：124 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
+- 看板列出全部需求（进行中、等你、已完成、已拒绝），进行中和等你的不折叠，较早的已结束需求折成一个数；“待你决定”把等待人工的需求和中台卡片加在一起。
+- 测试：131 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
 
 ## 下一步
 
-1. F3 剩余：看板对跑完的需求显示不够（现在只列 active 和 needs-human）；旧的失败需求 `R20261105-001` 一直占位，需要折叠规则；Web 界面后做。
+1. F3 剩余：Web 界面后做；真实审查者给出 REWORK 时看板和日志是否好用，还没见过。
 2. 写 `pro2` 布局重建脚本（用户问过“能否保存”，桌面应用没有保存命令，建议用脚本重建）。
 3. F4 模板：角色模板与规则从一处生成。
 4. F5 崩溃与卡住：强杀中台、强杀 worker、Agent 超时、中台重试在真实环境触发。
