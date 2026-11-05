@@ -9,21 +9,10 @@ from pathlib import Path
 
 from cockpit.agents import launch_cmd
 from cockpit.invoke import invoke as real_invoke
-from cockpit.pipeline import STAGES, next_move, step_dir, validate_done
+from cockpit.pipeline import STAGES, SetupError, check_vendors, next_move, step_dir, validate_done, write_input
 from cockpit.store import Run, atomic_write, now_iso
 
 EXIT_KEYS = ("ctrl+c", "ctrl+c")
-
-
-class SetupError(Exception):
-    pass
-
-
-def check_vendors(agents, roles):
-    """D008：设计作者与设计审查者的模型厂商必须不同。"""
-    a, b = agents[roles["designer"]], agents[roles["design_reviewer"]]
-    if a.get("vendor") == b.get("vendor"):
-        raise SetupError(f"designer 与 design_reviewer 同为 {a.get('vendor')}，违反 D008")
 
 
 def start_run(root, request_text, project, ctrl, today=None):
@@ -60,32 +49,7 @@ class Controller:
         return _new_step(state, attempt, self)
 
     def _write_input(self, run_dir, state):
-        st, step = state["stage"], state["step"]
-        spec = STAGES[st]
-        rid, rnd = state["id"], state["round"]
-        req = self.root / "workspace" / "requests" / "active" / f"{rid}.md"
-        files = [f"- 需求：{req}"]
-        if st in ("S2", "S3"):
-            files.append(f"- 分析：{run_dir / step_dir('S1', 1) / 'analysis.md'}")
-        if st == "S3":
-            d = run_dir / step_dir("S2", rnd)
-            files += [f"- 设计稿：{d / 'design.md'}", f"- 开发计划：{d / 'dev-plan.md'}"]
-        if st == "S2" and rnd > 1:
-            files.append(f"- 上轮审查意见：{run_dir / step_dir('S3', rnd - 1) / 'review.md'}（逐条回应，写 response.md）")
-        out = run_dir / step["dir"]
-        body = (
-            f"---\nschema_version: 1\nid: {rid}\nstage: {st}\nround: {rnd}\nrole: {step['role']}\n"
-            f"output_dir: {out}\nrequired_outputs: {spec['outputs'] + ['done.json']}\n---\n\n"
-            f"## 任务\n{spec['task']}\n\n## 输入文件\n" + "\n".join(files) + "\n\n"
-            f"## 输出要求\n产物与 done.json 都写到 {out}，一律用文件写入工具，不要用 shell 命令写文件。"
-            f"最后写 done.json，内容为 JSON 对象，字段：\n"
-            f'id="{rid}"，stage="{st}"，round={rnd}，role="{step["role"]}"，'
-            f"outputs=产物文件名列表（须包含 {spec['outputs']}），"
-            f"verdict 取 {spec['verdicts']} 之一，且与产物 frontmatter 的 verdict 一致，finished_at 为 ISO 时间。\n\n"
-            "## 必须停止并写 BLOCK 的情况\n删除数据、修改密钥或凭证、修改权限、对外发送消息、花钱、改变产品方向。"
-        )
-        atomic_write(out / "input.md", body)
-        return out / "input.md"
+        return write_input(self.root, run_dir, state)
 
     # ---- 一步推进 ----
     def advance(self, run_dir):

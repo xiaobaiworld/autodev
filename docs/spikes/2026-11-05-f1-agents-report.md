@@ -6,11 +6,11 @@
 | --- | --- | --- | --- | --- |
 | claude-opus（`ai-code-with/claude-opus-5-5`） | 通过 | 通过 | 通过 | 有，约 $0.081 |
 | claude-sonnet（`ai-code-with/claude-sonnet-5-5`） | 通过 | 通过 | 通过 | 有，约 $0.040 |
-| codex（`gpt-6-sol`，low） | 通过 | 通过 | 未验证 | 有，input 90699、output 441 |
+| codex（`gpt-6-sol`，low） | 通过 | 通过 | 通过（见下） | 有，input 90699、output 441 |
 | agy（`claude-sonnet-5-5-low`，走 `command`） | 通过 | 通过 | 未验证 | 无 |
 
 - 两个不同的 Claude 完整 ID 得到两个不同的实际模型名（日志里 `claude-opus-5-5` 与 `claude-sonnet-5-5`），magpie 别名问题在完整 ID 下不再出现。这是 Claude 这一对的对照，Codex 和 agy 没有对照。
-- Codex 的 `exec --json` 事件里没有模型字段，实际模型无法从日志确认。agy 的输出是纯文本，同样确认不了，也没有用量。
+- Codex 的 `exec --json` 事件里没有模型字段，但它自己的会话记录 `~/.codex/sessions/<日期>/rollout-*-<thread_id>.jsonl` 的 `turn_context` 写着 `model=gpt-6-sol`、`effort=low`，与配置一致（thread_id 取自 stdout 的 `thread_id`）。agy 的输出是纯文本，没有会话记录可查，仍未验证，也没有用量。
 - 权限探针（Claude，`acceptEdits`）：
   - `date > probe.txt` 被执行了，文件存在。
   - 带命令替换的 `printf ... "$(date +%Y)" > probe.json` 被拒绝，日志 `permission_denials` 有这一条，约 11 秒正常结束，没有挂起。
@@ -25,6 +25,6 @@
 
 ## 结论与没做的
 
-- F1 的五条标准里，Claude 两个 Agent 全部满足，Codex 和 agy 各有一项"未验证"。我不把"未验证"算作通过。
+- F1 的五条标准里，Claude 两个 Agent 和 Codex 全部满足（Codex 的实际模型靠它自己的会话记录确认）；agy 的实际模型和用量是"未验证"。我不把"未验证"算作通过。
 - 没测：Claude 的 `-p` 在需要批准的各类操作下的行为（只测了两条命令）；超时被强杀；agy 的权限（用了 `--dangerously-skip-permissions`，该测试目录是临时目录，任务无害）。
 - 下一步 F2 不依赖这几项，但 Codex 实际模型确认要在 F2 前后补一个办法，例如在 `command` 插件里自己打印模型，或在规则里固定模型后读 `~/.codex` 的会话记录。
