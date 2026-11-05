@@ -35,6 +35,8 @@
 
 ## 下一步（顺序可按新机器实况调整）
 
+0. **当前主线**：驾驶舱，见 `docs/design/2026-11-05-cockpit.md`。先做 P0 实验（`hc label`、对已有 shell 窗格发命令并等待、让 Agent 退出回到 shell），用户先手动把 Herdr 分成 4 块窗格。待用户确认实现语言（提议 Python 标准库）。
+
 1. 按 [`AGENT_HANDOFF.md`](AGENT_HANDOFF.md) 获取 AutoDev 公共仓库和 personagent 私有仓库，并核对分支、提交与工作区。先处理 personagent 两份未提交文档的转移或保留方式。
 2. 阅读 personagent 项目规则和状态。当前检查显示其处于需求与设计阶段、没有产品代码；确认这在新机器上仍成立。
 3. 解决 AutoDev 的 GitHub 协作范围与 personagent 项目规则冲突，之后再决定是否可把 personagent 作为首个自动化目标。
