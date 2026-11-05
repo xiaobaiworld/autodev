@@ -56,7 +56,7 @@ git apply --check /path/to/personagent-local-docs-2026-11-03.patch
 - 阶段：设计，尚无可运行代码。仓库有设计、数据规范、决策和配置；没有控制程序、CLI、Web 管理界面、schemas、`rules/`、`docs/DEV_PLAN.md` 或测试。
 - 设计方向：本机运行的需求驱动九阶段流水线。确定性程序负责状态流转和持久化；Agent 产出可审查文件；人工决定使用 `decision-K.md` / `reply-K.md` 文件对。
 - 首期唯一目标项目是 personagent（D002）。
-- 角色与 Agent 解耦，在 `config.yaml` 绑定并由 herdr 调度。当前配置为：Claude Opus 负责分析、设计、代码审查和复盘；Codex 负责设计审查、编码和复盘审查；agy 使用 Gemini 负责验收。
+- 角色与 Agent 解耦，在 `config.yaml` 绑定并由 Herdr（`hc`）调度。当前配置为：Claude Opus 负责分析、设计、代码审查和复盘；Codex 负责设计审查、编码和复盘审查；agy 使用 Gemini 负责验收。
 - 计划中的 Web 界面只监听 `127.0.0.1`。AutoDev 当前设计明确不包含 GitHub PR 和 CI。
 - 原 `goal.md` 自迭代循环已由需求驱动流水线取代。
 
@@ -71,7 +71,7 @@ AutoDev 设计暂不含 GitHub PR；personagent 的 `AGENTS.md` 则要求开发�
 - 固定的需求驱动流程取代旧自迭代循环（D001、D005）。
 - 第一阶段只接 personagent（D002）。
 - 状态由确定性程序驱动并落盘，以支持中断恢复（D004）。
-- 角色与 Agent 分开定义，映射放在 `config.yaml`，进程由 herdr 管理（D003）。
+- 角色与 Agent 分开定义，映射放在 `config.yaml`，进程由 Herdr（`hc`）管理（D003）。
 - 审查者与作者所用模型厂商必须不同；当前验收角色绑定 agy/Gemini（D008）。
 - 人工参与通过文件对完成；管理界面计划只监听本机（D009、D010）。
 - 复盘围绕动作、拆分、信息三个杠杆，改进建议须经审查和用户批准（D011）。
@@ -89,7 +89,7 @@ AutoDev 设计暂不含 GitHub PR；personagent 的 `AGENTS.md` 则要求开发�
 6. 协调 AutoDev 不做 PR 与 personagent 要求 Issue/TASK/PR 的流程差异。
 7. 补写全局规范未覆盖的 AutoDev 规则，再写 `docs/DEV_PLAN.md`，列出小步骤、大阶段和用户确认合并的关口。
 8. 明确首个演示是否按设计跳过纯文档需求的 S7、S8。
-9. 在新机器实际核对 herdr 的 `agent start`、`agent wait` 和 pane 丢失检测。原机器只检查过帮助文本，未运行过真实任务。
+9. 补测 `hc` 的跨机器 `--on`、`keep` 丢失检测，以及 Claude 与 agy 的启动；本机 Codex 的基本流程已实测（`docs/lessons.md` L001）。
 
 ## 原机器环境记录
 

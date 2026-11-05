@@ -75,24 +75,35 @@ roles:
 
 约束：每个审查角色所用模型的厂商，必须与它所审产物作者的模型厂商不同。按厂商而不按 CLI 判断，因为同一个 CLI 可以运行不同厂商的模型（例如 agy 既能跑 Gemini 也能跑 Claude）。程序启动时校验，不满足则拒绝运行。
 
-当前可用 Agent：Claude Code（Anthropic）、Codex（OpenAI）、agy（Antigravity，默认 Gemini）。三者都是 herdr 原生支持的 kind。
+当前可用 Agent：Claude Code（Anthropic）、Codex（OpenAI）、agy（Antigravity，默认 Gemini）。三者在 Herdr 里都被识别为 agent（claude-code、codex、antigravity）。
 
 新增 Agent 只需在 `agents` 下加一项，并提供 adapter（如何启动、如何发送提示、如何判断完成）。
 
-### 3.2 herdr 的作用
+### 3.2 Herdr（`hc`）的作用
 
-herdr 只负责 Agent 进程的生命周期：在 pane 中启动 Agent、发送提示、等待状态、读取输出、关闭 pane。流程状态不存放在 herdr 中，herdr 重启或 pane 丢失不影响流程状态的正确性。
+Herdr 只负责 Agent 进程的生命周期：启动终端、发送提示、等待状态、读取屏幕、关闭终端。流程状态不存放在 Herdr 中，Herdr 重启或终端丢失不影响流程状态的正确性。
 
-本机 herdr 0.9.5 提供 `agent start / prompt / wait / read`、`pane close`、`worktree create / remove`、`notification show`，覆盖上述需求。这些命令只核对过帮助文本，未实际运行验证。
+调用接口是 `hc`（herdr-core 的命令行，配置 `~/.config/herdr-core/config.toml`）。旧的 `herdr agent/pane` 命令连的是另一个 socket，在桌面应用下报 `server_not_running`，不要使用。2026-11-05 在本机实测（`docs/lessons.md` L001）：
+
+| 需要 | 命令 | 实测 |
+| --- | --- | --- |
+| 启动 | `hc run --bg --name N --cwd D codex` | 通过，返回地址 `tN` |
+| 发提示 | `hc send N "文字"` | 通过，Codex 会收到包了 `<hc from="…">` 的文字 |
+| 等待 | `hc wait N` | 通过，返回 `status: done` 和轮次；对方发消息时 `reason: message` 提前返回 |
+| 读屏幕 | `hc read N` | 能用，但只是屏幕文字，回复可能不在可见区域 |
+| 关闭 | `hc kill N` 加 `hc rm N` | 通过 |
+| 状态 | `hc get N`、`hc ls` | 通过，`status.state` 为 working、done、idle |
+
+完成判断以 `hc wait` 的状态加产物文件 `done.json` 为准，不以屏幕内容为准。跨机器用 `--on <机器名>`，未测。丢失检测靠 `keep` 标志，未测。Claude 与 agy 经 `hc run` 启动，未测。
 
 ### 3.3 一次 Agent 调用的约定
 
 每次调用都是一次性任务，不复用对话：
 
 1. 程序把该次调用所需的全部输入写进 `runs/<id>/<stage>/round-N/input.md`。
-2. 通过 herdr 在新 pane 中启动 Agent，提示只有一句：读取 input.md，按要求把产物写到指定路径，完成后写 `done.json`。
+2. 通过 `hc run --bg` 在新终端中启动 Agent，提示只有一句：读取 input.md，按要求把产物写到指定路径，完成后写 `done.json`。
 3. 程序以 `done.json` 是否存在、内容是否合法判断完成，不解析终端输出。终端输出仅保存为日志。
-4. 关闭 pane。
+4. `hc kill` 加 `hc rm` 关闭终端。
 
 这样，Agent 之间不共享对话，下一阶段只能看到上一阶段写下的文件。
 
@@ -226,9 +237,9 @@ autodev/
 | S8 验收退回 | 2 |
 | 单个步骤失败重试 | 2 |
 
-上限写在 `config.yaml`。超限、任意 Agent 报告 BLOCK、或 analyst 给出 CLARIFY，需求移到 `needs-human/`，并通过 herdr 通知用户。
+上限写在 `config.yaml`。超限、任意 Agent 报告 BLOCK、或 analyst 给出 CLARIFY，需求移到 `needs-human/`，并通过 Herdr 通知用户。
 
-需要用户参与时，程序生成一份决策请求 `human/decision-K.md`（一句话说明、要你判断的问题、推荐做法和依据路径），并通过 herdr 通知。用户可以在 Web 界面、`autodev reply` 命令或直接编辑 `human/reply-K.md` 回复，可选 `answer`、`approve`、`continue`、`revise`、`retry`、`takeover`、`reject`。
+需要用户参与时，程序生成一份决策请求 `human/decision-K.md`（一句话说明、要你判断的问题、推荐做法和依据路径），并通过 Herdr 通知。用户可以在 Web 界面、`autodev reply` 命令或直接编辑 `human/reply-K.md` 回复，可选 `answer`、`approve`、`continue`、`revise`、`retry`、`takeover`、`reject`。
 
 回复中的指示会作为「用户决定」传给后续每个 Agent，优先级高于需求原文；对项目长期有效的决定在正式发布时写入目标项目的 `docs/DECISIONS.md`，以后不再重复问。完整结构与规则见 `docs/DATA_SPEC.md` 第 8–10 节。
 

@@ -30,7 +30,7 @@ agents:                   # 可插拔，新增 Agent 在此加一项
     cli: codex
     vendor: openai
     model: null
-  agy:                    # Antigravity CLI，herdr kind=agy
+  agy:                    # Antigravity CLI，Herdr 识别为 antigravity
     cli: agy
     vendor: google        # agy 也能跑 Claude 模型，vendor 以实际所选模型为准
     model: gemini-4-argon-high
@@ -57,5 +57,5 @@ limits:
   step_timeout_minutes: 60
 
 scheduler:
-  runner: herdr
+  runner: hc            # herdr-core 命令行，见设计文档 3.2
   poll_seconds: 15
