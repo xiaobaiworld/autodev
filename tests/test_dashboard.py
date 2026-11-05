@@ -98,3 +98,22 @@ class RenderTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FrameHeightTest(unittest.TestCase):
+    def test_frame_fits_pane_height(self):
+        import tempfile
+        from unittest import mock
+        from dashboard import __main__ as m
+        runs = [run(i, "s1", "a", "nothing", finishedAt="2026-11-05T16:01:00.000Z") for i in range(1, 30)]
+
+        class H:
+            def state(self):
+                return state(runs=runs)
+
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(m.shutil, "get_terminal_size",
+                                                                      return_value=mock.Mock(columns=60, lines=15)):
+            out = m.frame(H(), tmp)
+        self.assertLessEqual(len(out.splitlines()), 14)
+        self.assertIn("AutoDev 看板", out.splitlines()[0])
+        self.assertIn("待你决定", out)

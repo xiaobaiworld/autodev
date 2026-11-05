@@ -32,8 +32,14 @@ def frame(hub, root):
         state = hub.state()
     except HubError as e:
         err = str(e)
-    return render(state, pipelines(root), datetime.now().astimezone(), error=err,
-                  width=shutil.get_terminal_size((70, 24)).columns - 1)
+    size = shutil.get_terminal_size((70, 24))
+    now, pipes = datetime.now().astimezone(), pipelines(root)
+    # 画面不能比窗格高，否则顶部会滚出去：从多到少试，直到放得下（至少留 1 条运行记录）
+    for n in range(12, 0, -1):
+        out = render(state, pipes, now, error=err, width=size.columns - 1, max_runs=n)
+        if len(out.splitlines()) <= size.lines - 1:
+            break
+    return out
 
 
 def main(argv=None):

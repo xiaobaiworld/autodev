@@ -22,11 +22,10 @@ from cockpit.controller import Controller, start_run  # noqa: E402
 from cockpit.store import Run  # noqa: E402
 from driver.hub import Hub, load_config  # noqa: E402
 from driver.runner import make_invoke  # noqa: E402
+from driver.setup import build_rules  # noqa: E402
 
 APP = Path(os.environ.get("AUTOLOOP_APP", "~/code/agent-autoloop")).expanduser()
 REQUEST = "给计算器模块 calc.py 加一个 divide(a, b) 函数，返回 a / b；除数为 0 时抛出 ValueError，并带清楚的提示信息。需要对应的单元测试。"
-PROMPT = ("这一轮的任务目录是事件的对象（subject），相对于当前目录。先读取该目录下的 input.md，严格按其中的要求完成："
-          "产物和 done.json 都写进该目录，一律用文件读写工具，不要用 shell 命令写文件。最后一条消息第一行写一句话结论。")
 
 
 def main(fake=False):
@@ -47,23 +46,11 @@ def main(fake=False):
     cmd = ["node", "--disable-warning=ExperimentalWarning", str(APP / "bin/agent-autoloop.ts")]
     subprocess.run(cmd + ["init", "--command", "true {prompt}", "--no-service", "--port", str(port)],
                    env=env, capture_output=True, check=True)
-    rules = json.loads((home / "rules.json").read_text())
-    worker = rules["agents"]["agent"]["worker"]
-    rules["agents"], rules["rules"] = {}, []
+    base = json.loads((home / "rules.json").read_text())
     policy = tmp / "policy.json"
     policy.write_text(json.dumps({"S3": ["REWORK"] * 5}))
-    for name in sorted(set(roles[r] for r in ("analyst", "designer", "design_reviewer"))):
-        a = agents[name]
-        if fake:
-            rules["agents"][name] = {"name": name, "worker": worker, "use": "command",
-                                     "command": ["python3", str(ROOT / "tests/fake_stage_agent.py"), str(policy), "{prompt}"]}
-            continue
-        use = {"claude": "claude", "codex": "codex"}[a["cli"]]
-        rules["agents"][name] = {"name": name, "worker": worker, "use": use, "model": a["model"],
-                                 "effort": "low", "access": "edit", "timeout": 15}
-    for stage, role in (("s1", "analyst"), ("s2", "designer"), ("s3", "design_reviewer")):
-        rules["rules"].append({"name": f"{stage}-{role}", "when": {"source": "local", "types": [f"stage.{stage}"]},
-                               "to": roles[role], "cwd": str(work / "workspace"), "prompt": PROMPT})
+    fake_cmd = ["python3", str(ROOT / "tests/fake_stage_agent.py"), str(policy), "{prompt}"] if fake else None
+    rules = build_rules(base, agents, roles, str(work / "workspace"), effort="low", fake_command=fake_cmd)
     (home / "rules.json").write_text(json.dumps(rules, ensure_ascii=False, indent=1))
     chk = subprocess.run(cmd + ["check"], env=env, capture_output=True, text=True)
     print("规则检查:", (chk.stdout + chk.stderr).strip()[:120])

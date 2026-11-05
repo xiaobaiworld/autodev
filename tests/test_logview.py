@@ -3,7 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from dashboard.logview import format_line, latest_log, tail_lines
+from cockpit.status import _w
+from dashboard.logview import fit, format_line, latest_log, tail_lines
 
 
 def j(**kw):
@@ -161,3 +162,32 @@ class PaneTest(unittest.TestCase):
             out = frame(tmp, Hub_(), 20, 80)
         self.assertIn("s2-designer / claude-opus  claimed", out)
         self.assertIn("纯文本一行", out)
+
+
+class DeadHub:
+    def state(self):
+        from driver.hub import HubError
+        raise HubError("连不上")
+
+
+class FitTest(unittest.TestCase):
+    def test_fit_by_display_width(self):
+        self.assertEqual(fit("abc", 10), "abc")
+        out = fit("中文很长很长的一行", 9)
+        self.assertLessEqual(_w(out), 9)
+        self.assertTrue(out.endswith("…"))
+
+    def test_frame_never_exceeds_pane_width(self):
+        from dashboard.logpane import frame
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp) / "worker" / "runs" / "1-1"
+            d.mkdir(parents=True)
+            long = j(type="assistant", message={"content": [{"type": "text", "text": "很长的一句话" * 40}]})
+            (d / "stdout-1.log").write_text(long + "\n")
+            out = frame(tmp, DeadHub(), 30, 62)
+        self.assertTrue(all(_w(l) <= 62 for l in out.splitlines()))
+        self.assertLessEqual(len(out.splitlines()), 30)
+
+    def test_tool_result_line_number_prefix_removed(self):
+        line = j(type="user", message={"content": [{"type": "tool_result", "content": "1\t---\n2\tid: R1"}]})
+        self.assertEqual(format_line(line), ["得 ---"])

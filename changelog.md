@@ -19,3 +19,4 @@
 - 新增 docs/TOOLS.md（工具手册）、AGENTS.md 与 CLAUDE.md（第一步先查工具手册）、L012
 - AGENTS.md 补充项目目的、原则、与全局规范的关系；TOOLS.md 查找顺序与之对齐
 - F3：主窗格日志视图 src/dashboard/logview.py、logpane.py（按真实 Claude、Codex 日志格式解析），假 Agent 在 pro2 左窗格验证；真实 Agent 实时滚动未验证
+- F3：driver.setup（规则生成与安装）、driver.run（正式入口）；真实 S1 到 S3 在 pro2 三格里实时跑通；日志窗格与看板按窗格宽高适配

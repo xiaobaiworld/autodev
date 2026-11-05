@@ -35,12 +35,13 @@
 | `docs/spikes/2026-11-05-autoloop-test-report-v2.md` | v2 补测：只确认 G5 方式 A |
 | `docs/spikes/2026-11-05-f1-agents-report.md` | F1：Claude、Codex、agy 无界面各跑一轮 |
 | `docs/spikes/2026-11-05-f2-pipeline-report.md` | F2：我们的流水线跑在 autoloop 上，S1 到 S3 跑通 |
+| `docs/spikes/2026-11-06-f3-real-run-report.md` | F3：真实流水线在 Herdr 三格里实时跑，日志与看板同步 |
 
 ## 代码与测试
 
 | 路径 | 内容 |
 | --- | --- |
-| `src/driver/` | 向 autoloop 中台发事件、读事实流、判断一轮是否结束 |
+| `src/driver/` | 向 autoloop 中台发事件、读事实流（`hub.py`、`runner.py`）；生成并安装规则（`setup.py`）；正式入口 `run.py` |
 | `src/cockpit/` | 阶段表与校验（`pipeline.py`）、主循环（`controller.py`）、状态落盘（`store.py`）；`claim.py`、`invoke.py`、`config.py`、`main.py` 是窗格驱动的旧方案，F6 清理 |
 | `src/dashboard/` | 命令行看板 |
 | `tests/` | 单元测试；`smoke_autoloop.py`、`f1_agents.py`、`f2_pipeline.py` 是联机验证脚本，后两个花额度 |

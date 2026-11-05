@@ -9,7 +9,7 @@ import sys
 import time
 from pathlib import Path
 
-from dashboard.logview import latest_log, tail_lines
+from dashboard.logview import fit, latest_log, tail_lines
 from driver.hub import Hub, HubError, load_config
 
 
@@ -31,8 +31,8 @@ def frame(home, hub, height, width):
     log = latest_log(Path(home) / "worker" / "runs")
     if log is None:
         return "还没有 Agent 运行过。\n"
-    body = tail_lines(log, max(1, height - 3))
-    return f"{describe(log, hub)}\n{'─' * max(10, min(width, 70))}\n" + "\n".join(body) + "\n"
+    body = [fit(l, width) for l in tail_lines(log, max(1, height - 3))]
+    return f"{fit(describe(log, hub), width)}\n{'─' * max(10, min(width, 70))}\n" + "\n".join(body) + "\n"
 
 
 def main(argv=None):

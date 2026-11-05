@@ -6,14 +6,29 @@ import json
 import re
 from pathlib import Path
 
+from cockpit.status import _w  # 显示宽度
+
 WIDTH = 110
 NOISE = {"system", "rate_limit_event", "thread.started", "turn.started"}
 TARGET_KEYS = ("file_path", "command", "path", "pattern", "url", "query", "description")
 
 
+def fit(s, width):
+    """按显示宽度截断（中文占 2 列），超出的用 … 代替。只截断，不改空白。"""
+    s = str(s)
+    if _w(s) <= width:
+        return s
+    out, used = "", 0
+    for ch in s:
+        cw = _w(ch)
+        if used + cw > width - 1:
+            break
+        out, used = out + ch, used + cw
+    return out + "…"
+
+
 def _cut(s, n=WIDTH):
-    s = " ".join(str(s).split())
-    return s if len(s) <= n else s[:n - 1] + "…"
+    return fit(" ".join(str(s).split()), n)  # 日志行：压缩空白后再截断
 
 
 def _lines(text, prefix, limit=2):
@@ -37,7 +52,8 @@ def _claude_block(c):
         body = c.get("content")
         if isinstance(body, list):
             body = " ".join(x.get("text", "") for x in body if isinstance(x, dict))
-        return _lines(body or "", "得", limit=1)
+        body = re.sub(r"^\s*\d+\t", "", body or "")
+        return _lines(body, "得", limit=1)
     return []
 
 
