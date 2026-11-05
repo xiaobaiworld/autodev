@@ -50,3 +50,14 @@
 - `magpie ls` 看各 Agent 当前默认模型；`magpie <agent> <model>` 会改全局默认，调度程序不要用它，只用启动参数，避免影响用户日常使用。
 - 坑 2：在 Agent 窗格（如主控 t14）里 `hc send` 到已跑过 Agent 的 shell 窗格（`reported=true`），文本会被包成 `<hc from="t14">…</hc>`，zsh 解析失败。做法：用 `hc exec hc send <t> "<命令>"` 发送，文本不被包装。已在 t18、t1b 验证。主控程序若不是 Agent 进程，需另行确认是否也会包装。
 - 规则已整理成 `docs/MODELS.md`（改 `config.yaml` 的 `agents`、写启动命令前必读）；本条只记踩坑过程。
+
+## L006 autoloop v2 补测结论（2026-11-05）
+
+来自 `docs/spikes/2026-11-05-autoloop-test-report-v2.md`（另一个 Agent 执行，autoloop 提交 `8f8e2ee`）。
+
+- 确认：G5 方式 A（外部推进 S1→S2→S3）通过，产物首行符合约定，重复事件被去重（`duplicate: true`，不增加轮次）。这支持"确定性流程在外、autoloop 当队列"的用法。
+- 未确认：回执链 hops 观察到 0→6，熔断（8 层）没触到；G3、G4、G7 因 10 轮上限没跑。未测不等于通过，不能据此确认九阶段整体可靠。
+- 再次踩到 L005 的坑：配置 sonnet/low，日志里实际模型是 `ai-code-with/claude-opus-5-5`，G3 仍无法判断。补测前先用完整模型 ID，且先做 G3-0 确认两个模型确实不同。
+- 坑：把关键项放在方式 B 回执链之后，轮数被链条耗尽，重蹈 L002 坑 1。做法：每项独立计数，或先跑关键项，回执链单独占一次预算。
+- 残留：`~/.local/bin/agent-autoloop` 软链接指向 `/tmp/autoloop-spike/home/app/...`，`/tmp` 重启后会失效；测试源码和数据库在 `~/.Trash/autoloop-spike-v2/`。
+- 费用参考：10 轮约 727k input tokens、$0.81。

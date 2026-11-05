@@ -35,7 +35,7 @@
 
 ## 下一步（顺序可按新机器实况调整）
 
-0. **当前主线**：驾驶舱，开发计划见 `docs/plans/2026-11-05-cockpit-dev-plan.md`，需求与设计见 `docs/design/2026-11-05-cockpit.md`。先做 P0 实验（`hc label`、对已有 shell 窗格发命令并等待、让 Agent 退出回到 shell），用户先手动把 Herdr 分成 4 块窗格。待用户确认实现语言（提议 Python 标准库）。
+0. **当前主线**：驾驶舱，开发计划见 `docs/plans/2026-11-05-cockpit-dev-plan.md`，需求与设计见 `docs/design/2026-11-05-cockpit.md`。P0（L004、L005）和 P1（窗格认领，`src/cockpit/`）已完成并推送。语言定为 Python 3 标准库，认领为标签主、手填地址备用。下一步 P2 状态区。
 
 1. 按 [`AGENT_HANDOFF.md`](AGENT_HANDOFF.md) 获取 AutoDev 公共仓库和 personagent 私有仓库，并核对分支、提交与工作区。先处理 personagent 两份未提交文档的转移或保留方式。
 2. 阅读 personagent 项目规则和状态。当前检查显示其处于需求与设计阶段、没有产品代码；确认这在新机器上仍成立。
@@ -46,7 +46,7 @@
 7. 补写 AutoDev `rules/` 中全局规范未覆盖的条文，再写 `docs/DEV_PLAN.md`；计划要列出小步骤、大阶段及用户确认合并的关口。
 8. 之后实现第一个里程碑：流程骨架（锁、`state.json`、`events.jsonl`、原子写、主循环），并按第 4 步定好的跳阶段规则跑通文档需求。
 9. 补测 `hc`：跨机器 `--on homemac`、`keep` 丢失检测、Claude 与 agy 启动。本机 Codex 的启动、发送、等待、读取、关闭已通过。
-10. 执行 `docs/spikes/2026-11-05-autoloop-test-plan-v2.md`（G5 三阶段小案例优先），拿到报告后再决定是否写 D014（底座改用 autoloop）。v1 报告结论与教训见 `docs/lessons.md` L002。
+10. autoloop v2 补测已完成（`docs/spikes/2026-11-05-autoloop-test-report-v2.md`，结论见 `docs/lessons.md` L006）：只确认 G5 方式 A，G3、G4、G5h、G7 未测。是否写 D014（底座改用 autoloop）待用户决定；驾驶舱本阶段不依赖它。若要继续，需补测 G3（先用完整模型 ID，见 `docs/MODELS.md`）、G4、G7、熔断，轮数上限要调高或拆成多次。
 
 ## 设计文档中的待协调点
 
