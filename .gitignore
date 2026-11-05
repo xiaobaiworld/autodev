@@ -1,2 +1,6 @@
 # macOS
 .DS_Store
+
+# cockpit runtime pane binding
+workspace/cockpit.json
+__pycache__/
