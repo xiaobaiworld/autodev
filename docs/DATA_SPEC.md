@@ -104,6 +104,7 @@ original_filename: tag-filter.md
   "schema_version": 1,
   "id": "R20261102-001",
   "project": "personagent",
+  "kind": "pipeline/design",
   "status": "active",
   "stage": "S3",
   "round": 2,
@@ -148,6 +149,7 @@ original_filename: tag-filter.md
 
 | 字段 | 含义 | 类型 | 必填 | 取值 / 校验 |
 | --- | --- | --- | --- | --- |
+| kind | 需求类型，路径写法，大类/子类，如 `pipeline/design` | string | 新记录必填；老记录没有，读取时按“未分类”，不猜 | 必须是 `src/cockpit/kinds.py` 里已登记的；未登记的在写文件前被拒绝 |
 | status | 需求总状态 | enum | 是 | `active` / `needs-human` / `done` / `rejected`；必须与需求文件所在目录一致 |
 | stage | 当前阶段 | enum | 是 | `S1`–`S9` |
 | round | 当前阶段轮次 | int | 是 | ≥ 1 |

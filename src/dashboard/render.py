@@ -63,7 +63,7 @@ def _pick_requests(pipelines, max_requests):
 
 def _request_line(p):
     word = STATUS_WORD.get(p.get("status"), p.get("status") or "?")
-    line = f" {p.get('id', '?')}  {p.get('stage', '-')}  第 {p.get('round', '-')} 轮  {word}"
+    line = f" {p.get('id', '?')}  {p.get('kind') or '未分类'}  {p.get('stage', '-')}  第 {p.get('round', '-')} 轮  {word}"
     if p.get("status") in LIVE:
         step = p.get("step") or {}
         line += f"  {step.get('role') or '-'} / {step.get('agent') or '-'}：{step.get('state') or '-'}"

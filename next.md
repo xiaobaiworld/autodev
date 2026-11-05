@@ -22,7 +22,8 @@
 - F3 界面：`src/dashboard/` 命令行看板读中台 `/v1/state` 与 `state.json`；在 Herdr 桌面应用的 `pro2` 空间里用 `herdr-app` 建了三格布局（左主窗格、右上看板、右下日志）。看板还没接真实流水线。
 - F3 已用真实 Agent 验证：三格里实时显示（`docs/spikes/2026-11-06-f3-real-run-report.md`）。入口 `python3 -m driver.run`。
 - 看板列出全部需求（进行中、等你、已完成、已拒绝），进行中和等你的不折叠，较早的已结束需求折成一个数；“待你决定”把等待人工的需求和中台卡片加在一起。
-- 测试：131 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
+- 需求有了 `kind` 字段（路径写法，大类/子类），目前只登记 `pipeline/design`，在 `src/cockpit/kinds.py`；看板每个需求显示它，老记录显示“未分类”。
+- 测试：144 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
 
 ## 下一步
 

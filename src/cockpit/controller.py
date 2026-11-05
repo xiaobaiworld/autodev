@@ -9,14 +9,16 @@ from pathlib import Path
 
 from cockpit.agents import launch_cmd
 from cockpit.invoke import invoke as real_invoke
+from cockpit.kinds import DEFAULT_KIND, check_kind
 from cockpit.pipeline import STAGES, SetupError, check_vendors, next_move, step_dir, validate_done, write_input
 from cockpit.store import Run, atomic_write, now_iso
 
 EXIT_KEYS = ("ctrl+c", "ctrl+c")
 
 
-def start_run(root, request_text, project, ctrl, today=None):
-    """领取需求：写 active 需求文件与初始 state.json。返回 run_id。"""
+def start_run(root, request_text, project, ctrl, today=None, kind=DEFAULT_KIND):
+    """领取需求：写 active 需求文件与初始 state.json。返回 run_id。kind 没登记就在写任何文件前拒绝。"""
+    check_kind(kind)
     root = Path(root)
     day = (today or datetime.now()).strftime("%Y%m%d")
     active = root / "workspace" / "requests" / "active"
@@ -26,7 +28,7 @@ def start_run(root, request_text, project, ctrl, today=None):
     atomic_write(active / f"{rid}.md",
                  f"---\nschema_version: 1\nid: {rid}\nproject: {project}\n"
                  f"submitted_at: {now_iso()}\n---\n\n{request_text}\n")
-    state = {"schema_version": 1, "id": rid, "project": project, "status": "active",
+    state = {"schema_version": 1, "id": rid, "project": project, "kind": kind, "status": "active",
              "stage": "S1", "round": 1, "step": None,
              "counters": {"design_review_rounds": 0},
              "human": {"waiting": False, "pending_decision": None, "resume_to": None}}

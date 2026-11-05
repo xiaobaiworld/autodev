@@ -10,6 +10,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from dashboard.logview import fit
 from dashboard.render import render
 from driver.hub import Hub, HubError, load_config
 
@@ -38,7 +39,7 @@ def frame(hub, root):
         out = render(state, pipes, now, error=err, width=size.columns - 1, max_runs=n)
         if len(out.splitlines()) <= size.lines - 1:
             break
-    return out
+    return "\n".join(fit(l, size.columns - 1) for l in out.splitlines()) + "\n"  # 超宽会折行，把画面撑高
 
 
 def main(argv=None):

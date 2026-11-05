@@ -169,3 +169,30 @@ class AllRequestsTest(unittest.TestCase):
         out = render(state(), ps, NOW, max_requests=2)
         for name in ("A0", "A4", "W1"):
             self.assertIn(name, out)
+
+
+class KindShownTest(unittest.TestCase):
+    def test_kind_is_shown_on_the_request_line(self):
+        out = render(state(), [pipe("R1", "active", kind="pipeline/design")], NOW)
+        self.assertIn("pipeline/design", out)
+
+    def test_old_record_without_kind_shows_unclassified(self):
+        self.assertIn("未分类", render(state(), [pipe("R1", "done")], NOW))
+
+
+class FrameWidthTest(unittest.TestCase):
+    def test_no_line_wider_than_pane(self):
+        import tempfile
+        from unittest import mock
+        from cockpit.status import _w
+        from dashboard import __main__ as m
+
+        class H:
+            def state(self):
+                return state()
+
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(m, "pipelines", return_value=[
+                pipe("R20261106-001", "active", kind="pipeline/design")]), \
+                mock.patch.object(m.shutil, "get_terminal_size", return_value=mock.Mock(columns=40, lines=30)):
+            out = m.frame(H(), tmp)
+        self.assertTrue(all(_w(l) <= 39 for l in out.splitlines()), out)

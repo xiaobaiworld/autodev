@@ -23,3 +23,4 @@
 - 新增 docs/design/2026-11-06-ticket-model.md：记录工单分类、拆解、成熟工具的要求与待讨论问题（提议，未实现）
 - 看板列出全部需求并带状态，等待人工的需求计入“待你决定”（原来漏算 human.waiting）；较早的已结束需求折叠
 - 新增 reference/agent-autoloop-classification.md：autoloop 作者自己怎么给任务分类（读线上 main d3e6d26）
+- state.json 加 kind 字段（路径写法 大类/子类，现仅 pipeline/design），未登记的类型在写文件前被拒绝；看板显示 kind 并按窗格宽度截断每行
