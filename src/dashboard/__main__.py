@@ -4,6 +4,7 @@
 """
 import argparse
 import json
+import shutil
 import sys
 import time
 from datetime import datetime
@@ -31,7 +32,8 @@ def frame(hub, root):
         state = hub.state()
     except HubError as e:
         err = str(e)
-    return render(state, pipelines(root), datetime.now().astimezone(), error=err)
+    return render(state, pipelines(root), datetime.now().astimezone(), error=err,
+                  width=shutil.get_terminal_size((70, 24)).columns - 1)
 
 
 def main(argv=None):

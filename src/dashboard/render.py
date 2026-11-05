@@ -42,8 +42,8 @@ def _run_row(r, now):
     return f" #{r['id']:<4}{_pad(r.get('rule') or '-', 20)}{_pad(r.get('agent') or '-', 13)}{_pad(st, 8)}{_pad(used, 8)}{note}".rstrip()
 
 
-def render(state, pipelines, now, error=None, max_runs=12):
-    out = [f"AutoDev 看板  {now.astimezone().strftime('%H:%M:%S')}", "─" * 70]
+def render(state, pipelines, now, error=None, max_runs=12, width=70):
+    out = [f"AutoDev 看板  {now.astimezone().strftime('%H:%M:%S')}", "─" * max(10, min(width, 70))]
     if error:
         out.append(f"读取失败（将继续重试）：{error}")
     out.append("")

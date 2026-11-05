@@ -80,6 +80,11 @@ class RenderTest(unittest.TestCase):
         agents = [{"id": "codex", "name": "codex", "online": False, "seenAt": "2026-11-05T15:00:00.000Z"}]
         self.assertIn("离线", render(state(agents=agents), [], NOW))
 
+    def test_divider_follows_narrow_width(self):
+        out = render(state(), [], NOW, width=30)
+        self.assertEqual(out.splitlines()[1], "─" * 30)
+        self.assertEqual(render(state(), [], NOW, width=200).splitlines()[1], "─" * 70)
+
     def test_long_error_is_truncated_to_one_line(self):
         runs = [run(4, "s1", "a", "queued", attempts=1, error="x" * 400 + "\n第二行")]
         out = render(state(runs=runs), [], NOW)
