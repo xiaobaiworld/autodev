@@ -61,3 +61,10 @@
 - 坑：把关键项放在方式 B 回执链之后，轮数被链条耗尽，重蹈 L002 坑 1。做法：每项独立计数，或先跑关键项，回执链单独占一次预算。
 - 残留：`~/.local/bin/agent-autoloop` 软链接指向 `/tmp/autoloop-spike/home/app/...`，`/tmp` 重启后会失效；测试源码和数据库在 `~/.Trash/autoloop-spike-v2/`。
 - 费用参考：10 轮约 727k input tokens、$0.81。
+
+## L007 P3 一次 Agent 调用实测（2026-11-05）
+
+- 判断"回到 shell"不能看前台进程名：`bash fake-agent.sh` 的前台名也是 `bash`，和 shell 同名。做法：比较 `hc get` 里前台 `pid` 与窗格 `pid`，相等才算回到 shell（`src/cockpit/invoke.py` 的 `at_shell`）。
+- 实测：假 Agent 约 11 秒；真 Codex（`-m gpt-6-sol -c model_reasoning_effort=low --sandbox workspace-write --ask-for-approval never`）25.4 秒，写出 `out.txt` 与 `done.json`，`ctrl+c ctrl+c` 退出后窗格回到 shell。
+- 发送统一走 `hc exec hc send`（L005）。主控是普通进程时是否还需要 exec 没测，保持 exec 无副作用。
+- 提示词里要明确让 Agent 写 `done.json`，否则只能等到超时。
