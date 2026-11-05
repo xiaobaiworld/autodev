@@ -1,0 +1,74 @@
+"""命令行看板的渲染：输入中台 /v1/state 和我们自己的 state.json，输出一屏文字。纯函数，不碰网络。"""
+from datetime import datetime
+
+from cockpit.status import _w  # 按显示宽度对齐中文
+
+RUN_STATE = {"claimed": "运行中", "queued": "排队", "nothing": "已结束", "done": "已结束", "cancelled": "已取消"}
+
+
+def _parse(ts):
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except (ValueError, AttributeError):
+        return None
+
+
+def fmt_elapsed(since, now):
+    t = _parse(since)
+    if t is None:
+        return "-"
+    sec = max(0, int((now - t).total_seconds()))
+    h, rest = divmod(sec, 3600)
+    return f"{h}:{rest // 60:02d}:{rest % 60:02d}" if h else f"{rest // 60:02d}:{rest % 60:02d}"
+
+
+def _pad(s, width):
+    return s + " " * max(0, width - _w(s))
+
+
+def _one_line(text, limit=60):
+    line = (text or "").strip().splitlines()[0] if (text or "").strip() else ""
+    return line if len(line) <= limit else line[:limit - 1] + "…"
+
+
+def _run_row(r, now):
+    st = RUN_STATE.get(r.get("state"), r.get("state") or "?")
+    note = ""
+    if r.get("state") == "queued" and (r.get("attempts") or 0) > 0:
+        st, note = "重试中", f"第 {r['attempts']} 次  {_one_line(r.get('error'))}"
+    elif r.get("state") == "cancelled":
+        note = _one_line(r.get("summary"))
+    used = fmt_elapsed(r.get("claimedAt"), now) if r.get("state") == "claimed" else "-"
+    return f" #{r['id']:<4}{_pad(r.get('rule') or '-', 20)}{_pad(r.get('agent') or '-', 13)}{_pad(st, 8)}{_pad(used, 8)}{note}".rstrip()
+
+
+def render(state, pipelines, now, error=None, max_runs=12):
+    out = [f"AutoDev 看板  {now.astimezone().strftime('%H:%M:%S')}", "─" * 70]
+    if error:
+        out.append(f"读取失败（将继续重试）：{error}")
+    out.append("")
+    if pipelines:
+        for p in pipelines:
+            step = p.get("step") or {}
+            who = f"{step.get('role') or '-'} / {step.get('agent') or '-'}：{step.get('state') or '-'}"
+            out.append(f" {p['id']}  {p['stage']}  第 {p['round']} 轮  {who}")
+    else:
+        out.append(" 没有进行中的需求")
+    if state is None:
+        return "\n".join(out) + "\n"
+    t = state.get("totals", {})
+    out += ["", f" 运行中 {t.get('running', 0)}  排队 {t.get('queued', 0)}  重试中 {t.get('retrying', 0)}"]
+    runs = sorted(state.get("runs", []), key=lambda r: r["id"], reverse=True)[:max_runs]
+    if runs:
+        out.append(f" {_pad('#', 5)}{_pad('规则', 20)}{_pad('Agent', 13)}{_pad('状态', 8)}{_pad('用时', 8)}")
+        out += [_run_row(r, now) for r in runs]
+    off = [a for a in state.get("agents", []) if not a.get("online")]
+    for a in off:
+        out.append(f" Agent {a.get('name') or a['id']} 离线（上次 {a.get('seenAt') or '-'}）")
+    open_cards = [c for c in state.get("cards", []) if c.get("state") == "open"]
+    asks = [c for c in open_cards if c.get("kind") == "ask"]
+    out += ["", f" 待你决定：{len(asks)}"]
+    out += [f"   [{c['id']}] {c.get('title') or ''}" for c in open_cards]
+    sp = (state.get("spending") or {}).get("today") or {}
+    out.append(f" 今天 {sp.get('rounds', 0)} 轮" + ("（费用部分未上报）" if sp.get("missingCost") else ""))
+    return "\n".join(out) + "\n"

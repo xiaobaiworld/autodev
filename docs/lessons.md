@@ -100,3 +100,11 @@
 - `/v1/stream` 的事实里能拼出"事件 → 轮次 → 状态"（`events`、`run_events`、`runs` 三张表），驱动不需要轮询 `why`。
 - macOS 没有 `timeout`；zsh 不会展开变量里的通配符、也不拆分变量里的命令；`python3 -I` 会忽略 `PYTHONPATH`。这些在本轮各撞过一次。
 - 用假 Agent（`tests/fake_stage_agent.py`）加真实中台，可以零成本测流转、轮次上限这类确定性逻辑，真实 Agent 只留给"能不能干活"的检验。
+
+## L011 桌面应用有自己的命令行 herdr-app（2026-11-06）
+
+- 三套命令各管一层：`herdr`（终端版 0.9.5，连旧服务，本机服务没在跑）、`hc`（herdr-core，只管终端，没有分屏与布局方法）、`herdr-app`（桌面应用本身，管空间、标签页、窗格、布局）。L001 和 L004 只查了前两个，漏了第三个。
+- 桌面应用的手册就在本机 `~/.config/herdr-app/AGENTS.md`，每次启动由应用重写。先读它，比查在线文档准：在线的 `/tui/docs/` 讲的是终端版。
+- 建窗格用 `herdr-app do tab.new --name <名> --folder <目录>` 和 `herdr-app do pane.split --direction right --pane <窗格id>`，用 `herdr-app ls` 看结构。显式传 `--pane`，不依赖焦点。
+- 用 `hc run` 建的终端会被算作调用者的子终端，没有窗格，界面里看不到；要有窗格得走 `herdr-app`。
+- “保存整个工作区”：空间、标签页、分屏由应用存进 herdr-core 的 `herdr-app` 文档，窗口外观是 `layouts/<名>.json`；没有找到单独的保存命令，需求待与用户确认。

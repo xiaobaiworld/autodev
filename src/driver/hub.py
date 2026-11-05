@@ -86,6 +86,10 @@ class Hub:
         return self._call("/v1/events", self.source,
                           {"id": event_id, "type": etype, "subject": subject, "summary": summary})
 
+    def state(self):
+        """总览：/v1/state，只读，本人的密钥。"""
+        return self._call("/v1/state", self.owner)
+
     def cancel(self, run):
         return self._call(f"/v1/runs/{run}/cancel", self.owner, {})
 
