@@ -33,7 +33,7 @@
 - E3 普通 shell 窗格：`hc send` 发命令可用；**`hc wait` 对没有 Agent 状态的进程只会超时**，不能用来等假脚本结束。完成判断用 `done.json`，是否回到 shell 看 `hc get` 的 `foreground.name`。
 - E4 退出：假 Agent 收到 `exit` 后前台回到 `zsh`，`hc get` 的 `status` 为 null，可靠。
 - E5 Codex：`codex --sandbox workspace-write --ask-for-approval never` 可写文件；`hc wait` 返回 `status: done`，`out.txt` 正确。**`hc send "/exit"` 无效**，文本会被包成 `<hc from=...>` 提示当普通消息；`hc keys <t> ctrl+c ctrl+c` 能退出，窗格回到 zsh。
-- E6 Claude：首次进入新目录会弹"信任此目录"，此时发提示会被当成选项，误选 "No, exit"，**窗格被关闭**（state finished、exit 1、从 `hc ls` 消失，只能由用户重新分屏）。做法：启动前先确认目录已被信任，或启动后先看屏幕再发提示。未验证 Claude 的正常退出方式。
+- E6 Claude：首次进入新目录会弹"信任此目录"，此时发提示会被当成选项，误选 "No, exit"，**窗格被关闭**（state finished、exit 1、从 `hc ls` 消失，只能由用户重新分屏）。做法：启动前先确认目录已被信任，或启动后先看屏幕再发提示。复测（新窗格 t1b）：窗格矮时只显示最后一个选项，先 `hc read <t> --lines 20` 看全，用 `hc keys <t> up` 移到 "Yes, I trust this folder" 再 `enter`，之后发提示正常，写出 out.txt，`hc wait` 返回 done。退出用 `hc keys <t> ctrl+c ctrl+c` 有效，前台回到 zsh。启动参数 `claude --permission-mode acceptEdits --model sonnet` 可用（横幅显示的模型名与 `--model` 不一致，疑似网关映射，未深究）。
 - E6 agy：`agy -p '<提示>' --dangerously-skip-permissions` 是一次性模式，结束后自动回 shell，退出码 3 表示失败。本机报 `User location is not supported for the API use`（地区限制），所以没有验证写文件。agy 另有 `--mode accept-edits|auto|plan`、`--sandbox`。
 - E7 清屏：`clear` 有效，`hc keys ctrl+l` 无效。
 
