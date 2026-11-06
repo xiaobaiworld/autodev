@@ -5,11 +5,12 @@ import shutil
 import time
 from pathlib import Path
 
+from cockpit.pipeline import STAGES as PIPELINE_STAGES
 from cockpit.store import atomic_write
 
 PROMPT = ("这一轮的任务目录是事件的对象（subject），相对于当前目录。先读取该目录下的 input.md，严格按其中的要求完成："
           "产物和 done.json 都写进该目录，一律用文件读写工具，不要用 shell 命令写文件。最后一条消息第一行写一句话结论。")
-STAGES = (("s1", "analyst"), ("s2", "designer"), ("s3", "design_reviewer"))
+STAGES = tuple((k.lower(), v["role"]) for k, v in PIPELINE_STAGES.items())  # 来自 templates/pipeline/design.json
 USE = {"claude": "claude", "codex": "codex"}  # agy 走 command 插件，P4 之外暂不接
 
 

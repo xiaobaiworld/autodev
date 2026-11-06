@@ -6,22 +6,20 @@ from pathlib import Path
 
 from cockpit.store import atomic_write
 
-STAGES = {
-    "S1": {"dir": "S1-analysis", "role": "analyst", "outputs": ["analysis.md"],
-           "verdicts": ["ACCEPT", "REJECT", "CLARIFY", "BLOCK"],
-           "task": "分析需求：写 analysis.md，frontmatter 含 verdict、summary、scope、"
-                   "acceptance_criteria（列表），不明确时 verdict 写 CLARIFY 并在 questions 列出问题。"},
-    "S2": {"dir": "S2-design", "role": "designer", "outputs": ["design.md", "dev-plan.md"],
-           "verdicts": ["DONE", "BLOCK"],
-           "task": "按分析结论写设计稿 design.md 和开发计划 dev-plan.md（frontmatter 含 verdict、summary，"
-                   "dev-plan.md 另含 tasks 列表）。若有上轮审查意见，逐条回应并写 response.md。"},
-    "S3": {"dir": "S3-design-review", "role": "design_reviewer", "outputs": ["review.md"],
-           "verdicts": ["PASS", "REWORK", "BLOCK"],
-           "task": "审查设计稿与开发计划：写 review.md，frontmatter 含 verdict、findings（列表，每项含 id、"
-                   "severity、location、problem、expected）。只报会导致错误或不满足验收标准的问题，"
-                   "不报风格。verdict 为 PASS 时不得有 critical 或 high 级别的问题。"},
-}
-ORDER = ["S1", "S2", "S3"]
+TEMPLATES = Path(__file__).resolve().parents[2] / "templates" / "pipeline"
+
+
+def load_template(kind):
+    """kind 如 pipeline/design，对应 templates/pipeline/design.json：阶段表、角色、产物、结论、任务说明都在那里，改那一处即可。"""
+    path = TEMPLATES / (kind.split("/", 1)[1] + ".json")
+    t = json.loads(path.read_text(encoding="utf-8"))
+    if t.get("kind") != kind or not t.get("order") or set(t["order"]) != set(t["stages"]):
+        raise ValueError(f"模板 {path} 的 kind 或阶段表不一致")
+    return t
+
+
+_DEFAULT = load_template("pipeline/design")
+STAGES, ORDER = _DEFAULT["stages"], _DEFAULT["order"]  # 现只有一个模板；多模板时按 state["kind"] 取
 
 
 def step_dir(stage, rnd):
