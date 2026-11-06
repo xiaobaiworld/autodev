@@ -18,6 +18,9 @@ sd = Path.cwd() / subject
 fm = (sd / "input.md").read_text(encoding="utf-8")
 field = lambda k: re.search(rf"^{k}: (.+)$", fm, re.M).group(1).strip()
 stage, rnd = field("stage"), int(field("round"))
+if stage == "S4":  # 编码阶段：往输入里写明的代码目录里放一个文件，模拟真实编码
+    m = re.search(r"代码目录[^：\n]*：(\S+)", fm)
+    Path(m.group(1), "todo.py").write_text("print('假的待办工具')\n", encoding="utf-8")
 policy = json.loads(policy_path.read_text())
 hang = policy.get("hang", {})
 if hang.get(stage, 0) > 0:  # F5：前 N 次在这一阶段卡住，用来触发超时

@@ -9,7 +9,8 @@ from pathlib import Path
 
 from cockpit.kinds import DEFAULT_KIND, check_kind
 from cockpit.pipeline import (SetupError, check_vendors, counters_for, next_move, step_dir, template_for,
-                              validate_done, write_input)
+                              validate_done, workdir_of, write_input)
+from cockpit.workdir import prepare, reset, snapshot
 from cockpit.store import Run, atomic_write, now_iso
 
 
@@ -73,21 +74,35 @@ class Controller:
         started = self.now()
         step.update(state="running", started_at=started.isoformat(timespec="seconds"),
                     deadline_at=(started + timedelta(minutes=self.limits["step_timeout_minutes"])).isoformat(timespec="seconds"))
+        if self._spec(state).get("workdir"):
+            step["base_commit"] = prepare(workdir_of(self.root, state))  # 起点提交，重复调用不变
         self._write_input(run.dir, dict(state, step=step))
         run.commit(dict(state, step=step), "step.started", data={"role": step["role"], "agent": step["agent"]})
         return f"{state['stage']} 启动 {step['agent']}"
 
+    def _spec(self, state):
+        return template_for(state)["stages"][state["stage"]]
+
     def _run(self, run, state):
         step = dict(state["step"])
         sd = run.dir / step["dir"]
+        wd = workdir_of(self.root, state) if self._spec(state).get("workdir") else None
         if (sd / "done.json").exists() and validate_done(run.dir, state) is None:
-            return self._finish(run, state)  # 崩溃前其实已完成（设计 5.4）
+            # 崩溃可能发生在 Agent 写完、快照之前：编码阶段补做快照，确认真有改动才算完成；没有改动就当没做过，往下重做
+            if wd is None or snapshot(wd, step["base_commit"], sd / "diff.patch"):
+                return self._finish(run, state)  # 崩溃前其实已完成（设计 5.4）
         # ponytail: 重启后一律从 input.md 重做，不接续等待仍存活的 pane；
         # 想省一次重做时再加"pane 存活且未超时则继续等"。
         inp = self._write_input(run.dir, state)
         agent = self.agents[step["agent"]]
+        (sd / "done.json").unlink(missing_ok=True)  # 重做前清掉上一次的完成标记，免得被当成这次的结果
+        if wd:
+            reset(wd, step["base_commit"])  # 每次都从同一个起点开始，失败重试不会带着上次的半成品
         res = self.invoke_fn(
             sd, timeout_s=self.limits["step_timeout_minutes"] * 60)
+        if res["ok"] and wd:
+            if not snapshot(wd, step["base_commit"], sd / "diff.patch"):
+                res = {"ok": False, "reason": "invalid_output", "detail": "代码目录没有任何改动，不能算编码完成"}
         if res["ok"]:
             bad = validate_done(run.dir, state)
             if bad is None:

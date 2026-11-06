@@ -1,6 +1,7 @@
 """F2 端到端（花额度）：真实 Agent 在 autoloop 上跑 S1 到 S3，由我们的 Controller 经 driver 发事件、等结束、校验产物。
 
 用法：python3 tests/f2_pipeline.py                 # 真实 Agent，花额度，期望 S3 PASS 后 done
+      python3 tests/f2_pipeline.py --build         # 假 Agent，pipeline/build 跑 S1 到 S4，期望 done 在 S4 且有 diff.patch
       python3 tests/f2_pipeline.py --fake-rework   # 假 Agent，S3 一直 REWORK，期望轮次上限后 needs-human
 Agent、模型、厂商取自 config.yaml；为省钱，规则里的强度统一压到 low（config 里的强度不动）。
 """
@@ -29,7 +30,7 @@ APP = Path(os.environ.get("AUTOLOOP_APP", "~/code/agent-autoloop")).expanduser()
 REQUEST = "给计算器模块 calc.py 加一个 divide(a, b) 函数，返回 a / b；除数为 0 时抛出 ValueError，并带清楚的提示信息。需要对应的单元测试。"
 
 
-def main(fake=False):
+def main(fake=False, build=False):
     cfg_text = (ROOT / "config.yaml").read_text(encoding="utf-8")
     agents, roles, limits = parse_agents(cfg_text), parse_roles(cfg_text), parse_limits(cfg_text)
     limits["step_timeout_minutes"] = 15
@@ -49,8 +50,8 @@ def main(fake=False):
                    env=env, capture_output=True, check=True)
     base = json.loads((home / "rules.json").read_text())
     policy = tmp / "policy.json"
-    policy.write_text(json.dumps({"S3": ["REWORK"] * 5}))
-    fake_cmd = ["python3", str(ROOT / "tests/fake_stage_agent.py"), str(policy), "{prompt}"] if fake else None
+    policy.write_text(json.dumps({} if build else {"S3": ["REWORK"] * 5}))
+    fake_cmd = ["python3", str(ROOT / "tests/fake_stage_agent.py"), str(policy), "{prompt}"] if (fake or build) else None
     rules = build_rules(base, agents, roles, str(work / "workspace"), effort="low", fake_command=fake_cmd)
     (home / "rules.json").write_text(json.dumps(rules, ensure_ascii=False, indent=1))
     chk = subprocess.run(cmd + ["check"], env=env, capture_output=True, text=True)
@@ -69,7 +70,7 @@ def main(fake=False):
         ctrl = Controller(work, agents, roles, limits,
                           invoke_fn=make_invoke(hub, limits["step_retries"]),
                           on_finish=lambda rd, st: write_record(home, rd, st))
-        rid = start_run(work, REQUEST, "toy", ctrl)
+        rid = start_run(work, REQUEST, "toy", ctrl, kind="pipeline/build" if build else "pipeline/design")
         rd = work / "workspace" / "runs" / rid
         t0 = time.time()
         ctrl.run_all(rd, log=lambda m: print(f"[{time.time() - t0:5.0f}s] {m}", flush=True), max_steps=40)
@@ -83,7 +84,13 @@ def main(fake=False):
         recs = sorted(rd.glob("S*/round-*/record-a*.json"))
         bad = [r.name for r in recs if not json.loads(r.read_text()).get("hub_run") or not (r.parent / "agent-a1.log").exists()]
         print(f"记录 {len(recs)} 份，缺中台运行号或日志的：{bad or '无'}")
-        if fake:  # 3 次 REWORK 用完审查轮次，必须停在 needs-human，且发生过 limit.exceeded，S2 做过 3 轮
+        if build:  # 假 Agent 跑 S1 到 S4：必须结束在 S4，有 diff.patch，且代码目录里确实有假 Agent 写的文件
+            patch = rd / "S4-code" / "round-1" / "diff.patch"
+            wd = work / "workspace" / "projects" / "toy" / rid
+            ok = (st["status"] == "done" and st["stage"] == "S4" and patch.exists() and "todo.py" in patch.read_text()
+                  and (wd / "todo.py").exists() and len(recs) == 4 and not bad)
+            print(f"S4：diff.patch {'有' if patch.exists() else '没有'}，代码目录文件 {sorted(p.name for p in wd.iterdir() if p.name != '.git')}")
+        elif fake:  # 3 次 REWORK 用完审查轮次，必须停在 needs-human，且发生过 limit.exceeded，S2 做过 3 轮
             ok = (st["status"] == "needs-human" and "limit.exceeded" in events
                   and len(list(rd.glob("S2-design/round-*"))) == 3 and st["counters"]["design_review_rounds"] == 3
                   and len(recs) == 7 and not bad)
@@ -100,4 +107,4 @@ def main(fake=False):
 
 
 if __name__ == "__main__":
-    sys.exit(main(fake="--fake-rework" in sys.argv))
+    sys.exit(main(fake="--fake-rework" in sys.argv, build="--build" in sys.argv))

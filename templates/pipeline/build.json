@@ -15,6 +15,7 @@
    "outputs": ["exec-report.md"],
    "verdicts": ["DONE", "BLOCK"],
    "inputs": ["request", "analysis", "design", "plan", "workdir"],
+   "workdir": true,
    "on": {
     "DONE": "done"
    },
