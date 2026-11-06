@@ -1,5 +1,16 @@
 # next.md
 
+## 2026-11-07 Luna 驾驶员复测
+
+- 起点：`5f6d270236bbde987ce890a704eee3132f00f8bf`，F4 完成后；在独立 worktree 分支 `codex-luna-rerun` 重做后续工作。
+- 中台锁定 `/Users/bai/code/agent-autoloop` 的 `8f8e2eef3cfaa8f7a418818adc442450fe6bd884`；运行数据使用全新独立目录，保留旧运行数据。
+- 真实需求原文：`requests/demo-todo-cli.md`；B/C 层设置固定为 Sonnet 终点 `6b66cd7` 的模型绑定与流水线模板，真实运行 effort 为 `low`。
+- 仅在隔离演示项目 `todo` 中运行；不触碰 `personagent`，不推送、不部署，不动 Herdr `pro1`。用户已授权按默认值完成 S9 的本次本地发布。
+- 起点单测实测 **149 项通过**（下面原始进度记录中的 144 是过时数字）。
+- 当前步骤：从 F5 开始补完 F5/F6、每步运行记录和比对、S4–S9；完成单测和联机场景后真实跑 S1–S9；生成并对照驾驶员报告，记录证据与未验证范围。
+
+---
+
 更新：2026-11-06 ｜ 阶段：以 agent-autoloop 为地基的集成（F0 到 F2 完成，F3 进行中）
 
 ## 恢复上下文时先读
