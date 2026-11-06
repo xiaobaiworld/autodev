@@ -7,7 +7,7 @@ from pathlib import Path
 from cockpit.agents import parse_agents, parse_limits, parse_roles
 from cockpit.controller import Controller, start_run
 from cockpit.store import Run
-from driver.record import codex_model_from_command, find_worker_run, parse_log, write_record
+from driver.record import codex_model_from_command, find_worker_run, normalize_usage, parse_log, summarize_run, write_record
 from test_controller import FakeAgent
 
 CFG = (Path(__file__).resolve().parents[1] / "config.yaml").read_text(encoding="utf-8")
@@ -55,6 +55,31 @@ class ParseTest(unittest.TestCase):
             (self.d / "worker" / "runs" / name / "context.json").write_text(json.dumps({"events": [{"id": key}]}))
         self.assertEqual(find_worker_run(self.d, "K").name, "3-2")
         self.assertIsNone(find_worker_run(self.d, "NONE"))
+
+
+class UsageTest(unittest.TestCase):
+    def test_claude_total_includes_cache(self):
+        u = {"input_tokens": 40, "cache_read_input_tokens": 100, "cache_creation_input_tokens": 10, "output_tokens": 5}
+        self.assertEqual(normalize_usage(u), {"input": 150, "cached": 100, "output": 5})
+
+    def test_codex_input_already_includes_cached(self):
+        u = {"input_tokens": 500, "cached_input_tokens": 400, "output_tokens": 7}
+        self.assertEqual(normalize_usage(u), {"input": 500, "cached": 400, "output": 7})
+
+    def test_missing_or_unknown_shape_is_none_not_zero(self):
+        for bad in (None, {}, {"output_tokens": 3}, "x"):
+            self.assertIsNone(normalize_usage(bad))
+
+    def test_summary_counts_steps_without_usage(self):
+        with tempfile.TemporaryDirectory() as d:
+            for i, (stage, agent, usage) in enumerate((("S1", "a", {"input_tokens": 1, "cache_read_input_tokens": 9, "output_tokens": 2}),
+                                                       ("S3", "b", None))):
+                p = Path(d) / f"{stage}-x" / "round-1"
+                p.mkdir(parents=True)
+                (p / "record-a1.json").write_text(json.dumps({"stage": stage, "round": 1, "agent": agent, "usage": usage}))
+            s = summarize_run(d)
+            self.assertEqual((s["total"]["input"], s["total"]["output"], s["total"]["no_usage"], s["total"]["steps"]), (10, 2, 1, 2))
+            self.assertEqual(s["by_agent"]["b"]["no_usage"], 1)
 
 
 class FlowTest(unittest.TestCase):

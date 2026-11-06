@@ -28,7 +28,8 @@
 - F6：窗格驱动旧代码已删，Controller 没有 `hc` 和 `panes`。
 - 真实演示：R20261106-002（命令行待办 `todo`）S1 到 S3 跑了 3 轮，Codex 两次 REWORK 后 PASS，共 817 秒；没触发轮次上限。
 - 每步记录：`done.json` 必填 `summary`，每步写 `record-a<次>.json` 和 `agent-a<次>.log`（`src/driver/record.py`，字段见 `docs/DATA_SPEC.md` 7.2.1）。真实演示 R20261106-003：5 步记录齐全，实际模型与配置一致。
-- 测试：115 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
+- 用量比较用归一后的 `tokens`（Claude 和 Codex 同口径）；`PYTHONPATH=src python3 -m driver.record workspace/runs/<需求号>` 汇总一个需求的 token、按阶段和 Agent 拆分。
+- 测试：119 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
 
 ## 下一步
 

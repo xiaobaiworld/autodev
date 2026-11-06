@@ -300,7 +300,8 @@ Agent 最后一步写入。程序只以此文件判断完成。
 | configured_model / actual_model | 配置的模型 / 日志里实际用的；两者对不上时 `notes` 会写 |
 | event_id、hub_run | 发给中台的事件 id、中台运行号（`<号>-<次>`） |
 | input、outputs、verdict、summary | 输入文件、输出文件、结论、Agent 写的理由 |
-| usage、cost_usd、duration_ms | 用量；Claude 有费用和耗时，Codex 日志里没有 |
+| usage、tokens | `usage` 是 CLI 原样的用量；`tokens` 是归一后的 `{input, cached, output}`：input 是总输入（含缓存命中），cached 是其中缓存命中，output 含推理。Claude 的总输入 = 新输入 + 缓存读 + 缓存写；Codex 的 `input_tokens` 按 OpenAI 口径视为已含缓存（**未在 Codex 文档核实**，本机 7 条 Codex 用量里缓存数都不大于输入数，这与“已含”一致但不能证明）。比较用 `tokens`，不用 `cost_usd` |
+| cost_usd、duration_ms | Claude 有，Codex 日志里没有；不作为比较依据 |
 | agent_final_message、commands_run、files_changed、reasoning | Agent 最后一条消息；执行命令数；改动的文件；Codex 的推理摘要（Claude 日志里没有） |
 | log、notes | 日志副本路径；取不到的东西在这里说明 |
 
