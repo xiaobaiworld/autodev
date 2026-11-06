@@ -14,7 +14,7 @@
    "role": "coder",
    "outputs": ["exec-report.md"],
    "verdicts": ["DONE", "BLOCK"],
-   "inputs": ["request", "analysis", "design", "plan", "workdir"],
+   "inputs": ["request", "analysis", "design", "plan", "workdir", "human"],
    "workdir": true,
    "on": {
     "DONE": "done"

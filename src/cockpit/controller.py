@@ -74,6 +74,14 @@ class Controller:
         started = self.now()
         step.update(state="running", started_at=started.isoformat(timespec="seconds"),
                     deadline_at=(started + timedelta(minutes=self.limits["step_timeout_minutes"])).isoformat(timespec="seconds"))
+        sd = run.dir / step["dir"]
+        if (sd / "done.json").exists():
+            # 同一阶段同一轮号被再次进入（人工处理后回到旧阶段，或审查通过后第二次进编码）：
+            # 上次的 done.json 不能留在原地，否则会被"崩溃前其实已完成"的快捷路径当成这次的结果。改名归档，不删。
+            n = 1
+            while sd.with_name(f"{sd.name}.prev-{n}").exists():
+                n += 1
+            sd.rename(sd.with_name(f"{sd.name}.prev-{n}"))
         if self._spec(state).get("workdir"):
             step["base_commit"] = prepare(workdir_of(self.root, state))  # 起点提交，重复调用不变
         self._write_input(run.dir, dict(state, step=step))
@@ -152,6 +160,36 @@ class Controller:
             nxt["human"] = dict(state["human"], waiting=True)
         run.commit(nxt, event, data=data)
         return f"{state['stage']} 停止：{status}"
+
+    def resume(self, run_dir, action, note="", stage=None):
+        """人处理完"等你"的需求后的回复入口（DATA_SPEC 第 8 到 10 节的最小版）。
+        action: continue（原阶段再来一轮）/ rework（回到 stage 指定的阶段，默认原阶段，开新一轮）/ reject（结束）。
+        回复写进 human/reply-<K>.md，后续步骤的输入里会带上它；计数器清零（用户拍板后重新给轮次）。
+        只改 needs-human 的需求，其他状态报错；校验都在写任何东西之前。"""
+        run = Run(run_dir)
+        state = run.load()
+        if state["status"] != "needs-human":
+            raise ValueError(f"需求 {state['id']} 不在等待人工的状态（现在是 {state['status']}）")
+        if action not in ("continue", "rework", "reject"):
+            raise ValueError(f"action 只能是 continue / rework / reject，收到 {action!r}")
+        stages = template_for(state)["stages"]
+        target = stage or state["stage"]
+        if action != "reject" and target not in stages:
+            raise ValueError(f"阶段 {target!r} 不在模板里：{sorted(stages)}")
+        hdir = run.dir / "human"
+        k = len(list(hdir.glob("reply-*.md"))) + 1 if hdir.exists() else 1
+        atomic_write(hdir / f"reply-{k}.md",
+                     f"---\naction: {action}\nstage: {target}\nreplied_at: {now_iso()}\n---\n\n{note or '（没有附言）'}\n")
+        human = {"waiting": False, "pending_decision": None, "resume_to": None}
+        if action == "reject":
+            run.commit(dict(state, status="rejected", human=human), "human.replied",
+                       data={"action": action, "reply": f"human/reply-{k}.md"})
+            return f"已拒绝 {state['id']}"
+        nxt = dict(state, status="active", stage=target, round=state["round"] + 1,
+                   counters=counters_for(state.get("kind") or DEFAULT_KIND), human=human)
+        nxt["step"] = self._new_step(nxt, 1)
+        run.commit(nxt, "human.replied", data={"action": action, "stage": target, "reply": f"human/reply-{k}.md"})
+        return f"{state['id']} 回到 {target} 第 {nxt['round']} 轮"
 
     def run_all(self, run_dir, log=print, max_steps=200):
         for _ in range(max_steps):

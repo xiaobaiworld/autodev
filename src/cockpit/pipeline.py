@@ -168,9 +168,13 @@ def write_input(root, run_dir, state):
         "workdir": ("代码目录（只改这里的文件，不要执行 git 命令）", workdir_of(root, state)),
     }
     files = []
+    replies = sorted((run_dir / "human").glob("reply-*.md")) if (run_dir / "human").exists() else []
     for name in spec.get("inputs", ["request"]):
         if name == "review_prev" and rnd <= 1:
             continue  # 第 1 轮没有上轮意见
+        if name == "human":
+            files += [f"- 用户决定（优先于需求原文，必须遵守）：{p}" for p in replies]  # 没有回复就不列
+            continue
         if name not in paths:
             raise ValueError(f"模板阶段 {st} 的 inputs 里有未知名字 {name!r}")
         label, p = paths[name]

@@ -1,7 +1,7 @@
 {
  "kind": "pipeline/design",
  "order": ["S1", "S2", "S3"],
- "scope": "这是流水线中的一轮，不是在开发 AutoDev 本身。只读下面“输入文件”列出的文件和本步骤目录；不要按 AGENTS.md 的“开始任务前”去读 next.md、lessons.md、TOOLS.md、INDEX.md，也不要读全局开发规范。",
+ "scope": "这是流水线中的一轮，不是在开发 AutoDev 本身。只读下面“输入文件”列出的文件和本步骤目录；不要按 AGENTS.md 的“开始任务前”去读 next.md、lessons.md、TOOLS.md、INDEX.md，也不要读全局开发规范。运行环境没有网络：设计和实现只能用 Python 标准库和本机已有的东西，不要依赖需要联网下载安装的包或构建工具（如 pip 安装 setuptools）。",
  "stages": {
   "S1": {
    "dir": "S1-analysis",
@@ -21,7 +21,7 @@
    "role": "designer",
    "outputs": ["design.md", "dev-plan.md"],
    "verdicts": ["DONE", "BLOCK"],
-   "inputs": ["request", "analysis", "review_prev"],
+   "inputs": ["request", "analysis", "review_prev", "human"],
    "on": {
     "DONE": {"goto": "S3", "round": "same"}
    },

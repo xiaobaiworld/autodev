@@ -29,12 +29,13 @@
 - 真实演示：R20261106-002（命令行待办 `todo`）S1 到 S3 跑了 3 轮，Codex 两次 REWORK 后 PASS，共 817 秒；没触发轮次上限。
 - 每步记录：`done.json` 必填 `summary`，每步写 `record-a<次>.json` 和 `agent-a<次>.log`（`src/driver/record.py`，字段见 `docs/DATA_SPEC.md` 7.2.1）。真实演示 R20261106-003：5 步记录齐全，实际模型与配置一致。
 - 用量比较用归一后的 `tokens`（Claude 和 Codex 同口径）；`PYTHONPATH=src python3 -m driver.record workspace/runs/<需求号>` 汇总一个需求的 token、按阶段和 Agent 拆分。
-- 优化记录在 `docs/OPTIMIZATIONS.md`（O001 效果待测，重跑 R20261106-004 的结果要补进去）；比对工具 `python3 -m driver.compare digest|diff`。
-- 测试：123 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
+- 优化记录在 `docs/OPTIMIZATIONS.md`（O001 第一次对比：单步输入 -4.6%，总量下降来自返工轮数不同，看不出明显效果，待多跑几遍）；比对工具 `python3 -m driver.compare digest|diff`。
+- S4 编码阶段（设计见 `docs/design/2026-11-06-s4-code-stage.md`）：转移规则和各步输入改由模板驱动（`templates/pipeline/*.json` 的 `on`、`inputs`，支持 `extends`）；新增类型 `pipeline/build`（S1 到 S4，`python3 -m driver.run --kind pipeline/build`）。代码目录在 `workspace/projects/<项目>/<需求号>/`，git 操作全由程序做（`src/cockpit/workdir.py`：起点提交、重做前回到起点、生成 `diff.patch`）；S4 报 DONE 但没有任何改动会被判无效并重试。假 Agent 联机跑通 S1 到 S4（`python3 tests/f2_pipeline.py --build`）。**真实 Agent 跑 S4 还没做**（Codex 沙箱里能否写代码目录、能否跑测试是最大的未知）。
+- 测试：145 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
 
 ## 下一步
 
-1. 接 S4 以后的阶段（编码、检查、代码审查、发布候选、验收、发布）：先在 `templates/pipeline/` 加模板、在 `kinds.py` 登记类型，再扩 `next_move`。目标项目 personagent 还没有可运行代码，检查命令（`config.yaml` 的 `checks`）待定。
+1. 真实 Agent 跑 `pipeline/build` 到 S4（`--kind pipeline/build --effort low`，花额度），核对 `diff.patch` 与 `exec-report.md` 的 `files_changed` 是否一致。再接 S5 检查（第一个“程序步骤”：跑检查命令，退出码决定结论）、S6 代码审查、S7 到 S9。目标项目用演示需求，personagent 还没有可运行代码；检查命令先用 `python3 -m unittest`。
 2. F3 剩余：Web 界面；`pro2` 布局重建脚本（桌面应用没有保存命令）。
 3. F5 没验证的：权限弹窗卡住、真实 Agent 进程崩溃、`/v1/stream` 从 0 重放在历史很大时的开销。
 4. 未验证项：agy 的实际模型名与用量；强度参数在 Claude 启动参数里的写法。
