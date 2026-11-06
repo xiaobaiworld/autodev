@@ -148,6 +148,11 @@ def next_move(state, verdict, limits):
     return ("goto", act["goto"], new_rnd, {c: 1} if c else {})
 
 
+# 只有这几类事才必须停下问人。“修改权限”特指账号、访问控制、系统级权限；代码目录里给自己写的脚本设置可执行位（chmod +x）不算。
+BLOCK_RULE = ("## 必须停止并写 BLOCK 的情况\n删除数据、修改密钥或凭证、修改账号或访问控制等权限、对外发送消息、花钱、改变产品方向。"
+              "在代码目录内对自己新写的文件设置可执行位（如 chmod +x bin/todo）不属于这里，可以直接做。")
+
+
 class SetupError(Exception):
     pass
 
@@ -239,35 +244,7 @@ def write_input(root, run_dir, state):
         f"summary=一两句话写清做了什么、为什么这么做（不能为空），"
         f"outputs=产物文件名列表（须包含 {spec['outputs']}），"
         f"verdict 取 {spec['verdicts']} 之一，且与产物 frontmatter 的 verdict 一致，finished_at 为 ISO 时间。\n\n"
-        "## 必须停止并写 BLOCK 的情况\n删除数据、修改密钥或凭证、修改权限、对外发送消息、花钱、改变产品方向。"
-    )
-    atomic_write(out / "input.md", body)
-    return out / "input.md"
-    req = root / "workspace" / "requests" / "active" / f"{rid}.md"
-    files = [f"- 需求：{req}"]
-    if st in ("S2", "S3", "S4"):
-        files.append(f"- 分析：{at('S1', 1) / 'analysis.md'}")
-    if st == "S3":
-        files += [f"- 设计稿：{at('S2', rnd) / 'design.md'}", f"- 开发计划：{at('S2', rnd) / 'dev-plan.md'}"]
-    if st == "S4":
-        r = _latest_round(run_dir, "S2", kind)  # 通过审查的那一轮设计
-        files += [f"- 设计稿：{at('S2', r) / 'design.md'}", f"- 开发计划：{at('S2', r) / 'dev-plan.md'}",
-                  f"- 工作目录（只改这里的文件，不要提交 git）：{workdir_of(root, state)}"]
-    if st == "S2" and rnd > 1:
-        files.append(f"- 上轮审查意见：{at('S3', rnd - 1) / 'review.md'}（逐条回应，写 response.md）")
-    out = run_dir / step["dir"]
-    body = (
-        f"---\nschema_version: 1\nid: {rid}\nstage: {st}\nround: {rnd}\nrole: {step['role']}\n"
-        f"output_dir: {out}\nrequired_outputs: {spec['outputs'] + ['done.json']}\n---\n\n"
-        f"## 任务\n{spec['task']}\n\n## 输入文件\n" + "\n".join(files) + "\n\n"
-        + (f"## 范围\n{scope}\n\n" if scope else "")
-        + f"## 输出要求\n产物与 done.json 都写到 {out}，一律用文件写入工具，不要用 shell 命令写文件。"
-        f"最后写 done.json，内容为 JSON 对象，字段：\n"
-        f'id="{rid}"，stage="{st}"，round={rnd}，role="{step["role"]}"，'
-        f"summary=一两句话写清做了什么、为什么这么做（不能为空），"
-        f"outputs=产物文件名列表（须包含 {spec['outputs']}），"
-        f"verdict 取 {spec['verdicts']} 之一，且与产物 frontmatter 的 verdict 一致，finished_at 为 ISO 时间。\n\n"
-        "## 必须停止并写 BLOCK 的情况\n删除数据、修改密钥或凭证、修改权限、对外发送消息、花钱、改变产品方向。"
+        + BLOCK_RULE
     )
     atomic_write(out / "input.md", body)
     return out / "input.md"
