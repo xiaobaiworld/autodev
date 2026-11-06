@@ -30,3 +30,4 @@
 - F6：移除窗格驱动的 claim/config/main/invoke/status 及其测试，Controller 不再有 hc 与 panes，agents.py 去掉 launch_cmd，config.yaml 去掉 scheduler 与 cockpit 段，新记录不再写 pane_id；显示宽度函数挪到 src/dashboard/width.py
 - 每步记录：done.json 新增必填 summary（做了什么、为什么）；新增 src/driver/record.py，每步完成后写 record-a<次>.json 并留存 Agent 原始日志；记录写失败只记 record.failed 事件。真实 Agent 跑通（R20261106-003，221 秒，2 轮）
 - 记录里新增归一的 tokens（总输入/缓存/输出，Claude 与 Codex 同口径）；新增 python3 -m driver.record <需求目录> 汇总 token
+- 新增 src/driver/compare.py（摘要 digest.json 与两次运行的确定性比对）；模板加 scope，输入加“范围”说明；新增 docs/OPTIMIZATIONS.md 记录每次流程优化（O001）

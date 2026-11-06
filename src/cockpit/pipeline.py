@@ -19,7 +19,7 @@ def load_template(kind):
 
 
 _DEFAULT = load_template("pipeline/design")
-STAGES, ORDER = _DEFAULT["stages"], _DEFAULT["order"]  # 现只有一个模板；多模板时按 state["kind"] 取
+STAGES, ORDER, SCOPE = _DEFAULT["stages"], _DEFAULT["order"], _DEFAULT.get("scope", "")  # 现只有一个模板；多模板时按 state["kind"] 取
 
 
 def step_dir(stage, rnd):
@@ -103,7 +103,8 @@ def write_input(root, run_dir, state):
         f"---\nschema_version: 1\nid: {rid}\nstage: {st}\nround: {rnd}\nrole: {step['role']}\n"
         f"output_dir: {out}\nrequired_outputs: {spec['outputs'] + ['done.json']}\n---\n\n"
         f"## 任务\n{spec['task']}\n\n## 输入文件\n" + "\n".join(files) + "\n\n"
-        f"## 输出要求\n产物与 done.json 都写到 {out}，一律用文件写入工具，不要用 shell 命令写文件。"
+        + (f"## 范围\n{SCOPE}\n\n" if SCOPE else "")
+        + f"## 输出要求\n产物与 done.json 都写到 {out}，一律用文件写入工具，不要用 shell 命令写文件。"
         f"最后写 done.json，内容为 JSON 对象，字段：\n"
         f'id="{rid}"，stage="{st}"，round={rnd}，role="{step["role"]}"，'
         f"summary=一两句话写清做了什么、为什么这么做（不能为空），"

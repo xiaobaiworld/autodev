@@ -5,6 +5,7 @@
   "S2",
   "S3"
  ],
+ "scope": "这是流水线中的一轮，不是在开发 AutoDev 本身。只读下面“输入文件”列出的文件和本步骤目录；不要按 AGENTS.md 的“开始任务前”去读 next.md、lessons.md、TOOLS.md、INDEX.md，也不要读全局开发规范。",
  "stages": {
   "S1": {
    "dir": "S1-analysis",
