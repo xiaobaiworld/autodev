@@ -11,7 +11,6 @@ import json
 import sys
 from pathlib import Path
 
-from cockpit.pipeline import TEMPLATES
 from cockpit.store import atomic_write
 from driver.record import normalize_usage, summarize_run
 
@@ -37,6 +36,13 @@ def _input_scope(sd):
     return f.read_text(encoding="utf-8") if f.exists() else ""
 
 
+def _run_template_hash(run_dir):
+    """取这次运行各步记录里的模板哈希；老记录没有就是 None（未记录），不拿现在的模板去猜。"""
+    hashes = {json.loads(p.read_text())["template_hash"] if "template_hash" in json.loads(p.read_text()) else None
+              for p in Path(run_dir).glob("S*/round-*/record-a*.json")}
+    return hashes.pop() if len(hashes) == 1 else ("mixed" if hashes else None)
+
+
 def build_digest(run_dir):
     run_dir = Path(run_dir)
     state = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
@@ -48,10 +54,9 @@ def build_digest(run_dir):
                       "tokens": normalize_usage(r.get("usage")), "commands": r.get("commands_run"),
                       "has_scope_note": "## 范围" in _input_scope(p.parent)})
     kind = state.get("kind")
-    tpl = TEMPLATES / (kind.split("/", 1)[1] + ".json") if kind else None
     return {"schema_version": 1, "id": state["id"], "kind": kind, "status": state["status"],
             "request_hash": _sha(_request_text(run_dir)),
-            "template_hash": _sha(tpl.read_text(encoding="utf-8")) if tpl and tpl.exists() else None,
+            "template_hash": _run_template_hash(run_dir),
             "steps": steps, "summary": summarize_run(run_dir)}
 
 
@@ -78,8 +83,13 @@ def diff_digests(a, b):
     issues = []
     if a["request_hash"] != b["request_hash"]:
         issues.append("需求文本不同：两次做的不是同一件事，差异不能全算成优化的效果")
-    if a["template_hash"] != b["template_hash"]:
+    if a["template_hash"] is None or b["template_hash"] is None:
+        issues.append("模板版本未记录（老记录）：无法判断两次用的模板是否相同")
+    elif a["template_hash"] != b["template_hash"]:
         issues.append("模板不同：这正是要比较的改动，则下面的差异可归因于它；若还有别的改动则无法分开")
+    sa, sb = {s["has_scope_note"] for s in a["steps"]}, {s["has_scope_note"] for s in b["steps"]}
+    if sa != sb:  # 看 Agent 实际收到的 input.md，比看模板更准
+        issues.append(f"步骤输入不同：范围说明 {'有' if True in sa else '无'} → {'有' if True in sb else '无'}（这是被比较的改动）")
     ma = sorted({s["model"] for s in a["steps"]}); mb = sorted({s["model"] for s in b["steps"]})
     if ma != mb:
         issues.append(f"实际模型不同：{ma} → {mb}")

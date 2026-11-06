@@ -102,6 +102,14 @@ def summarize_run(run_dir):
             "design_rounds": max([r["round"] for r in recs if r["stage"] == "S2"] or [0])}
 
 
+def template_hash(kind):
+    """运行当时的模板内容哈希。比对时用它判断模板是否相同，不能等到生成摘要时再算（那时模板可能已经改了）。"""
+    from driver.compare import _sha
+    from cockpit.pipeline import TEMPLATES
+    f = TEMPLATES / (kind.split("/", 1)[1] + ".json") if kind else None
+    return _sha(f.read_text(encoding="utf-8")) if f and f.exists() else None
+
+
 def _files(d, names):
     return [str(Path(d) / n) for n in names]
 
@@ -117,7 +125,8 @@ def write_record(home, run_dir, state, now=None):
            "configured_model": step.get("model"), "started_at": step.get("started_at"),
            "recorded_at": (now or datetime.now().astimezone()).isoformat(timespec="seconds"),
            "event_id": key, "input": str(sd / "input.md"), "outputs": _files(sd, done.get("outputs", [])),
-           "verdict": done.get("verdict"), "summary": done.get("summary"), "notes": []}
+           "verdict": done.get("verdict"), "summary": done.get("summary"), "notes": [],
+           "template_hash": template_hash(state.get("kind"))}
     wr = find_worker_run(home, key)
     if wr is None:
         rec["notes"].append("没有找到中台的运行目录，原始日志没有留存")

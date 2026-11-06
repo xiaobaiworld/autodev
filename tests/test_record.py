@@ -112,6 +112,7 @@ class FlowTest(unittest.TestCase):
         ctrl.run_all(rd, log=lambda m: None)
         rec = json.loads(next((rd / "S1-analysis" / "round-1").glob("record-a1.json")).read_text())
         self.assertEqual((rec["verdict"], rec["summary"]), ("ACCEPT", "测试"))
+        self.assertTrue(rec["template_hash"])  # 运行当时的模板版本，比对时靠它判断模板是否相同
         self.assertTrue(any("没有找到" in n for n in rec["notes"]))
 
 

@@ -52,6 +52,30 @@ class CompareTest(unittest.TestCase):
         self.assertEqual(d["total"]["input"], (700, 400))
         self.assertIn("-75%", render(a, b, d))
 
+    def test_scope_note_difference_in_step_input_is_flagged(self):
+        ra = make_run(self.root, "R1", "甲", ("ACCEPT", "DONE", "PASS"), (1, 2, 3))
+        rb = make_run(self.root, "R2", "甲", ("ACCEPT", "DONE", "PASS"), (1, 2, 3))
+        for d in rb.glob("S*-x/round-1"):
+            (d / "input.md").write_text("## 任务\n...\n## 范围\n只读输入文件\n")
+        for d in ra.glob("S*-x/round-1"):
+            (d / "input.md").write_text("## 任务\n...\n")
+        issues = diff_digests(build_digest(ra), build_digest(rb))["comparability"]
+        self.assertTrue(any("范围说明 无 → 有" in i for i in issues), issues)
+
+    def test_template_hash_comes_from_records_not_from_current_template(self):
+        r = make_run(self.root, "R1", "甲", ("ACCEPT", "DONE", "PASS"), (1, 2, 3))
+        self.assertIsNone(build_digest(r)["template_hash"])  # 老记录没有，不去猜
+        for p in r.glob("S*-x/round-1/record-a1.json"):
+            rec = json.loads(p.read_text())
+            rec["template_hash"] = "abc123"
+            p.write_text(json.dumps(rec))
+        self.assertEqual(build_digest(r)["template_hash"], "abc123")
+        p = next(r.glob("S3-x/round-1/record-a1.json"))
+        rec = json.loads(p.read_text())
+        rec["template_hash"] = "other"
+        p.write_text(json.dumps(rec))
+        self.assertEqual(build_digest(r)["template_hash"], "mixed")
+
     def test_missing_usage_is_flagged(self):
         r = make_run(self.root, "R1", "甲", ("ACCEPT", "DONE", "PASS"), (1, 2, 3))
         p = next(r.glob("S3-x/round-1/record-a1.json"))
