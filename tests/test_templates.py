@@ -24,7 +24,8 @@ class TemplateTest(unittest.TestCase):
             self.assertIn(s["role"], roles)
 
     def test_rules_are_derived_from_the_template(self):
-        self.assertEqual([r for _, r in RULE_STAGES], [pipeline.STAGES[k]["role"] for k in pipeline.ORDER])
+        self.assertEqual(dict(RULE_STAGES), {k.lower(): r for k, r in pipeline.stage_roles().items()})
+        self.assertIn("s4", dict(RULE_STAGES))  # pipeline/build 的 S4 也要有规则
 
     def test_inconsistent_template_is_refused(self):
         with tempfile.TemporaryDirectory() as d:

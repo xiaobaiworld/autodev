@@ -9,8 +9,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-DEFAULT = {"S1": "ACCEPT", "S2": "DONE", "S3": "PASS"}
-OUTPUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"]}
+DEFAULT = {"S1": "ACCEPT", "S2": "DONE", "S3": "PASS", "S4": "DONE"}
+OUTPUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"], "S4": ["exec-report.md"]}
 
 policy_path, prompt = Path(sys.argv[1]), sys.argv[2]
 subject = re.search(r"runs/R\d{8}-\d{3}/\S+", prompt).group(0).rstrip("。，).,")

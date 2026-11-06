@@ -12,6 +12,7 @@ from pathlib import Path
 
 from cockpit.agents import parse_agents, parse_limits, parse_roles
 from cockpit.controller import Controller, start_run
+from cockpit.kinds import DEFAULT_KIND
 from cockpit.pipeline import SetupError
 from cockpit.store import LockError, Run, acquire_lock
 from driver.hub import Hub, HubError, load_config
@@ -27,6 +28,7 @@ def main(argv=None):
     ap.add_argument("--home", required=True, help="agent-autoloop 数据目录（含 config.json、rules.json）")
     ap.add_argument("--root", default=str(AUTODEV), help="放 workspace/runs 的目录，看板读这里")
     ap.add_argument("--request", required=True, help="需求正文文件")
+    ap.add_argument("--kind", default=DEFAULT_KIND, help="需求类型：pipeline/design（到设计审查）或 pipeline/build（含编码）")
     ap.add_argument("--effort", default=None, help="覆盖 config 里的强度，如 low")
     ap.add_argument("--config", default=str(AUTODEV / "config.yaml"))
     a = ap.parse_args(argv)
@@ -43,7 +45,7 @@ def main(argv=None):
         ctrl = Controller(root, agents, roles, limits,
                           invoke_fn=make_invoke(hub, limits["step_retries"]),
                           on_finish=lambda rd, st: write_record(home, rd, st))
-        rid = start_run(root, Path(a.request).read_text(encoding="utf-8"), "toy", ctrl)
+        rid = start_run(root, Path(a.request).read_text(encoding="utf-8"), "toy", ctrl, kind=a.kind)
     except (OSError, ValueError, KeyError, LockError, SetupError, HubError) as e:
         print(f"启动失败：{e}", file=sys.stderr)
         return 1

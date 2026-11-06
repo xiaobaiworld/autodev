@@ -11,7 +11,7 @@ AGENTS = {
     "codex": {"cli": "codex", "vendor": "openai", "model": "gpt-6-sol", "effort": "low"},
     "agy": {"cli": "agy", "vendor": "google", "model": "x"},
 }
-ROLES = {"analyst": "claude-opus", "designer": "claude-opus", "design_reviewer": "codex"}
+ROLES = {"analyst": "claude-opus", "designer": "claude-opus", "design_reviewer": "codex", "coder": "codex"}
 BASE = {"sources": {"local": {"name": "本机"}}, "agents": {"agent": {"worker": "mac1"}}, "rules": [{"name": "old"}]}
 
 
@@ -34,8 +34,9 @@ class BuildRulesTest(unittest.TestCase):
     def test_one_rule_per_stage_routed_by_role(self):
         r = self.build()
         by = {x["name"]: x for x in r["rules"]}
-        self.assertEqual(sorted(by), ["s1-analyst", "s2-designer", "s3-design_reviewer"])
+        self.assertEqual(sorted(by), ["s1-analyst", "s2-designer", "s3-design_reviewer", "s4-coder"])
         self.assertEqual(by["s3-design_reviewer"]["to"], "codex")
+        self.assertEqual(by["s4-coder"]["when"], {"source": "local", "types": ["stage.s4"]})
         self.assertEqual(by["s1-analyst"]["when"], {"source": "local", "types": ["stage.s1"]})
         self.assertTrue(all(x["cwd"] == "/w/workspace" for x in r["rules"]))
 

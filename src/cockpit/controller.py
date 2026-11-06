@@ -1,5 +1,5 @@
 """最小主循环（P4）：每次 advance 只推进一步并立即落盘，重启后从 state.json 继续（设计 5.3、5.4）。
-invoke_fn 必须传入（正式用 driver.runner.make_invoke，测试用假的）。S4 以后不在本计划内。
+invoke_fn 必须传入（正式用 driver.runner.make_invoke，测试用假的）。阶段和转移来自 state["kind"] 对应的模板。
 """
 import json
 import re
@@ -8,7 +8,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from cockpit.kinds import DEFAULT_KIND, check_kind
-from cockpit.pipeline import STAGES, SetupError, check_vendors, next_move, step_dir, validate_done, write_input
+from cockpit.pipeline import (SetupError, check_vendors, counters_for, next_move, step_dir, template_for,
+                              validate_done, write_input)
 from cockpit.store import Run, atomic_write, now_iso
 
 
@@ -26,7 +27,7 @@ def start_run(root, request_text, project, ctrl, today=None, kind=DEFAULT_KIND):
                  f"submitted_at: {now_iso()}\n---\n\n{request_text}\n")
     state = {"schema_version": 1, "id": rid, "project": project, "kind": kind, "status": "active",
              "stage": "S1", "round": 1, "step": None,
-             "counters": {"design_review_rounds": 0},
+             "counters": counters_for(kind),
              "human": {"waiting": False, "pending_decision": None, "resume_to": None}}
     run = Run(root / "workspace" / "runs" / rid)
     state["step"] = _new_step(state, 1, ctrl)
@@ -147,9 +148,9 @@ class Controller:
 
 def _new_step(state, attempt, ctrl):
     stage = state["stage"]
-    role = STAGES[stage]["role"]
+    role = template_for(state)["stages"][stage]["role"]
     agent = ctrl.roles[role]
     model = ctrl.agents[agent].get("model")
     return {"state": "pending", "role": role, "agent": agent, "model": model,
-            "dir": step_dir(stage, state["round"]), "started_at": None,
+            "dir": step_dir(stage, state["round"], state.get("kind") or DEFAULT_KIND), "started_at": None,
             "deadline_at": None, "attempt": attempt, "fail_reason": None}

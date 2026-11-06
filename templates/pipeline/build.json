@@ -1,0 +1,24 @@
+{
+ "kind": "pipeline/build",
+ "extends": "pipeline/design",
+ "order": ["S1", "S2", "S3", "S4"],
+ "stages": {
+  "S3": {
+   "on": {
+    "PASS": {"goto": "S4", "round": 1},
+    "REWORK": {"goto": "S2", "round": "inc", "counter": "design_review_rounds"}
+   }
+  },
+  "S4": {
+   "dir": "S4-code",
+   "role": "coder",
+   "outputs": ["exec-report.md"],
+   "verdicts": ["DONE", "BLOCK"],
+   "inputs": ["request", "analysis", "design", "plan", "workdir"],
+   "on": {
+    "DONE": "done"
+   },
+   "task": "按开发计划在“代码目录”里实现，并写测试。只改该目录里的文件，不要执行 git 命令（提交和差异由程序处理）。写 exec-report.md，frontmatter 含 verdict、summary、files_changed（列表）、tests_added（列表）；做不下去或需要用户判断时 verdict 写 BLOCK 并说明原因。"
+  }
+ }
+}

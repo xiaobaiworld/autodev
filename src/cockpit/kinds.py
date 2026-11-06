@@ -8,6 +8,7 @@ import re
 # 路径 -> 一句话说明。只登记真正在用的；新类型先在这里加，再写进 docs/DATA_SPEC.md。
 KINDS = {
     "pipeline/design": "需求分析、设计、设计审查（S1 到 S3），产物是一份可审查的设计和开发计划",
+    "pipeline/build": "在 design 之后继续编码（S1 到 S4），产物是代码目录里的改动和执行报告；检查、代码审查等后续阶段待接",
 }
 DEFAULT_KIND = "pipeline/design"
 _PATH = re.compile(r"[a-z][a-z0-9_-]*(/[a-z][a-z0-9_-]*)*")
