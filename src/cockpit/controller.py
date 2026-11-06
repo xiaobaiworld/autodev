@@ -10,7 +10,8 @@ from pathlib import Path
 from cockpit.kinds import DEFAULT_KIND, check_kind
 from cockpit.pipeline import (SetupError, check_vendors, counters_for, next_move, step_dir, template_for,
                               validate_done, workdir_of, write_input)
-from cockpit.workdir import prepare, reset, snapshot
+from cockpit.tools import TOOLS
+from cockpit.workdir import checkpoint, head, prepare, reset, snapshot
 from cockpit.store import Run, atomic_write, now_iso
 
 
@@ -37,10 +38,11 @@ def start_run(root, request_text, project, ctrl, today=None, kind=DEFAULT_KIND):
 
 
 class Controller:
-    def __init__(self, root, agents, roles, limits, invoke_fn, clock=None, on_finish=None):
+    def __init__(self, root, agents, roles, limits, invoke_fn, clock=None, on_finish=None, tools=None):
         self.root = Path(root)
         self.agents, self.roles, self.limits = agents, roles, limits
         self.invoke_fn = invoke_fn
+        self.tools = tools or TOOLS  # 程序步骤用的工具表；测试可以换成假的，正式运行用 cockpit.tools.TOOLS
         self.on_finish = on_finish  # 步骤完成后调用 (run_dir, state)，用来写记录；它出错不影响流程
         self.now = clock or (lambda: datetime.now().astimezone())
         check_vendors(agents, roles)
@@ -83,7 +85,11 @@ class Controller:
                 n += 1
             sd.rename(sd.with_name(f"{sd.name}.prev-{n}"))
         if self._spec(state).get("workdir"):
-            step["base_commit"] = prepare(workdir_of(self.root, state))  # 起点提交，重复调用不变
+            wd = workdir_of(self.root, state)
+            prepare(wd)  # 第一次建仓库；已有就不动
+            # 起点：每个编码轮开始前把上一轮的代码提交成检查点，作为这一轮的起点。这样 S5 检查失败退回 S4 时，
+            # Agent 是在已有代码上修，不会被清空；同一轮内的失败重试仍回到这个起点。S5 不改代码，起点就是当前 HEAD。
+            step["base_commit"] = checkpoint(wd, f"{state['stage']} 第 {state['round']} 轮起点") if state["stage"] == "S4" else head(wd)
         self._write_input(run.dir, dict(state, step=step))
         run.commit(dict(state, step=step), "step.started", data={"role": step["role"], "agent": step["agent"]})
         return f"{state['stage']} 启动 {step['agent']}"
@@ -91,9 +97,36 @@ class Controller:
     def _spec(self, state):
         return template_for(state)["stages"][state["stage"]]
 
+    def _run_tool(self, run, state):
+        """程序步骤：不调用 Agent，工具给出 verdict，由程序写 done.json 再走同一套校验。"""
+        step, spec = state["step"], self._spec(state)
+        sd = run.dir / step["dir"]
+        (sd / "done.json").unlink(missing_ok=True)
+        wd = workdir_of(self.root, state)
+        try:
+            r = self.tools[spec["tool"]]({"workdir": wd, "sd": sd, "spec": spec,
+                                     "timeout_s": self.limits["step_timeout_minutes"] * 60})
+        except Exception as e:  # 工具自己出错（不是检查没通过）：按步骤失败处理，会重试，用完转人工
+            r = None
+            res = {"reason": "command_failed", "detail": f"{type(e).__name__}: {e}"}
+        if r is not None:
+            atomic_write(sd / "done.json", json.dumps({
+                "id": state["id"], "stage": state["stage"], "round": state["round"], "role": step["role"],
+                "outputs": r["outputs"], "verdict": r["verdict"], "summary": r["summary"],
+                "finished_at": now_iso()}, ensure_ascii=False, indent=1) + "\n")
+            bad = validate_done(run.dir, state)
+            if bad is None:
+                return self._finish(run, state)
+            res = {"reason": "invalid_output", "detail": bad}
+        nstep = dict(step, state="failed", fail_reason=res["reason"])
+        run.commit(dict(state, step=nstep), "step.failed", data={"reason": res["reason"], "detail": res["detail"]})
+        return f"{state['stage']} 失败：{res['reason']}"
+
     def _run(self, run, state):
         step = dict(state["step"])
         sd = run.dir / step["dir"]
+        if self._spec(state).get("runner") == "tool":
+            return self._run_tool(run, state)
         wd = workdir_of(self.root, state) if self._spec(state).get("workdir") else None
         if (sd / "done.json").exists() and validate_done(run.dir, state) is None:
             # 崩溃可能发生在 Agent 写完、快照之前：编码阶段补做快照，确认真有改动才算完成；没有改动就当没做过，往下重做
@@ -201,9 +234,13 @@ class Controller:
 
 def _new_step(state, attempt, ctrl):
     stage = state["stage"]
-    role = template_for(state)["stages"][stage]["role"]
-    agent = ctrl.roles[role]
-    model = ctrl.agents[agent].get("model")
+    spec = template_for(state)["stages"][stage]
+    role = spec["role"]
+    if spec.get("runner") == "tool":  # 程序步骤没有 Agent，也没有模型
+        agent, model = f"tool:{spec['tool']}", None
+    else:
+        agent = ctrl.roles[role]
+        model = ctrl.agents[agent].get("model")
     return {"state": "pending", "role": role, "agent": agent, "model": model,
             "dir": step_dir(stage, state["round"], state.get("kind") or DEFAULT_KIND), "started_at": None,
             "deadline_at": None, "attempt": attempt, "fail_reason": None}

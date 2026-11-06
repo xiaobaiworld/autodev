@@ -7,12 +7,12 @@ from unittest import mock
 from cockpit import pipeline
 from cockpit.pipeline import counters_for, load_template, next_move, write_input
 
-LIM = {"design_review_rounds": 3}
+LIM = {"design_review_rounds": 3, "check_rounds": 3}
 
 
-def st(kind, stage, rnd=1, used=0):
+def st(kind, stage, rnd=1, used=0, checks=0):
     return {"id": "R1", "kind": kind, "stage": stage, "round": rnd, "project": "toy",
-            "counters": {"design_review_rounds": used}}
+            "counters": {"design_review_rounds": used, "check_rounds": checks}}
 
 
 class BuildTransitionTest(unittest.TestCase):
@@ -23,8 +23,12 @@ class BuildTransitionTest(unittest.TestCase):
             (st(d, "S3"), "PASS", ("done", "S3", 1)),        # design：仍然到此结束（回归）
             (st(b, "S3"), "REWORK", ("goto", "S2", 2)),
             (st(b, "S3", 3, used=2), "REWORK", ("limit", "S3", 3)),
-            (st(b, "S4"), "DONE", ("done", "S4", 1)),
+            (st(b, "S4"), "DONE", ("goto", "S5", 1)),        # 编码完成先去检查
             (st(b, "S4"), "BLOCK", ("needs-human", "S4", 1)),
+            (st(b, "S5"), "PASS", ("done", "S5", 1)),
+            (st(b, "S5"), "FAIL", ("goto", "S4", 2)),        # 检查失败退回编码，开新一轮
+            (st(b, "S5", 3, used=0, checks=2), "FAIL", ("limit", "S5", 3)),
+            (st(b, "S5"), "BLOCK", ("needs-human", "S5", 1)),
             (st(b, "S1"), "ACCEPT", ("goto", "S2", 1)),
             (st(b, "S1"), "REJECT", ("rejected", "S1", 1)),
             (st(None, "S3"), "PASS", ("done", "S3", 1)),     # 老记录没有 kind，按 design 处理
@@ -35,14 +39,15 @@ class BuildTransitionTest(unittest.TestCase):
 
     def test_build_extends_design(self):
         b, d = load_template("pipeline/build"), load_template("pipeline/design")
-        self.assertEqual(b["order"], ["S1", "S2", "S3", "S4"])
+        self.assertEqual(b["order"], ["S1", "S2", "S3", "S4", "S5"])
         self.assertEqual(b["stages"]["S1"], d["stages"]["S1"])           # 没覆盖的阶段原样继承
         self.assertEqual(b["stages"]["S3"]["role"], d["stages"]["S3"]["role"])  # 覆盖 on 不丢 role
         self.assertEqual(b["stages"]["S4"]["role"], "coder")
         self.assertEqual(b["scope"], d["scope"])
 
     def test_counters_follow_template(self):
-        self.assertEqual(counters_for("pipeline/build"), {"design_review_rounds": 0})
+        self.assertEqual(counters_for("pipeline/build"), {"design_review_rounds": 0, "check_rounds": 0})
+        self.assertEqual(counters_for("pipeline/design"), {"design_review_rounds": 0})   # design 不带检查计数器
 
 
 class BrokenTemplateTest(unittest.TestCase):

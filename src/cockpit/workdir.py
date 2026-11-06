@@ -47,6 +47,16 @@ def prepare(workdir, seed_files=None):
     return head(workdir)
 
 
+def checkpoint(workdir, message="检查点"):
+    """把当前所有改动提交成一个检查点，返回新的 HEAD；没有改动就不提交，返回当前 HEAD。
+    每个编码轮开始时调用：上一轮的代码成为这一轮的起点，检查失败退回来修时不会被清空。"""
+    workdir = Path(workdir)
+    _git(workdir, "add", "-A")
+    if _git(workdir, "status", "--porcelain").strip():
+        _git(workdir, "commit", "-q", "-m", message)
+    return head(workdir)
+
+
 def reset(workdir, base):
     """回到起点：丢弃所有改动和未跟踪文件。只用在程序自己建的代码目录里。"""
     workdir = Path(workdir)

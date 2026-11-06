@@ -76,6 +76,19 @@ class CompareTest(unittest.TestCase):
         p.write_text(json.dumps(rec))
         self.assertEqual(build_digest(r)["template_hash"], "mixed")
 
+    def test_tool_step_without_model_does_not_break_the_comparison(self):
+        def with_tool_step(rid):
+            r = make_run(self.root, rid, "甲", ("ACCEPT", "DONE", "PASS"), (1, 2, 3))
+            d = r / "S5-check" / "round-1"
+            d.mkdir(parents=True)
+            (d / "record-a1.json").write_text(json.dumps({
+                "stage": "S5", "round": 1, "attempt": 1, "agent": "tool:check", "actual_model": None,
+                "configured_model": None, "verdict": "PASS", "recorded_at": "2026-11-06T12:09:00+08:00", "usage": None}))
+            return build_digest(r)
+        a, b = with_tool_step("R1"), with_tool_step("R2")
+        d = diff_digests(a, b)                                   # 以前这里会 TypeError：None 和字符串不能排序
+        self.assertFalse(any("实际模型不同" in i for i in d["comparability"]))
+
     def test_missing_usage_is_flagged(self):
         r = make_run(self.root, "R1", "甲", ("ACCEPT", "DONE", "PASS"), (1, 2, 3))
         p = next(r.glob("S3-x/round-1/record-a1.json"))

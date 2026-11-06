@@ -18,9 +18,17 @@ sd = Path.cwd() / subject
 fm = (sd / "input.md").read_text(encoding="utf-8")
 field = lambda k: re.search(rf"^{k}: (.+)$", fm, re.M).group(1).strip()
 stage, rnd = field("stage"), int(field("round"))
-if stage == "S4":  # 编码阶段：往输入里写明的代码目录里放一个文件，模拟真实编码
-    m = re.search(r"代码目录[^：\n]*：(\S+)", fm)
-    Path(m.group(1), "todo.py").write_text("print('假的待办工具')\n", encoding="utf-8")
+if stage == "S4":  # 编码阶段：往输入里写明的代码目录里放文件，模拟真实编码
+    m = re.search(r"^- 代码目录[^：\n]*：(\S+)$", fm, re.M)   # 只认“输入文件”清单里的那一行，不认任务说明里碰巧出现的字
+    wd = Path(m.group(1))
+    (wd / "tests").mkdir(exist_ok=True)
+    (wd / "todo.py").write_text(f"VERSION = {rnd}\n", encoding="utf-8")   # 每一轮内容不同，才算“有改动”
+    # 第 1 轮的测试故意失败（策略里 check_fail_first 为真），之后的轮次才通过：用来演练“检查失败 -> 退回编码 -> 修好”
+    policy_now = json.loads(policy_path.read_text())
+    broken = policy_now.get("check_fail_first") and rnd == 1
+    (wd / "tests" / "test_todo.py").write_text(
+        "import unittest\nfrom todo import VERSION\nclass T(unittest.TestCase):\n"
+        f"    def test_v(self):\n        self.assertEqual(VERSION, {99 if broken else rnd})\n", encoding="utf-8")
 policy = json.loads(policy_path.read_text())
 hang = policy.get("hang", {})
 if hang.get(stage, 0) > 0:  # F5：前 N 次在这一阶段卡住，用来触发超时

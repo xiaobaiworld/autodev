@@ -127,8 +127,11 @@ def write_record(home, run_dir, state, now=None):
            "event_id": key, "input": str(sd / "input.md"), "outputs": _files(sd, done.get("outputs", [])),
            "verdict": done.get("verdict"), "summary": done.get("summary"), "notes": [],
            "template_hash": template_hash(state.get("kind"))}
-    wr = find_worker_run(home, key)
-    if wr is None:
+    is_tool = str(step["agent"]).startswith("tool:")
+    wr = None if is_tool else find_worker_run(home, key)
+    if is_tool:  # 程序步骤：没有 Agent 也没有中台运行，它的产物（如 check.log）本身就是完整记录
+        rec["tool"] = step["agent"][len("tool:"):]
+    elif wr is None:
         rec["notes"].append("没有找到中台的运行目录，原始日志没有留存")
     else:
         rec["hub_run"] = wr.name

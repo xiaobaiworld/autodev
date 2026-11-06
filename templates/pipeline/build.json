@@ -1,7 +1,7 @@
 {
  "kind": "pipeline/build",
  "extends": "pipeline/design",
- "order": ["S1", "S2", "S3", "S4"],
+ "order": ["S1", "S2", "S3", "S4", "S5"],
  "stages": {
   "S3": {
    "on": {
@@ -14,12 +14,27 @@
    "role": "coder",
    "outputs": ["exec-report.md"],
    "verdicts": ["DONE", "BLOCK"],
-   "inputs": ["request", "analysis", "design", "plan", "workdir", "human"],
+   "inputs": ["request", "analysis", "design", "plan", "workdir", "check_prev", "human"],
    "workdir": true,
    "on": {
-    "DONE": "done"
+    "DONE": {"goto": "S5", "round": "same"}
    },
-   "task": "按开发计划在“代码目录”里实现，并写测试。只改该目录里的文件，不要执行 git 命令（提交和差异由程序处理）。写 exec-report.md，frontmatter 含 verdict、summary、files_changed（列表）、tests_added（列表）；做不下去或需要用户判断时 verdict 写 BLOCK 并说明原因。"
+   "task": "按开发计划在“代码目录”里实现，并写测试。只改该目录里的文件，不要执行 git 命令（提交和差异由程序处理）。写 exec-report.md，frontmatter 含 verdict、summary、files_changed（列表）、tests_added（列表）；做不下去或需要用户判断时 verdict 写 BLOCK 并说明原因。若输入里有“上轮检查结果”，说明上一轮代码没通过程序运行的检查：先读它，在已有代码上修复，不要推倒重来。"
+  },
+  "S5": {
+   "dir": "S5-check",
+   "runner": "tool",
+   "tool": "check",
+   "role": "checker",
+   "command": ["python3", "-m", "unittest", "discover", "-s", "tests"],
+   "outputs": ["check.log"],
+   "verdicts": ["PASS", "FAIL", "BLOCK"],
+   "workdir": true,
+   "on": {
+    "PASS": "done",
+    "FAIL": {"goto": "S4", "round": "inc", "counter": "check_rounds"}
+   },
+   "task": "程序在代码目录里运行检查命令，退出码为 0 且确实跑了测试才算通过。"
   }
  }
 }

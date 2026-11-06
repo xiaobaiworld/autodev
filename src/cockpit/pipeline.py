@@ -6,6 +6,7 @@ from pathlib import Path
 
 from cockpit.kinds import DEFAULT_KIND, KINDS
 from cockpit.store import atomic_write
+from cockpit.tools import TOOLS
 
 TEMPLATES = Path(__file__).resolve().parents[2] / "templates" / "pipeline"
 TERMINAL = {"done", "rejected", "needs-human"}  # 结论去向写成这三个字符串之一，或写成 {"goto": 阶段, "round": ..., "counter": ...}
@@ -20,6 +21,11 @@ def _check_transitions(t, path):
         for v in spec["verdicts"]:
             if v != "BLOCK" and v not in on:  # BLOCK 一律转人工，由程序处理，不用写
                 raise ValueError(f"模板 {path} 阶段 {name} 的结论 {v} 没有写去哪")
+        if spec.get("runner") == "tool":
+            if spec.get("tool") not in TOOLS:
+                raise ValueError(f"模板 {path} 阶段 {name} 用了没有注册的工具 {spec.get('tool')!r}：{sorted(TOOLS)}")
+            if spec["tool"] == "check" and not spec.get("command"):
+                raise ValueError(f"模板 {path} 阶段 {name} 的 check 工具缺少 command")
         for v, act in on.items():
             if v not in spec["verdicts"]:
                 raise ValueError(f"模板 {path} 阶段 {name} 的 on 里有不允许的结论 {v}")
@@ -69,6 +75,8 @@ def stage_roles():
     for kind in sorted(KINDS):
         if kind.startswith("pipeline/"):
             for st, spec in load_template(kind)["stages"].items():
+                if spec.get("runner") == "tool":
+                    continue  # 程序步骤没有 Agent，不生成派活规则
                 if out.setdefault(st, spec["role"]) != spec["role"]:
                     raise ValueError(f"阶段 {st} 在不同模板里角色不一致：{out[st]} 与 {spec['role']}")
     return dict(sorted(out.items()))
@@ -121,7 +129,7 @@ def next_move(state, verdict, limits):
     r = act["round"]
     new_rnd = r if isinstance(r, int) else (rnd if r == "same" else rnd + 1)
     c = act.get("counter")
-    if c and state["counters"][c] + 1 >= limits[c]:
+    if c and state["counters"].get(c, 0) + 1 >= limits[c]:
         return ("limit", stage, rnd, {c: 1})
     return ("goto", act["goto"], new_rnd, {c: 1} if c else {})
 
@@ -158,14 +166,16 @@ def write_input(root, run_dir, state):
     rid, rnd = state["id"], state["round"]
     at = lambda stg, r: run_dir / step_dir(stg, r, kind)
     latest = lambda stg: _latest_round(run_dir, stg, kind) or 1
-    # 模板里 inputs 写这一步要读哪些文件（名字 -> 路径），程序按名字取；没有的名字报错，不静默漏掉
+    # 模板里 inputs 写这一步要读哪些文件（名字 -> (说明, 路径函数)），只算这一步用到的，模板没有的阶段不会被碰到；没有的名字报错，不静默漏掉
     paths = {
-        "request": ("需求", root / "workspace" / "requests" / "active" / f"{rid}.md"),
-        "analysis": ("分析", at("S1", 1) / "analysis.md"),
-        "design": ("设计稿", at("S2", latest("S2")) / "design.md"),
-        "plan": ("开发计划", at("S2", latest("S2")) / "dev-plan.md"),
-        "review_prev": ("上轮审查意见（逐条回应，写 response.md）", at("S3", rnd - 1) / "review.md"),
-        "workdir": ("代码目录（只改这里的文件，不要执行 git 命令）", workdir_of(root, state)),
+        "request": ("需求", lambda: root / "workspace" / "requests" / "active" / f"{rid}.md"),
+        "analysis": ("分析", lambda: at("S1", 1) / "analysis.md"),
+        "design": ("设计稿", lambda: at("S2", latest("S2")) / "design.md"),
+        "plan": ("开发计划", lambda: at("S2", latest("S2")) / "dev-plan.md"),
+        "review_prev": ("上轮审查意见（逐条回应，写 response.md）", lambda: at("S3", rnd - 1) / "review.md"),
+        "workdir": ("代码目录（只改这里的文件，不要执行 git 命令）", lambda: workdir_of(root, state)),
+        "check_prev": ("上轮检查结果（由程序运行测试得到，先读它，在已有代码上修复，不要推倒重来）",
+                       lambda: at("S5", rnd - 1) / "check.log"),
     }
     files = []
     replies = sorted((run_dir / "human").glob("reply-*.md")) if (run_dir / "human").exists() else []
@@ -177,7 +187,10 @@ def write_input(root, run_dir, state):
             continue
         if name not in paths:
             raise ValueError(f"模板阶段 {st} 的 inputs 里有未知名字 {name!r}")
-        label, p = paths[name]
+        label, make = paths[name]
+        p = make()
+        if name == "check_prev" and not p.is_file():
+            continue  # 不是从检查失败退回来的（第 1 轮，或人工处理后继续），就没有这份文件
         files.append(f"- {label}：{p}")
     out = run_dir / step["dir"]
     body = (

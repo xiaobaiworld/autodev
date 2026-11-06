@@ -94,6 +94,17 @@ class FlowTest(unittest.TestCase):
         return Controller(self.root, parse_agents(CFG), parse_roles(CFG), parse_limits(CFG),
                           invoke_fn=FakeAgent({"S1": ["ACCEPT"], "S2": ["DONE"], "S3": ["PASS"]}), on_finish=on_finish)
 
+    def test_tool_step_record_has_no_hub_lookup_and_no_misleading_note(self):
+        sd = self.root / "workspace" / "runs" / "R1" / "S5-check" / "round-1"
+        sd.mkdir(parents=True)
+        (sd / "done.json").write_text(json.dumps({"outputs": ["check.log"], "verdict": "PASS", "summary": "ok"}))
+        state = {"id": "R1", "kind": "pipeline/build", "stage": "S5", "round": 1,
+                 "step": {"agent": "tool:check", "role": "checker", "dir": "S5-check/round-1", "attempt": 1,
+                          "model": None, "started_at": None}}
+        rec = json.loads(write_record(self.root / "nohome", self.root / "workspace" / "runs" / "R1", state).read_text())
+        self.assertEqual((rec["tool"], rec["notes"], rec["verdict"]), ("check", [], "PASS"))
+        self.assertNotIn("hub_run", rec)
+
     def test_record_failure_does_not_stop_the_pipeline(self):
         def boom(rd, st):
             raise RuntimeError("坏了")

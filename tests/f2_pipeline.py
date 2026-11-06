@@ -50,7 +50,7 @@ def main(fake=False, build=False):
                    env=env, capture_output=True, check=True)
     base = json.loads((home / "rules.json").read_text())
     policy = tmp / "policy.json"
-    policy.write_text(json.dumps({} if build else {"S3": ["REWORK"] * 5}))
+    policy.write_text(json.dumps({"check_fail_first": True} if build else {"S3": ["REWORK"] * 5}))
     fake_cmd = ["python3", str(ROOT / "tests/fake_stage_agent.py"), str(policy), "{prompt}"] if (fake or build) else None
     rules = build_rules(base, agents, roles, str(work / "workspace"), effort="low", fake_command=fake_cmd)
     (home / "rules.json").write_text(json.dumps(rules, ensure_ascii=False, indent=1))
@@ -82,14 +82,21 @@ def main(fake=False, build=False):
             v = json.loads(dj.read_text()).get("verdict") if dj.exists() else None
             print(f"  {d.relative_to(rd)}: verdict={v} 产物={sorted(p.name for p in d.iterdir() if p.name != 'done.json')}")
         recs = sorted(rd.glob("S*/round-*/record-a*.json"))
-        bad = [r.name for r in recs if not json.loads(r.read_text()).get("hub_run") or not (r.parent / "agent-a1.log").exists()]
+        is_tool = lambda r: json.loads(r.read_text()).get("tool")        # 程序步骤（S5）没有中台运行和 Agent 日志，不按这条查
+        bad = [r.name for r in recs if not is_tool(r) and (not json.loads(r.read_text()).get("hub_run")
+                                                           or not (r.parent / "agent-a1.log").exists())]
         print(f"记录 {len(recs)} 份，缺中台运行号或日志的：{bad or '无'}")
-        if build:  # 假 Agent 跑 S1 到 S4：必须结束在 S4，有 diff.patch，且代码目录里确实有假 Agent 写的文件
-            patch = rd / "S4-code" / "round-1" / "diff.patch"
+        if build:  # 假 Agent 跑 S1 到 S5：第 1 轮测试故意失败 -> S5 判 FAIL -> 退回 S4 在已有代码上修好 -> S5 PASS
             wd = work / "workspace" / "projects" / "toy" / rid
-            ok = (st["status"] == "done" and st["stage"] == "S4" and patch.exists() and "todo.py" in patch.read_text()
-                  and (wd / "todo.py").exists() and len(recs) == 4 and not bad)
-            print(f"S4：diff.patch {'有' if patch.exists() else '没有'}，代码目录文件 {sorted(p.name for p in wd.iterdir() if p.name != '.git')}")
+            p1, p2 = rd / "S4-code" / "round-1" / "diff.patch", rd / "S4-code" / "round-2" / "diff.patch"
+            c1, c2 = rd / "S5-check" / "round-1" / "check.log", rd / "S5-check" / "round-2" / "check.log"
+            checks = [(c.read_text() if c.exists() else "") for c in (c1, c2)]
+            ok = (st["status"] == "done" and st["stage"] == "S5" and p1.exists() and p2.exists()
+                  and "FAIL" in checks[0] and "退出码 1" in checks[0] and "退出码 0" in checks[1]
+                  and "-VERSION = 1" in p2.read_text() and "+VERSION = 2" in p2.read_text()   # 第 2 轮是在第 1 轮代码上改的
+                  and not bad)
+            print(f"S5 第1轮 {'失败' if '退出码 1' in checks[0] else '没失败?'}，第2轮 {'通过' if '退出码 0' in checks[1] else '没通过?'}；"
+                  f"代码目录 {sorted(p.name for p in wd.iterdir() if p.name != '.git')}；记录 {len(recs)} 份")
         elif fake:  # 3 次 REWORK 用完审查轮次，必须停在 needs-human，且发生过 limit.exceeded，S2 做过 3 轮
             ok = (st["status"] == "needs-human" and "limit.exceeded" in events
                   and len(list(rd.glob("S2-design/round-*"))) == 3 and st["counters"]["design_review_rounds"] == 3

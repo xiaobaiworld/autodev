@@ -90,7 +90,8 @@ def diff_digests(a, b):
     sa, sb = {s["has_scope_note"] for s in a["steps"]}, {s["has_scope_note"] for s in b["steps"]}
     if sa != sb:  # 看 Agent 实际收到的 input.md，比看模板更准
         issues.append(f"步骤输入不同：范围说明 {'有' if True in sa else '无'} → {'有' if True in sb else '无'}（这是被比较的改动）")
-    ma = sorted({s["model"] for s in a["steps"]}); mb = sorted({s["model"] for s in b["steps"]})
+    ma = sorted({s["model"] for s in a["steps"] if s["model"]})   # 程序步骤没有模型（None），不参与比较，也不能和字符串一起排序
+    mb = sorted({s["model"] for s in b["steps"] if s["model"]})
     if ma != mb:
         issues.append(f"实际模型不同：{ma} → {mb}")
     if a["summary"]["total"]["no_usage"] or b["summary"]["total"]["no_usage"]:
