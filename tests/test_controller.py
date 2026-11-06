@@ -40,7 +40,7 @@ class FakeAgent:
         v = self.verdicts[stage].pop(0)
         (Path(sd) / "done.json").write_text(json.dumps({
             "id": g("id"), "stage": stage, "round": rnd, "role": g("role"),
-            "outputs": OUTS[stage], "verdict": v}))
+            "outputs": OUTS[stage], "verdict": v, "summary": "测试"}))
         return {"ok": True, "reason": None}
 
 

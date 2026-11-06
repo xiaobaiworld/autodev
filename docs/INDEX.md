@@ -42,7 +42,7 @@
 
 | 路径 | 内容 |
 | --- | --- |
-| `src/driver/` | 向 autoloop 中台发事件、读事实流（`hub.py`、`runner.py`）；生成并安装规则（`setup.py`）；正式入口 `run.py` |
+| `src/driver/` | 向 autoloop 中台发事件、读事实流（`hub.py`、`runner.py`）；每步写记录（`record.py`）；生成并安装规则（`setup.py`）；正式入口 `run.py` |
 | `src/cockpit/` | 需求类型登记（`kinds.py`）；阶段表加载与校验（`pipeline.py`，阶段表本身在 `templates/pipeline/`）、主循环（`controller.py`）、状态落盘（`store.py`）、`config.yaml` 读取（`agents.py`）。窗格驱动的旧方案已在 F6 移除 |
 | `templates/pipeline/` | 流水线模板：每个 `pipeline/*` 类型一个 JSON，写阶段顺序、角色、产物、可选结论和任务说明；改这里即改下一次运行 |
 | `src/dashboard/` | 命令行看板与日志窗格 |

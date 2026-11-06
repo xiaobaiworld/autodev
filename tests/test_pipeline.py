@@ -18,7 +18,7 @@ def st(stage="S3", rnd=1, used=0):
 def done(stage="S3", rnd=1, **kw):
     role = {"S1": "analyst", "S2": "designer", "S3": "design_reviewer"}[stage]
     d = {"id": "R1", "stage": stage, "round": rnd, "role": role,
-         "outputs": ["review.md"], "verdict": "PASS"}
+         "outputs": ["review.md"], "verdict": "PASS", "summary": "审查完成"}
     d.update(kw)
     return d
 
@@ -44,6 +44,13 @@ class ValidateTest(unittest.TestCase):
     def test_wrong_round(self):
         self.put(done(rnd=2))
         self.assertIn("round", validate_done(self.run, st()))
+
+    def test_missing_or_blank_summary_is_refused(self):
+        for bad in (None, "", "  "):
+            d = done()
+            d["summary"] = bad
+            self.put(d)
+            self.assertIn("summary", validate_done(self.run, st()))
 
     def test_bad_verdict(self):
         self.put(done(verdict="DONE"))

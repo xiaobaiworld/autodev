@@ -34,6 +34,6 @@ for name in OUTPUTS[stage]:
     (sd / name).write_text(f"---\nverdict: {verdict}\n---\n假产物\n", encoding="utf-8")
 (sd / "done.json").write_text(json.dumps({
     "id": field("id"), "stage": stage, "round": rnd, "role": field("role"),
-    "outputs": OUTPUTS[stage], "verdict": verdict,
+    "outputs": OUTPUTS[stage], "verdict": verdict, "summary": f"假 {stage} 第 {rnd} 轮，结论 {verdict}",
     "finished_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}), encoding="utf-8")
 print(f"没事可做：假 {stage} 第 {rnd} 轮 {verdict}")

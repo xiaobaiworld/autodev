@@ -273,9 +273,12 @@ Agent 最后一步写入。程序只以此文件判断完成。
   "role": "design_reviewer",
   "outputs": ["review.md"],
   "verdict": "REWORK",
+  "summary": "审查了设计稿，缺少可直接运行的命令入口，要求返工。",
   "finished_at": "2026-11-02T23:58:12+08:00"
 }
 ```
+
+`summary`（2026-11-06 起必填）：一两句话写清做了什么、为什么这么做，由 Agent 写；“为什么”只能由它给。
 
 校验：
 
@@ -283,8 +286,23 @@ Agent 最后一步写入。程序只以此文件判断完成。
 2. `outputs` 中每个文件都存在于本步骤目录。
 3. `verdict` 在该角色允许的取值内（见 7.3）。
 4. 产物 frontmatter 中的 `verdict` 与此处一致。
+5. `summary` 是非空字符串。
 
 任一失败记为 `invalid_output`。
+
+### 7.2.1 步骤记录（record-a<次>.json）
+
+每步完成后由程序写在步骤目录里（`src/driver/record.py`），只记程序能确定的事实；`summary` 从 `done.json` 原样带上。同目录还有 `agent-a<次>.log`，是 Agent 原始输出的副本。写记录失败只会多一条 `record.failed` 事件，不影响流转。
+
+| 字段 | 含义 |
+| --- | --- |
+| id、kind、stage、round、attempt、role、agent | 这是哪一步 |
+| configured_model / actual_model | 配置的模型 / 日志里实际用的；两者对不上时 `notes` 会写 |
+| event_id、hub_run | 发给中台的事件 id、中台运行号（`<号>-<次>`） |
+| input、outputs、verdict、summary | 输入文件、输出文件、结论、Agent 写的理由 |
+| usage、cost_usd、duration_ms | 用量；Claude 有费用和耗时，Codex 日志里没有 |
+| agent_final_message、commands_run、files_changed、reasoning | Agent 最后一条消息；执行命令数；改动的文件；Codex 的推理摘要（Claude 日志里没有） |
+| log、notes | 日志副本路径；取不到的东西在这里说明 |
 
 ### 7.3 各角色产物与结论取值
 

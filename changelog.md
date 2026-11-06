@@ -28,3 +28,4 @@
 - F4：阶段表、角色、产物、结论、任务说明移到 templates/pipeline/design.json，pipeline.py 与规则生成都从它读；新增 tests/test_templates.py
 - F5：新增 tests/f5_crash.py（假 Agent、真实中台）：Agent 卡住被超时取消并重试且无残留进程；驱动 kill -9 后重启不重复发同一轮；中台 kill -9 重启后在途一轮自行完成。假 Agent 支持前 N 次卡住
 - F6：移除窗格驱动的 claim/config/main/invoke/status 及其测试，Controller 不再有 hc 与 panes，agents.py 去掉 launch_cmd，config.yaml 去掉 scheduler 与 cockpit 段，新记录不再写 pane_id；显示宽度函数挪到 src/dashboard/width.py
+- 每步记录：done.json 新增必填 summary（做了什么、为什么）；新增 src/driver/record.py，每步完成后写 record-a<次>.json 并留存 Agent 原始日志；记录写失败只记 record.failed 事件。真实 Agent 跑通（R20261106-003，221 秒，2 轮）

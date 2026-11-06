@@ -35,10 +35,11 @@ def start_run(root, request_text, project, ctrl, today=None, kind=DEFAULT_KIND):
 
 
 class Controller:
-    def __init__(self, root, agents, roles, limits, invoke_fn, clock=None):
+    def __init__(self, root, agents, roles, limits, invoke_fn, clock=None, on_finish=None):
         self.root = Path(root)
         self.agents, self.roles, self.limits = agents, roles, limits
         self.invoke_fn = invoke_fn
+        self.on_finish = on_finish  # 步骤完成后调用 (run_dir, state)，用来写记录；它出错不影响流程
         self.now = clock or (lambda: datetime.now().astimezone())
         check_vendors(agents, roles)
 
@@ -98,7 +99,12 @@ class Controller:
     def _finish(self, run, state):
         d = json.loads((run.dir / state["step"]["dir"] / "done.json").read_text(encoding="utf-8"))
         step = dict(state["step"], state="finished", verdict=d["verdict"], fail_reason=None)
-        run.commit(dict(state, step=step), "step.finished", data={"verdict": d["verdict"]})
+        run.commit(dict(state, step=step), "step.finished", data={"verdict": d["verdict"], "summary": d["summary"]})
+        if self.on_finish:
+            try:
+                self.on_finish(run.dir, state)
+            except Exception as e:  # 记录是附加的，写不出来只留一条事件，不拖垮流水线
+                run.commit(run.read(), "record.failed", data={"error": f"{type(e).__name__}: {e}"})
         return f"{state['stage']} 完成：{d['verdict']}"
 
     def _after_failure(self, run, state):

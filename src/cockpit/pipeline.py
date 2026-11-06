@@ -43,6 +43,8 @@ def validate_done(run_dir, state):
             return f"done.json 的 {k} 是 {d.get(k)!r}，应为 {want!r}"
     if d.get("verdict") not in stage["verdicts"]:
         return f"verdict {d.get('verdict')!r} 不在 {stage['verdicts']}"
+    if not isinstance(d.get("summary"), str) or not d["summary"].strip():
+        return "done.json 缺少 summary（一两句话：做了什么、为什么这么做）"
     outs = d.get("outputs")
     if not isinstance(outs, list):
         return "outputs 不是列表"
@@ -104,6 +106,7 @@ def write_input(root, run_dir, state):
         f"## 输出要求\n产物与 done.json 都写到 {out}，一律用文件写入工具，不要用 shell 命令写文件。"
         f"最后写 done.json，内容为 JSON 对象，字段：\n"
         f'id="{rid}"，stage="{st}"，round={rnd}，role="{step["role"]}"，'
+        f"summary=一两句话写清做了什么、为什么这么做（不能为空），"
         f"outputs=产物文件名列表（须包含 {spec['outputs']}），"
         f"verdict 取 {spec['verdicts']} 之一，且与产物 frontmatter 的 verdict 一致，finished_at 为 ISO 时间。\n\n"
         "## 必须停止并写 BLOCK 的情况\n删除数据、修改密钥或凭证、修改权限、对外发送消息、花钱、改变产品方向。"

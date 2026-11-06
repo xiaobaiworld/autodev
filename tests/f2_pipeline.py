@@ -21,6 +21,7 @@ from cockpit.agents import parse_agents, parse_limits, parse_roles  # noqa: E402
 from cockpit.controller import Controller, start_run  # noqa: E402
 from cockpit.store import Run  # noqa: E402
 from driver.hub import Hub, load_config  # noqa: E402
+from driver.record import write_record  # noqa: E402
 from driver.runner import make_invoke  # noqa: E402
 from driver.setup import build_rules  # noqa: E402
 
@@ -66,7 +67,8 @@ def main(fake=False):
             time.sleep(0.1)
         hub = Hub(load_config(home))
         ctrl = Controller(work, agents, roles, limits,
-                          invoke_fn=make_invoke(hub, limits["step_retries"]))
+                          invoke_fn=make_invoke(hub, limits["step_retries"]),
+                          on_finish=lambda rd, st: write_record(home, rd, st))
         rid = start_run(work, REQUEST, "toy", ctrl)
         rd = work / "workspace" / "runs" / rid
         t0 = time.time()
@@ -78,9 +80,13 @@ def main(fake=False):
             dj = d / "done.json"
             v = json.loads(dj.read_text()).get("verdict") if dj.exists() else None
             print(f"  {d.relative_to(rd)}: verdict={v} 产物={sorted(p.name for p in d.iterdir() if p.name != 'done.json')}")
+        recs = sorted(rd.glob("S*/round-*/record-a*.json"))
+        bad = [r.name for r in recs if not json.loads(r.read_text()).get("hub_run") or not (r.parent / "agent-a1.log").exists()]
+        print(f"记录 {len(recs)} 份，缺中台运行号或日志的：{bad or '无'}")
         if fake:  # 3 次 REWORK 用完审查轮次，必须停在 needs-human，且发生过 limit.exceeded，S2 做过 3 轮
             ok = (st["status"] == "needs-human" and "limit.exceeded" in events
-                  and len(list(rd.glob("S2-design/round-*"))) == 3 and st["counters"]["design_review_rounds"] == 3)
+                  and len(list(rd.glob("S2-design/round-*"))) == 3 and st["counters"]["design_review_rounds"] == 3
+                  and len(recs) == 7 and not bad)
         else:
             ok = st["status"] == "done" and st["stage"] == "S3"
     finally:
