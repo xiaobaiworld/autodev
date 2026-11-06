@@ -1,7 +1,7 @@
 """命令行看板的渲染：输入中台 /v1/state 和我们自己的 state.json，输出一屏文字。纯函数，不碰网络。"""
 from datetime import datetime
 
-from cockpit.status import _w  # 按显示宽度对齐中文
+from dashboard.text import width as _w  # 按显示宽度对齐中文
 
 RUN_STATE = {"claimed": "运行中", "queued": "排队", "nothing": "已结束", "done": "已结束", "cancelled": "已取消"}
 

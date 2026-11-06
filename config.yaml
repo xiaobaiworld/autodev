@@ -47,7 +47,7 @@ roles:                    # 审查角色与作者的模型厂商必须不同
   design_reviewer: { agent: codex }
   coder:           { agent: codex }
   code_reviewer:   { agent: claude-opus }
-  acceptor:        { agent: agy }
+  acceptor:        { agent: claude-opus }   # 设计原定 agy；agy 的实际模型/用量没验证过、规则生成也还不支持它，先用 Claude，见 DECISIONS D015
   retrospector:    { agent: claude-opus }
   retro_reviewer:  { agent: codex }
 
@@ -58,15 +58,7 @@ limits:
   design_review_rounds: 3
   check_rounds: 3
   code_review_rounds: 3
+  usage_rounds: 3         # S7U 使用验证失败退回编码的上限
   acceptance_rounds: 2
   step_retries: 2
   step_timeout_minutes: 60
-
-scheduler:
-  runner: hc            # herdr-core 命令行，见设计文档 3.2
-  poll_seconds: 15
-
-cockpit:                # 驾驶舱，见 docs/archive/2026-11-05-cockpit.md
-  claim: label          # 认领主方式：label（标签）或 address（手填，读 workspace/cockpit.json）
-  refresh_seconds: 2
-  panes: [claude-opus, codex, agy]   # 需要认领的角色，与 agents 的键一致

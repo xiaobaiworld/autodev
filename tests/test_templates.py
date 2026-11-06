@@ -23,6 +23,13 @@ class TemplateTest(unittest.TestCase):
         for s in pipeline.STAGES.values():
             self.assertIn(s["role"], roles)
 
+    def test_build_template_resolves_all_stages_and_routes(self):
+        template = pipeline.load_template("pipeline/build")
+        self.assertEqual(template["order"], ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S7U", "S8", "S9"])
+        state = {"stage": "S8", "round": 1, "counters": {"acceptance_rounds": 0}}
+        self.assertEqual(pipeline.next_move(state, "PASS", {"acceptance_rounds": 2}, template)[:3], ("goto", "S9", 1))
+        self.assertEqual(template["stages"]["S9"]["gate"], "human")
+
     def test_rules_are_derived_from_the_template(self):
         self.assertEqual([r for _, r in RULE_STAGES], [pipeline.STAGES[k]["role"] for k in pipeline.ORDER])
 

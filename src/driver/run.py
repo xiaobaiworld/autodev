@@ -1,4 +1,4 @@
-"""正式入口：把规则装进指定的 autoloop 中台，再用 Controller 跑一个需求的 S1 到 S3。
+"""正式入口：将选定模板的 Agent 规则装入指定中台并推进一条需求。
 
 python3 -m driver.run --home <autoloop 数据目录> --root <AutoDev 根目录> --request <需求.md> [--effort low]
 中台要已经在运行（agent-autoloop up）。看板与日志窗格读同一个 home 和 root，所以能实时看到这次运行。
@@ -26,6 +26,8 @@ def main(argv=None):
     ap.add_argument("--home", required=True, help="agent-autoloop 数据目录（含 config.json、rules.json）")
     ap.add_argument("--root", default=str(AUTODEV), help="放 workspace/runs 的目录，看板读这里")
     ap.add_argument("--request", required=True, help="需求正文文件")
+    ap.add_argument("--kind", default="pipeline/design", help="流水线类型，如 pipeline/build")
+    ap.add_argument("--project", default="toy", help="隔离代码目录使用的项目名")
     ap.add_argument("--effort", default=None, help="覆盖 config 里的强度，如 low")
     ap.add_argument("--config", default=str(AUTODEV / "config.yaml"))
     a = ap.parse_args(argv)
@@ -35,13 +37,12 @@ def main(argv=None):
         text = Path(a.config).read_text(encoding="utf-8")
         agents, roles, limits = parse_agents(text), parse_roles(text), parse_limits(text)
         base = json.loads((home / "rules.json").read_text(encoding="utf-8"))
-        rules = build_rules(base, agents, roles, str(root / "workspace"), effort=a.effort)
+        rules = build_rules(base, agents, roles, str(root / "workspace"), effort=a.effort, kind=a.kind)
         hub = Hub(load_config(home))
         hub.state()  # 中台没起来就在这里失败，不要先改规则
         backup = install_rules(home, rules)
-        ctrl = Controller(root, None, agents, roles, {k: "hub" for k in agents}, limits,
-                          invoke_fn=make_invoke(hub))
-        rid = start_run(root, Path(a.request).read_text(encoding="utf-8"), "toy", ctrl)
+        ctrl = Controller(root, agents, roles, limits, invoke_fn=make_invoke(hub), kind=a.kind)
+        rid = start_run(root, Path(a.request).read_text(encoding="utf-8"), a.project, ctrl, kind=a.kind)
     except (OSError, ValueError, KeyError, LockError, SetupError, HubError) as e:
         print(f"启动失败：{e}", file=sys.stderr)
         return 1

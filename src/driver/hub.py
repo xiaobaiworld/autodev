@@ -19,7 +19,7 @@ class HubError(Exception):
 
 def load_config(home):
     d = json.loads((Path(home) / "config.json").read_text(encoding="utf-8"))
-    return {"url": d["url"], "owner": d["owner"], "source": d["source"]["key"]}
+    return {"url": d["url"], "owner": d["owner"], "source": d["source"]["key"], "home": str(home)}
 
 
 class RunTracker:
@@ -68,6 +68,23 @@ class RunTracker:
 class Hub:
     def __init__(self, cfg):
         self.url, self.owner, self.source = cfg["url"], cfg["owner"], cfg["source"]
+        self.home = Path(cfg["home"]) if cfg.get("home") else None
+
+    def agent_log(self, run_id):
+        """读取中台落盘的最后一次 worker 输出；缺失时返回空文本。"""
+        if self.home is None:
+            return ""
+        folders = sorted((self.home / "worker" / "runs").glob(f"{run_id}-*"),
+                         key=lambda p: int(p.name.rsplit("-", 1)[-1]) if p.name.rsplit("-", 1)[-1].isdigit() else 0)
+        if not folders:
+            return ""
+        folder = folders[-1]
+        parts = []
+        for name in ("stdout-1.log", "stderr-1.log", "command-1.sh"):
+            path = folder / name
+            if path.is_file():
+                parts.append(f"===== {name} =====\n{path.read_text(encoding='utf-8', errors='replace')}")
+        return "\n\n".join(parts)
 
     def _call(self, path, key, body=None, method=None, timeout=15):
         data = None if body is None else json.dumps(body).encode()

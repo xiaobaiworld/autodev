@@ -17,7 +17,7 @@ def st(stage="S3", rnd=1, used=0):
 
 def done(stage="S3", rnd=1, **kw):
     role = {"S1": "analyst", "S2": "designer", "S3": "design_reviewer"}[stage]
-    d = {"id": "R1", "stage": stage, "round": rnd, "role": role,
+    d = {"id": "R1", "stage": stage, "round": rnd, "role": role, "summary": "已完成",
          "outputs": ["review.md"], "verdict": "PASS"}
     d.update(kw)
     return d
@@ -29,7 +29,7 @@ class ValidateTest(unittest.TestCase):
         self.run = Path(self.tmp.name)
         self.sd = self.run / step_dir("S3", 1)
         self.sd.mkdir(parents=True)
-        (self.sd / "review.md").write_text("x")
+        (self.sd / "review.md").write_text("## 原文对照\n\n逐条核对。\n")
 
     def tearDown(self):
         self.tmp.cleanup()

@@ -1,8 +1,4 @@
-"""把 Controller 的"调用一次 Agent"换成：向 autoloop 中台发事件，读事实流等这一轮结束。
-
-返回值和 cockpit.invoke.invoke 一致：{"ok": bool, "reason": None|timeout|command_failed}。
-完成与否仍由 Controller 按 done.json 校验，这里只回答"中台那一轮有没有跑完"。
-"""
+"""把 Controller 的 Agent 调用交给 autoloop，并从事实流等待结束。"""
 import re
 import time
 
@@ -25,7 +21,12 @@ def subject_of(state):
 def make_invoke(hub, hub_retries=0, tracker=None, clock=time.monotonic, sleep=time.sleep, poll_s=30):
     tracker = tracker or RunTracker()  # ponytail: 从序号 0 重放整个日志；历史很大时改为只读最近序号
 
-    def invoke(_hc, _pane, sd, _launch, _prompt, timeout_s, exit_keys=None):  # 与 Controller 的调用签名一致
+    def capture(result):
+        if result and result.get("hub_run_id"):
+            result["agent_log"] = hub.agent_log(result["hub_run_id"])
+        return result
+
+    def invoke(sd, _launch, _prompt, timeout_s):
         run_dir = sd.parents[1]
         state = Run(run_dir).read()
         key = event_id(state)
@@ -36,10 +37,11 @@ def make_invoke(hub, hub_retries=0, tracker=None, clock=time.monotonic, sleep=ti
             return {"ok": False, "reason": "command_failed", "detail": str(e)}
         deadline = clock() + timeout_s
         while True:
+            remaining = max(0.1, deadline - clock())
             try:
-                for fact in hub.facts(after=tracker.seq, timeout=poll_s):
+                for fact in hub.facts(after=tracker.seq, timeout=min(poll_s, remaining)):
                     tracker.feed(fact)
-                    done = _judge(hub, tracker, key, hub_retries)
+                    done = capture(_judge(hub, tracker, key, hub_retries))
                     if done:
                         return done
                     if clock() >= deadline:
@@ -49,13 +51,15 @@ def make_invoke(hub, hub_retries=0, tracker=None, clock=time.monotonic, sleep=ti
                 sleep(min(5, max(0, deadline - clock())))
                 if clock() >= deadline:
                     return {"ok": False, "reason": "command_failed", "detail": last}
-            done = _judge(hub, tracker, key, hub_retries)
+            done = capture(_judge(hub, tracker, key, hub_retries))
             if done:
                 return done
             if clock() >= deadline:
                 st = tracker.status(key)
                 if st:
                     _try_cancel(hub, st["run"])
+                    return capture({"ok": False, "reason": "timeout", "hub_run_id": st["run"],
+                                    "hub_attempts": st["attempts"], "detail": st.get("error")})
                 return {"ok": False, "reason": "timeout"}
 
     return invoke
@@ -67,12 +71,14 @@ def _judge(hub, tracker, key, hub_retries):
         return None
     if st["state"] == "ended":
         if st["raw"] == "cancelled":  # 中台连续失败后放弃、或被人取消
-            return {"ok": False, "reason": "command_failed", "detail": st.get("summary")}
-        return {"ok": True, "reason": None}
+            return {"ok": False, "reason": "command_failed", "detail": st.get("summary"),
+                    "hub_run_id": st["run"], "hub_attempts": st["attempts"]}
+        return {"ok": True, "reason": None, "hub_run_id": st["run"], "hub_attempts": st["attempts"]}
     # 确定性进程失败交给 Controller 重新派新事件，不等中台的分钟级退避。
     if st["attempts"] > hub_retries:
         _try_cancel(hub, st["run"])
-        return {"ok": False, "reason": "command_failed", "detail": st.get("error")}
+        return {"ok": False, "reason": "command_failed", "detail": st.get("error"),
+                "hub_run_id": st["run"], "hub_attempts": st["attempts"]}
     return None
 
 

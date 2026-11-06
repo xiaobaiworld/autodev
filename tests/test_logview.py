@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from cockpit.status import _w
+from dashboard.text import width as _w
 from dashboard.logview import fit, format_line, latest_log, tail_lines
 
 

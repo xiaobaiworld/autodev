@@ -4,28 +4,29 @@
 
 - 起点：`5f6d270236bbde987ce890a704eee3132f00f8bf`，F4 完成后；在独立 worktree 分支 `codex-luna-rerun` 重做后续工作。
 - 中台锁定 `/Users/bai/code/agent-autoloop` 的 `8f8e2eef3cfaa8f7a418818adc442450fe6bd884`；运行数据使用全新独立目录，保留旧运行数据。
-- 真实需求原文：`requests/demo-todo-cli.md`；B/C 层设置固定为 Sonnet 终点 `6b66cd7` 的模型绑定与流水线模板，真实运行 effort 为 `low`。
+- 真实需求原文：`requests/demo-todo-cli.md`（SHA-256 `9df8bf7d6e2ef78eeece1ae4af10d12a1450c378996313da3d640d4480f0fad1`）；B/C 层配置与 Sonnet 终点 `6b66cd7` 一致，真实运行 effort 为 `low`。两份当前工作树里的模板哈希相同，但 Sonnet R010 当时没有 S7U；当前模板哈希不能证明历史运行使用的版本。
 - 仅在隔离演示项目 `todo` 中运行；不触碰 `personagent`，不推送、不部署，不动 Herdr `pro1`。用户已授权按默认值完成 S9 的本次本地发布。
-- 起点单测实测 **149 项通过**（下面原始进度记录中的 144 是过时数字）。
-- 当前步骤：从 F5 开始补完 F5/F6、每步运行记录和比对、S4–S9；完成单测和联机场景后真实跑 S1–S9；生成并对照驾驶员报告，记录证据与未验证范围。
+- 当前 worktree：单测 **130 项通过**；F2 完整假 Agent S1–S9、设计返工上限，以及 F5 hang/crash/ctrl-kill/hub-kill 均通过。`driver.reply continue` 现会实际继续推进；F2 已调用真实 CLI 验证 S9 发布。
+- 已完成：真实 Luna 运行 `R20261107-001` 到 S9 并本地结束发布；复核 S1–S9 全部产物；对照 Sonnet R010 的应用代码、各阶段报告与 A 层会话报告；将结果写入 `docs/reports/2026-11-07-session-report-luna.md`。
+- 后续建议：修复运行比较器的阶段/输入差异识别，保存运行时配置和模板快照，记录有效 effort，统一验证 Claude/Codex 的模型与 token 口径，并把 S7U 文件断言结果传给 S8。当前比较报告已明确这些数据不能用于模型胜负或 token 成本结论。
 
 ---
 
-更新：2026-11-06 ｜ 阶段：以 agent-autoloop 为地基的集成（F0 到 F2 完成，F3 进行中）
+历史进度：2026-11-06 ｜ 以 agent-autoloop 为地基的集成（供追溯；当前状态以本文顶部为准）
 
 ## 恢复上下文时先读
 
 1. 本文件（尤其是下面的“换窗口接手时要知道”）
 2. `docs/design/2026-11-05-autoloop-foundation.md`：当前主线方案（F0 到 F6 步骤、结构、待决）
-3. `docs/DECISIONS.md`：D001 到 D014（D014 是用 autoloop 做地基）
-4. `docs/lessons.md`：L001 到 L012，开始新功能前先扫一遍
+3. `docs/DECISIONS.md`：D001 到 D015（D014 是用 autoloop 做地基）
+4. `docs/lessons.md`：L001 到 L013，开始新功能前先扫一遍
 5. `docs/MODELS.md`：模型名只写完整 ID
 6. `docs/design/2026-11-02-autodev-design.md`：流程设计（第 3.2、3.3、5 节已被地基方案部分取代，见各节顶部说明）
 7. `docs/DATA_SPEC.md`、`config.yaml`
 8. 全局规范：`~/Library/Mobile Documents/com~apple~CloudDocs/agent/coding/AI编程全局规范/GLOBAL_DEV_WORKFLOW.md`
 9. 换机器时另读 `AGENT_HANDOFF.md`
 
-## 当前状态
+## 历史状态（2026-11-06）
 
 - 地基：agent-autoloop 检出在 `~/code/agent-autoloop`，锁定提交 `8f8e2ee`。中台管派活、排队、重试、租约、事实日志、卡片；Agent 以无界面进程运行（Claude `-p`、Codex `exec`、agy `-p`）。
 - 我们的部分放在中台外面：`src/driver/` 向中台发事件、读事实流；`src/cockpit/pipeline.py`、`controller.py`、`store.py` 管阶段、轮次上限、厂商不同检查、产物校验与状态落盘。
@@ -36,7 +37,7 @@
 - 需求有了 `kind` 字段（路径写法，大类/子类），目前只登记 `pipeline/design`，在 `src/cockpit/kinds.py`；看板每个需求显示它，老记录显示“未分类”。
 - 测试：144 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
 
-## 下一步
+## 当时计划（2026-11-06，已由顶部的复测目标替代）
 
 1. F3 剩余：Web 界面后做；真实审查者给出 REWORK 时看板和日志是否好用，还没见过。
 2. 写 `pro2` 布局重建脚本（用户问过“能否保存”，桌面应用没有保存命令，建议用脚本重建）。
@@ -45,7 +46,7 @@
 5. F6 清理：移除不再需要的窗格驱动代码（`src/cockpit/` 的 `claim.py`、`invoke.py`、`config.py`、`main.py`、`status.py` 中不再用的部分），回写设计文档第 3、5、9 节。
 6. 未验证项：agy 的实际模型名与用量；真实审查者给出 REWORK 并回应意见；强度参数在 Claude 启动参数里的写法；`/v1/stream` 从序号 0 重放在历史很大时的开销。
 
-## 换窗口接手时要知道（仓库里没有的东西）
+## Sonnet 基线环境（不用于 Luna 复跑）
 
 - 演示用中台在 `/tmp/autodev-demo`（`home/` 是 autoloop 数据目录，`al` 是带环境变量的包装脚本）。它跑在 Herdr `pro2` 空间右下窗格（`hc` 地址 `t1n`，标签 `autodev-log`），端口 3399。`/tmp` 重启后会没，丢了就重建：`init --command '<假 Agent> {prompt}' --no-service --port 3399`，再 `up`。
 - `pro2` 空间三格：左 `t1k`（日志窗格 `python3 -m dashboard.logpane --home /tmp/autodev-demo/home`）、右上 `t1m`（看板 `python3 -m dashboard --home /tmp/autodev-demo/home --root ~/code/autodev`，都要加 `PYTHONPATH=src`）、右下 `t1n`（中台）。窗格丢了用 `herdr-app` 重建，见 `docs/TOOLS.md` 第 2 节；布局重建脚本还没写。
@@ -55,7 +56,7 @@
 - 线上 autoloop 的最新只读副本在 `/tmp/aal-latest`（`d3e6d26`），本机锁定的 `~/code/agent-autoloop` 仍是 `8f8e2ee`，没升级。
 - 已知小问题：`docs/INDEX.md` 里 `src/cockpit/` 一行没提 `kinds.py`；窗格驱动的旧代码还没清（F6）。
 
-## 刚做完 / 马上做
+## F4 阶段的记录（历史）
 
 - 刚做完：需求加了 `kind` 字段（`src/cockpit/kinds.py`，现只登记 `pipeline/design`，路径写法，以后分子类只多登记一行）。
 - 马上做：F4 模板（角色模板与规则从一处生成，模板里要有“适用于哪个 kind”的字段）。

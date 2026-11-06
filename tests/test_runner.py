@@ -35,6 +35,9 @@ class FakeHub:
     def cancel(self, run):
         self.cancelled.append(run)
 
+    def agent_log(self, run):
+        return ""
+
     def facts(self, after=0, timeout=60):
         if self.batches:
             yield from self.batches.pop(0)
@@ -71,7 +74,7 @@ class RunnerTest(unittest.TestCase):
             yield from orig(after, timeout)
         hub.facts = facts
         inv = make_invoke(hub, hub_retries=retries, clock=self.clock.now, sleep=self.clock.sleep)
-        return inv(None, "x", self.sd, "", "", timeout_s=timeout_s, exit_keys=("ctrl+c",))
+        return inv(self.sd, "", "", timeout_s=timeout_s)
 
     def test_subject_and_event_id_shape(self):
         s = subject_of(Run(self.run_dir).read())
@@ -82,7 +85,8 @@ class RunnerTest(unittest.TestCase):
     def test_success(self):
         hub = FakeHub([[fact(1, EV, LINK, run_row("queued")), fact(2, run_row("claimed")),
                         fact(3, run_row("nothing", summary="ok"))]])
-        self.assertEqual(self.call(hub), {"ok": True, "reason": None})
+        self.assertEqual(self.call(hub), {"ok": True, "reason": None, "hub_run_id": 7,
+                                          "hub_attempts": 0, "agent_log": ""})
         self.assertEqual(hub.emitted[0][:3], (event_id(STATE), "stage.s1", subject_of(STATE)))
 
     def test_hub_gave_up_is_command_failed(self):
@@ -106,7 +110,8 @@ class RunnerTest(unittest.TestCase):
     def test_within_retry_limit_keeps_waiting_until_success(self):
         hub = FakeHub([[fact(1, EV, LINK, run_row("queued")), fact(2, run_row("queued", attempts=1, error="x"))],
                        [fact(3, run_row("claimed", attempts=1)), fact(4, run_row("nothing", attempts=1))]])
-        self.assertEqual(self.call(hub), {"ok": True, "reason": None})
+        self.assertEqual(self.call(hub), {"ok": True, "reason": None, "hub_run_id": 7,
+                                          "hub_attempts": 1, "agent_log": ""})
         self.assertEqual(hub.cancelled, [])
 
     def test_timeout_cancels_and_reports(self):

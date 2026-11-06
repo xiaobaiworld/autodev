@@ -115,3 +115,18 @@
 - 原因：这个工具由三套命令组成（`herdr-app`、`hc`、旧的 `herdr`），只看其中一套或看本机旧版帮助，会得出错误结论。
 - 做法：已确定的工具、该查的在线文档、跑通过的命令记在 `docs/TOOLS.md`；项目根的 `AGENTS.md` 第一步就是“先查它，再找别处”。在线文档优先，工具自带手册用来核对版本。查到新用法立刻补回，不留在对话里。
 
+## L013 联机测试要走用户实际调用的人工回复入口（2026-11-07）
+
+- 坑：`driver.reply continue` 原先只把状态改回 active；S9 发布还要再推进一次 Controller。`f2_pipeline.py` 直接调用 `apply_reply()` 再手动推进，所以完整假流程通过，却没有验证 CLI 能否真正完成批准后的发布。
+- 做法：`driver.reply continue` / `rework` 在持有单实例锁时继续运行到终态或下一道人工关口；F2 的 S9 检查调用同一个 CLI 入口，并检查最终状态与标签。
+- 教训：端到端测试应调用用户实际使用的命令，并检查最终持久化状态；单测业务函数再加测试脚本手动推进，不能替代这项验证。
+
+## L014 比较真实运行要用当时的配置和完整产物（2026-11-07）
+
+- 坑：R010 与 Luna 的 R20261107-001 都在不同 worktree 中。`driver.compare` 只读当前仓库的模板哈希，没有指出 R010 没有 S7U；它也没检查阶段输入哈希。比较器将 Claude 日志里的 `ai-code-with/claude-opus-5-5` 与 `claude-opus-5-5` 判成不同模型，但运行配置请求的是相同 ID。
+- 坑：Luna 运行用 `--effort low`，隔离中台 `rules.json` 也是 low；`record-a*.json` 却从原始配置记成 high。Codex 日志没有解析出 `actual_model`，只有启动命令能证明传了 `gpt-6-sol`。
+- 坑：不同厂商的缓存 token 字段含义不同，不能统一用 `input_tokens + output_tokens` 计算总量；Sonnet 历史记录还是原始格式，比较器得出其 `total_tokens: 0`。
+- 坑：S7U 成功验证默认文件并在隔离 scratch 中生成 `.todo.json`，但 S8 的 `input.md` 只传了 `usage.log`，没有包含文件或 `expect_file` 断言结果。验收 Agent 因而如实报告“没有直接看到文件”，这是证据传递缺口。
+- 做法：比较时直接检查每个阶段的输入、原始日志、工具日志和输出文件；模型名、强度和用量分开写清“配置请求”“日志记录”“实际验证”。要做自动比较，先为每次运行保存有效配置和模板快照，并测试缺阶段、输入变化及 token 归一化。程序步骤的断言结果也要写进下游 Agent 能看到的日志。
+- 相关记录：`docs/reports/2026-11-07-session-report-luna.md`、`docs/guides/rerun-with-another-agent.md`。
+

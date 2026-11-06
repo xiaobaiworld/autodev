@@ -1,6 +1,6 @@
 # 文档与关键文件索引
 
-更新日期：2026-11-06
+更新日期：2026-11-07
 
 本索引按用途列出当前有效的入口、设计与参考资料。状态描述的是 AutoDev 自身资料的权威性；外部参考不能覆盖项目决策。已被取代的文档在 `docs/archive/`，只供追溯。
 
@@ -11,6 +11,7 @@
 | `README.md` | 项目简介与入口 | 当前项目入口 |
 | `AGENTS.md`、`CLAUDE.md` | 给 Agent 的项目说明；第一步是先查 `docs/TOOLS.md`（`CLAUDE.md` 只引用 `AGENTS.md`） | 每次开始任务先读 |
 | `docs/TOOLS.md` | 已确定的工具、在线文档链接、跑通过的命令、环境坑 | 找任何功能之前先查这里；查到新用法要补回 |
+| `docs/guides/rerun-with-another-agent.md` | 用同一需求复跑，并区分 A、B、C 层比较 | 本次 Luna 复跑入口 |
 | `next.md` | 当前阶段、已验证事项、下一步、仍然开放的问题 | 当前工作状态，每个阶段结束后更新 |
 | `AGENT_HANDOFF.md` | 换机器时的仓库获取方式、personagent 本地补丁的转移方法 | 只在换机器时读；其中的“当前状态”以 `next.md` 为准 |
 | `config.yaml` | 项目、Agent、角色绑定、轮次上限、cockpit 段 | 配置；模型名规则见 `docs/MODELS.md` |
@@ -22,10 +23,10 @@
 | `docs/design/2026-11-05-autoloop-foundation.md` | 以 agent-autoloop 为地基的方案：结构、F0 到 F6、界面共用数据、待决事项 | 当前主线 |
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
 | `docs/design/2026-11-02-autodev-design.md` | 九阶段流水线、角色、产物、人工参与、Web 界面、复盘、规则 | 当前设计基线；第 3.2、3.3、5 节的执行与调度部分已被地基方案部分取代，各节顶部有说明 |
-| `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D014 | 决策事实源 |
+| `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D015 | 决策事实源 |
 | `docs/DATA_SPEC.md` | 数据目录、实体与文件格式 | 设计规范；`state.json`、`done.json` 已在代码里使用 |
 | `docs/MODELS.md` | 模型名规则：只写完整 ID、magpie 映射原因、各 CLI 的指定方式 | 规则；改 `config.yaml` 的 `agents` 或写启动命令前必读 |
-| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L012 | 开始新功能前先读 |
+| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L014 | 开始新功能前先读 |
 | `docs/design/autodev-workflow-prototype.html` | 工作流界面原型 | 静态讨论稿，示例数据，不代表可运行系统 |
 
 ## 验证记录
@@ -37,15 +38,17 @@
 | `docs/spikes/2026-11-05-f1-agents-report.md` | F1：Claude、Codex、agy 无界面各跑一轮 |
 | `docs/spikes/2026-11-05-f2-pipeline-report.md` | F2：我们的流水线跑在 autoloop 上，S1 到 S3 跑通 |
 | `docs/spikes/2026-11-06-f3-real-run-report.md` | F3：真实流水线在 Herdr 三格里实时跑，日志与看板同步 |
+| `docs/reports/2026-11-07-session-report-sonnet-5-5.md` | Sonnet 驾驶员从 S3 接到 S9 的基线报告 |
+| `docs/reports/2026-11-07-session-report-luna.md` | Luna 真实复跑 S1–S9，并与 Sonnet 的代码、阶段报告和证据对照 |
 
 ## 代码与测试
 
 | 路径 | 内容 |
 | --- | --- |
-| `src/driver/` | 向 autoloop 中台发事件、读事实流（`hub.py`、`runner.py`）；生成并安装规则（`setup.py`）；正式入口 `run.py` |
-| `src/cockpit/` | 需求类型登记（`kinds.py`）；阶段表与校验（`pipeline.py`）、主循环（`controller.py`）、状态落盘（`store.py`）；`claim.py`、`invoke.py`、`config.py`、`main.py` 是窗格驱动的旧方案，F6 清理 |
+| `src/driver/` | 向 autoloop 中台发事件、读事实流；生成规则；每步记录与比较；人工回复后继续推进；正式入口 `run.py` |
+| `src/cockpit/` | 需求类型登记、模板阶段与产物校验、状态落盘、程序检查/发布/使用验证、隔离代码工作区 |
 | `src/dashboard/` | 命令行看板 |
-| `tests/` | 单元测试；`smoke_autoloop.py`、`f1_agents.py`、`f2_pipeline.py` 是联机验证脚本，后两个花额度 |
+| `tests/` | 单元测试；`smoke_autoloop.py`、`f1_agents.py`、`f2_pipeline.py`、`f5_crash.py` 是联机验证脚本，其中真实 Agent 运行会花额度 |
 
 ## 参考资料
 

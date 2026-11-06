@@ -5,22 +5,27 @@ import shutil
 import time
 from pathlib import Path
 
-from cockpit.pipeline import STAGES as PIPELINE_STAGES
+from cockpit.pipeline import load_template
 from cockpit.store import atomic_write
 
 PROMPT = ("这一轮的任务目录是事件的对象（subject），相对于当前目录。先读取该目录下的 input.md，严格按其中的要求完成："
           "产物和 done.json 都写进该目录，一律用文件读写工具，不要用 shell 命令写文件。最后一条消息第一行写一句话结论。")
-STAGES = tuple((k.lower(), v["role"]) for k, v in PIPELINE_STAGES.items())  # 来自 templates/pipeline/design.json
-USE = {"claude": "claude", "codex": "codex"}  # agy 走 command 插件，P4 之外暂不接
+USE = {"claude": "claude", "codex": "codex"}
+STAGES = tuple((name.lower(), spec["role"]) for name, spec in load_template("pipeline/design")["stages"].items())
 
 
-def build_rules(base, agents, roles, cwd, effort=None, fake_command=None, timeout_minutes=15):
+def build_rules(base, agents, roles, cwd, effort=None, fake_command=None, timeout_minutes=15, kind="pipeline/design"):
     """base 是 autoloop init 生成的 rules.json（取 sources、channels、worker 名）。返回新的 rules 字典，不改 base。
     effort: 覆盖 config 里的强度（省钱用）；fake_command: 用这条命令代替真实 Agent（测试用）。"""
+    template = load_template(kind)
+    stages = tuple((name.lower(), template["stages"][name]["role"]) for name in template["order"]
+                   if template["stages"][name].get("runner") != "tool")
     out = copy.deepcopy(base)
     worker = next(iter(base["agents"].values()))["worker"]
     out["agents"], out["rules"] = {}, []
-    for stage, role in STAGES:
+    for stage, role in stages:
+        if role not in roles or roles[role] not in agents:
+            raise ValueError(f"模板角色 {role} 未绑定到已配置 Agent")
         name = roles[role]
         if name in out["agents"]:
             continue
@@ -33,7 +38,7 @@ def build_rules(base, agents, roles, cwd, effort=None, fake_command=None, timeou
         out["agents"][name] = {"name": name, "worker": worker, "use": USE[a["cli"]], "model": a["model"],
                                "effort": effort or a.get("effort", "low"), "access": "edit",
                                "timeout": timeout_minutes}
-    for stage, role in STAGES:
+    for stage, role in stages:
         out["rules"].append({"name": f"{stage}-{role}", "when": {"source": "local", "types": [f"stage.{stage}"]},
                              "to": roles[role], "cwd": cwd, "prompt": PROMPT})
     return out

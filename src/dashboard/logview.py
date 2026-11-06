@@ -6,7 +6,7 @@ import json
 import re
 from pathlib import Path
 
-from cockpit.status import _w  # 显示宽度
+from dashboard.text import width as _w  # 显示宽度
 
 WIDTH = 110
 NOISE = {"system", "rate_limit_event", "thread.started", "turn.started"}
