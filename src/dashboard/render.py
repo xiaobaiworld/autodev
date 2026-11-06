@@ -70,7 +70,26 @@ def _request_line(p):
     return line
 
 
-def render(state, pipelines, now, error=None, max_runs=12, width=70, max_requests=6):
+def wait_reason(p):
+    """一个等人的需求在等什么。全部从 state.json 已有的字段推出来，推不出就老实写“等你处理”，不编原因。"""
+    h, step = p.get("human") or {}, p.get("step") or {}
+    stage = p.get("stage", "-")
+    gate = str(h.get("pending_decision") or "")
+    if gate.startswith("gate:"):
+        return f"要你批准才进 {gate[5:]}"
+    if step.get("state") == "failed":
+        return f"{stage} 步骤失败（{step.get('fail_reason') or '原因未记录'}），重试用完"
+    verdict = step.get("verdict")
+    if verdict == "BLOCK":
+        return f"{stage} 的 Agent 报 BLOCK，要你判断"
+    if verdict == "CLARIFY":
+        return f"{stage} 需求不清楚，要你澄清"
+    if verdict in ("REWORK", "FAIL"):
+        return f"{stage} 返工轮次用完，仍是 {verdict}"
+    return "等你处理"
+
+
+def render(state, pipelines, now, error=None, max_runs=12, width=70, max_requests=6, reply_cmd=None):
     out = [f"AutoDev 看板  {now.astimezone().strftime('%H:%M:%S')}", "─" * max(10, min(width, 70))]
     if error:
         out.append(f"读取失败（将继续重试）：{error}")
@@ -98,7 +117,10 @@ def render(state, pipelines, now, error=None, max_runs=12, width=70, max_request
     asks = [c for c in open_cards if c.get("kind") == "ask"]
     out += ["", f" 待你决定：{len(asks) + len(waiting)}"]
     out += [f"   [{c['id']}] {c.get('title') or ''}" for c in open_cards]
-    out += [f"   {p.get('id', '?')} 等你处理（{p.get('stage', '-')}）" for p in waiting]
+    for p in waiting:
+        out.append(f"   {p.get('id', '?')}  {wait_reason(p)}")
+        if reply_cmd:  # 完整的、复制就能敲的命令前缀，由调用方按自己的 --home 拼好
+            out.append(f"     {reply_cmd} {p.get('id', '?')} continue|rework|reject")
     sp = (state.get("spending") or {}).get("today") or {}
     out.append(f" 今天 {sp.get('rounds', 0)} 轮" + ("（费用部分未上报）" if sp.get("missingCost") else ""))
     return "\n".join(out) + "\n"

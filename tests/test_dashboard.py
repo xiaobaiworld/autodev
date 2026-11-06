@@ -142,6 +142,34 @@ class AllRequestsTest(unittest.TestCase):
         out = render(state(), [pipe("R1", "needs-human", waiting=True), pipe("R2", "done")], NOW)
         self.assertIn("待你决定：1", out)
 
+    def test_waiting_reason_says_what_the_human_is_asked_to_do(self):
+        from dashboard.render import wait_reason
+        base = {"stage": "S9", "human": {"waiting": True}, "step": {}}
+        cases = [
+            (dict(base, human={"waiting": True, "pending_decision": "gate:S9"}), "要你批准才进 S9"),
+            (dict(base, stage="S4", step={"state": "failed", "fail_reason": "command_failed"}), "S4 步骤失败（command_failed）"),
+            (dict(base, stage="S4", step={"state": "finished", "verdict": "BLOCK"}), "S4 的 Agent 报 BLOCK"),
+            (dict(base, stage="S1", step={"state": "finished", "verdict": "CLARIFY"}), "S1 需求不清楚"),
+            (dict(base, stage="S6", step={"state": "finished", "verdict": "REWORK"}), "返工轮次用完，仍是 REWORK"),
+            (dict(base, stage="S5", step={"state": "finished", "verdict": "FAIL"}), "返工轮次用完，仍是 FAIL"),
+            (dict(base, step={"state": "finished", "verdict": "PASS"}), "等你处理"),        # 推不出原因就不编
+            ({"stage": "S2", "human": {"waiting": True}}, "等你处理"),                     # 老记录没有 step 字段
+        ]
+        for p, want in cases:
+            with self.subTest(want=want):
+                self.assertIn(want, wait_reason(p))
+
+    def test_waiting_lines_show_reason_and_the_exact_reply_command(self):
+        p = pipe("R7", "needs-human", stage="S9", waiting=True)
+        p["human"]["pending_decision"] = "gate:S9"
+        out = render(state(), [p], NOW, reply_cmd="PYTHONPATH=src python3 -m driver.reply --home /h")
+        self.assertIn("R7  要你批准才进 S9", out)
+        self.assertIn("python3 -m driver.reply --home /h R7 continue|rework|reject", out)
+
+    def test_no_reply_command_line_when_not_given(self):
+        out = render(state(), [pipe("R7", "needs-human", waiting=True)], NOW)
+        self.assertNotIn("driver.reply", out)
+
     def test_hub_cards_and_waiting_requests_add_up(self):
         cards = [{"id": 5, "title": "问题", "kind": "ask", "state": "open"}]
         out = render(state(cards=cards), [pipe("R1", "needs-human", waiting=True)], NOW)
