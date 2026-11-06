@@ -9,9 +9,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-DEFAULT = {"S1": "ACCEPT", "S2": "DONE", "S3": "PASS", "S4": "DONE", "S6": "PASS"}
+DEFAULT = {"S1": "ACCEPT", "S2": "DONE", "S3": "PASS", "S4": "DONE", "S6": "PASS", "S8": "PASS"}
 OUTPUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"], "S4": ["exec-report.md"],
-           "S6": ["review.md"]}
+           "S6": ["review.md"], "S8": ["acceptance.md"]}
 
 policy_path, prompt = Path(sys.argv[1]), sys.argv[2]
 subject = re.search(r"runs/R\d{8}-\d{3}/\S+", prompt).group(0).rstrip("。，).,")
@@ -46,7 +46,7 @@ verdict = queue.pop(0) if queue else DEFAULT[stage]
 policy[stage] = queue
 policy_path.write_text(json.dumps(policy))
 for name in OUTPUTS[stage]:
-    extra = "\n## 原文对照\n假的逐条对照\n" if name == "review.md" else ""   # 审查产物必须有这个小节
+    extra = "\n## 原文对照\n假的逐条对照\n" if name in ("review.md", "acceptance.md") else ""   # 审查和验收产物必须有这个小节
     (sd / name).write_text(f"---\nverdict: {verdict}\n---\n假产物\n{extra}", encoding="utf-8")
 (sd / "done.json").write_text(json.dumps({
     "id": field("id"), "stage": stage, "round": rnd, "role": field("role"),

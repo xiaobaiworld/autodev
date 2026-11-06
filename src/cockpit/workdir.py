@@ -59,6 +59,23 @@ def checkpoint(workdir, message="检查点"):
     return head(workdir)
 
 
+def commit_all(workdir, message):
+    """把当前所有改动提交（含 CHANGELOG 之类程序刚写的文件），返回提交的前 8 位；没有改动也留一个空提交，让标签有处可打。"""
+    workdir = Path(workdir)
+    _git(workdir, "add", "-A")
+    _git(workdir, "commit", "-q", "--allow-empty", "-m", message)
+    return head(workdir)[:8]
+
+
+def list_tags(workdir):
+    return _git(Path(workdir), "tag", "--list").split()
+
+
+def add_tag(workdir, tag, message):
+    """打带注释的标签。同名已存在时 git 会报错，由调用方先查，不覆盖。"""
+    _git(Path(workdir), "tag", "-a", tag, "-m", message)
+
+
 def fingerprint(workdir):
     """代码目录当前内容的指纹（已跟踪文件、新文件、改动都算进去，不含 .git 和被 .gitignore 忽略的缓存）。
     只读阶段（审查）前后各取一次，不一样就说明有人改了代码。不改变仓库状态、不产生提交。"""

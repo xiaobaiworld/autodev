@@ -64,6 +64,11 @@ class Controller:
         step = state["step"]
         s = step["state"]
         if s == "pending":
+            stage = state["stage"]
+            if self._spec(state).get("gate") == "human" and stage not in state["human"].get("approved", []):
+                # 人工确认关口（设计 8：合并或发布前须用户确认）：停在这一阶段开始之前，等 resume(continue) 批准
+                held = dict(state, human=dict(state["human"], pending_decision=f"gate:{stage}"))
+                return self._stop(run, held, "needs-human", "human.requested", {"gate": stage})
             return self._start(run, state)
         if s == "running":
             return self._run(run, state)
@@ -114,7 +119,7 @@ class Controller:
         (sd / "done.json").unlink(missing_ok=True)
         wd = workdir_of(self.root, state)
         try:
-            r = self.tools[spec["tool"]]({"workdir": wd, "sd": sd, "spec": spec,
+            r = self.tools[spec["tool"]]({"workdir": wd, "sd": sd, "spec": spec, "state": state,
                                      "timeout_s": self.limits["step_timeout_minutes"] * 60})
         except Exception as e:  # 工具自己出错（不是检查没通过）：按步骤失败处理，会重试，用完转人工
             r = None
@@ -232,6 +237,17 @@ class Controller:
         target = stage or state["stage"]
         if action != "reject" and target not in stages:
             raise ValueError(f"阶段 {target!r} 不在模板里：{sorted(stages)}")
+        gate = str(state["human"].get("pending_decision") or "")
+        if gate.startswith("gate:") and action == "continue" and target == gate[5:]:
+            # 人批准了这道关口：记下已批准，原轮次原阶段直接放行；不开新一轮，也不清计数器
+            k = len(list((run.dir / "human").glob("reply-*.md"))) + 1 if (run.dir / "human").exists() else 1
+            atomic_write(run.dir / "human" / f"reply-{k}.md",
+                         f"---\naction: continue\nstage: {target}\nreplied_at: {now_iso()}\n---\n\n{note or '（批准）'}\n")
+            human = {"waiting": False, "pending_decision": None, "resume_to": None,
+                     "approved": list(state["human"].get("approved", [])) + [target]}
+            run.commit(dict(state, status="active", human=human), "human.replied",
+                       data={"action": "approve", "gate": target, "reply": f"human/reply-{k}.md"})
+            return f"{state['id']} 批准通过 {target}"
         hdir = run.dir / "human"
         k = len(list(hdir.glob("reply-*.md"))) + 1 if hdir.exists() else 1
         atomic_write(hdir / f"reply-{k}.md",

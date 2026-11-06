@@ -7,12 +7,13 @@ from unittest import mock
 from cockpit import pipeline
 from cockpit.pipeline import counters_for, load_template, next_move, write_input
 
-LIM = {"design_review_rounds": 3, "check_rounds": 3, "code_review_rounds": 3}
+LIM = {"design_review_rounds": 3, "check_rounds": 3, "code_review_rounds": 3, "acceptance_rounds": 2}
 
 
-def st(kind, stage, rnd=1, used=0, checks=0, reviews=0):
+def st(kind, stage, rnd=1, used=0, checks=0, reviews=0, accepts=0):
     return {"id": "R1", "kind": kind, "stage": stage, "round": rnd, "project": "toy",
-            "counters": {"design_review_rounds": used, "check_rounds": checks, "code_review_rounds": reviews}}
+            "counters": {"design_review_rounds": used, "check_rounds": checks, "code_review_rounds": reviews,
+                         "acceptance_rounds": accepts}}
 
 
 class BuildTransitionTest(unittest.TestCase):
@@ -26,7 +27,15 @@ class BuildTransitionTest(unittest.TestCase):
             (st(b, "S4"), "DONE", ("goto", "S5", 1)),        # 编码完成先去检查
             (st(b, "S4"), "BLOCK", ("needs-human", "S4", 1)),
             (st(b, "S5"), "PASS", ("goto", "S6", 1)),        # 检查通过才进代码审查
-            (st(b, "S6"), "PASS", ("done", "S6", 1)),
+            (st(b, "S6"), "PASS", ("goto", "S7", 1)),        # 代码审查通过进发布候选
+            (st(b, "S7"), "PASS", ("goto", "S8", 1)),
+            (st(b, "S7"), "BLOCK", ("needs-human", "S7", 1)),
+            (st(b, "S8"), "PASS", ("goto", "S9", 1)),
+            (st(b, "S8"), "REWORK", ("goto", "S4", 2)),      # 验收不过退回编码
+            (st(b, "S8", 3, accepts=1), "REWORK", ("limit", "S8", 3)),     # 验收上限是 2
+            (st(b, "S8"), "BLOCK", ("needs-human", "S8", 1)),
+            (st(b, "S9"), "PASS", ("done", "S9", 1)),
+            (st(b, "S9"), "BLOCK", ("needs-human", "S9", 1)),
             (st(b, "S6"), "REWORK", ("goto", "S4", 2)),      # 审查打回编码，开新一轮
             (st(b, "S6", 3, reviews=2), "REWORK", ("limit", "S6", 3)),
             (st(b, "S6"), "BLOCK", ("needs-human", "S6", 1)),
@@ -43,8 +52,12 @@ class BuildTransitionTest(unittest.TestCase):
 
     def test_build_extends_design(self):
         b, d = load_template("pipeline/build"), load_template("pipeline/design")
-        self.assertEqual(b["order"], ["S1", "S2", "S3", "S4", "S5", "S6"])
+        self.assertEqual(b["order"], ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9"])
         self.assertEqual(b["stages"]["S6"]["role"], "code_reviewer")
+        self.assertEqual(b["stages"]["S8"]["role"], "acceptor")
+        self.assertEqual([b["stages"][s].get("runner") for s in ("S5", "S7", "S9")], ["tool"] * 3)   # 确定性步骤由程序执行
+        self.assertEqual(b["stages"]["S9"]["gate"], "human")                  # 正式发布前必须人确认
+        self.assertNotIn("gate", b["stages"]["S7"])
         self.assertEqual(b["stages"]["S1"], d["stages"]["S1"])           # 没覆盖的阶段原样继承
         self.assertEqual(b["stages"]["S3"]["role"], d["stages"]["S3"]["role"])  # 覆盖 on 不丢 role
         self.assertEqual(b["stages"]["S4"]["role"], "coder")
@@ -52,7 +65,7 @@ class BuildTransitionTest(unittest.TestCase):
 
     def test_counters_follow_template(self):
         self.assertEqual(counters_for("pipeline/build"),
-                         {"design_review_rounds": 0, "check_rounds": 0, "code_review_rounds": 0})
+                         {"design_review_rounds": 0, "check_rounds": 0, "code_review_rounds": 0, "acceptance_rounds": 0})
         self.assertEqual(counters_for("pipeline/design"), {"design_review_rounds": 0})   # design 不带检查计数器
 
 

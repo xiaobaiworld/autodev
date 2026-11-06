@@ -56,4 +56,37 @@ def run_check(workdir, sd, spec, timeout_s):
     return {"verdict": "PASS", "summary": "检查命令退出码 0，测试通过。", "outputs": ["check.log"]}
 
 
-TOOLS = {"check": lambda ctx: run_check(ctx["workdir"], ctx["sd"], ctx["spec"], ctx["timeout_s"])}
+def run_release(workdir, sd, spec, state):
+    """S7 发布候选（tag="rc"）与 S9 正式发布（tag="final"）：在代码目录的 git 仓库里打标签并写日志。
+    版本号取模板 spec["version"]（如 "0.1.0"）；候选标签 v0.1.0-rc.1（序号取已有 rc 标签的最大值加一），正式标签 v0.1.0。
+    正式发布还把一条记录追加到代码目录的 CHANGELOG.md。已有同名正式标签就拒绝（BLOCK），不覆盖。
+    # ponytail: 只在本地 git 里打标签，不推送、不部署；接真实项目（personagent）时再加推送，那时必须先问人。"""
+    from cockpit.workdir import GitError, add_tag, commit_all, list_tags
+    kind = spec["tag"]
+    if kind not in ("rc", "final"):
+        raise ValueError(f"release 工具的 tag 只能是 rc 或 final，收到 {kind!r}")
+    version = str(spec.get("version") or "").strip()
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        raise ValueError(f"version 必须是 x.y.z，收到 {version!r}")
+    log, tags = [], list_tags(workdir)
+    if kind == "rc":
+        nums = [int(m.group(1)) for t in tags if (m := re.fullmatch(rf"v{re.escape(version)}-rc\.(\d+)", t))]
+        tag = f"v{version}-rc.{max(nums, default=0) + 1}"
+    else:
+        tag = f"v{version}"
+        if tag in tags:
+            atomic_write(Path(sd) / "release.log", f"正式标签 {tag} 已存在，不覆盖。\n")
+            return {"verdict": "BLOCK", "summary": f"正式标签 {tag} 已存在，拒绝覆盖，需要人来决定。", "outputs": ["release.log"]}
+        entry = f"## {tag}\n\n- 需求 {state['id']}：{spec.get('note') or '见需求记录'}\n"
+        path = Path(workdir) / "CHANGELOG.md"
+        path.write_text((path.read_text(encoding="utf-8") if path.exists() else "# CHANGELOG\n\n") + entry + "\n", encoding="utf-8")
+        log.append(f"写入 CHANGELOG.md：{entry.strip()}")
+    commit = commit_all(workdir, f"{state['id']} {tag}")
+    add_tag(workdir, tag, f"{state['id']} {tag}")
+    log.append(f"提交 {commit}，标签 {tag}")
+    atomic_write(Path(sd) / "release.log", "\n".join(log) + "\n")
+    return {"verdict": "PASS", "summary": f"已在代码目录打标签 {tag}（只在本地，未推送）。", "outputs": ["release.log"]}
+
+
+TOOLS = {"check": lambda ctx: run_check(ctx["workdir"], ctx["sd"], ctx["spec"], ctx["timeout_s"]),
+         "release": lambda ctx: run_release(ctx["workdir"], ctx["sd"], ctx["spec"], ctx["state"])}

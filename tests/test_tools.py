@@ -9,6 +9,85 @@ from cockpit.tools import run_check
 PY = "python3"
 
 
+class ReleaseToolTest(unittest.TestCase):
+    """S7 发布候选 / S9 正式发布：只在本地 git 里打标签，不推送。"""
+
+    def setUp(self):
+        from cockpit.workdir import prepare
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.wd, self.sd = self.root / "wd", self.root / "sd"
+        prepare(self.wd, {"todo.py": "x = 1\n"})
+        self.sd.mkdir()
+        self.state = {"id": "R1"}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def rel(self, tag, version="0.1.0", **extra):
+        from cockpit.tools import run_release
+        return run_release(self.wd, self.sd, dict({"tag": tag, "version": version}, **extra), self.state)
+
+    def tags(self):
+        from cockpit.workdir import list_tags
+        return sorted(list_tags(self.wd))
+
+    def test_rc_numbers_count_up_and_do_not_touch_the_changelog(self):
+        self.assertEqual(self.rel("rc")["verdict"], "PASS")
+        self.assertEqual(self.rel("rc")["verdict"], "PASS")
+        self.assertEqual(self.tags(), ["v0.1.0-rc.1", "v0.1.0-rc.2"])
+        self.assertFalse((self.wd / "CHANGELOG.md").exists())
+        self.assertIn("v0.1.0-rc.2", (self.sd / "release.log").read_text())
+
+    def test_rc_numbering_is_per_version(self):
+        self.rel("rc", "0.1.0")
+        self.rel("rc", "0.2.0")
+        self.assertEqual(self.tags(), ["v0.1.0-rc.1", "v0.2.0-rc.1"])
+
+    def test_final_tags_and_writes_changelog_once(self):
+        r = self.rel("final", note="命令行待办")
+        self.assertEqual((r["verdict"], self.tags()), ("PASS", ["v0.1.0"]))
+        text = (self.wd / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("## v0.1.0", text)
+        self.assertIn("R1：命令行待办", text)
+
+    def test_final_never_overwrites_an_existing_tag(self):
+        self.rel("final")
+        before = (self.wd / "CHANGELOG.md").read_text(encoding="utf-8")
+        r = self.rel("final")
+        self.assertEqual(r["verdict"], "BLOCK")                          # 交给人，不覆盖
+        self.assertEqual((self.wd / "CHANGELOG.md").read_text(encoding="utf-8"), before)
+        self.assertEqual(self.tags(), ["v0.1.0"])
+
+    def test_tag_points_at_a_commit_that_includes_the_final_changes(self):
+        import subprocess
+        (self.wd / "late.py").write_text("y = 2\n")                      # 标签之前还没提交的改动
+        self.rel("rc")
+        shown = subprocess.run(["git", "show", "--stat", "--format=", "v0.1.0-rc.1"], cwd=self.wd,
+                               capture_output=True, text=True).stdout
+        self.assertIn("late.py", shown)
+
+    def test_bad_specs_are_refused_before_touching_git(self):
+        for tag, version in (("beta", "0.1.0"), ("rc", "1.0"), ("final", ""), ("rc", "v0.1.0")):
+            with self.subTest(tag=tag, version=version):
+                with self.assertRaises(ValueError):
+                    self.rel(tag, version)
+        self.assertEqual(self.tags(), [])
+
+    def test_template_without_tag_or_version_is_refused_at_load_time(self):
+        import json
+        from unittest import mock
+        from cockpit import pipeline
+        t = pipeline.load_template("pipeline/build")
+        t["stages"]["S5"].update(runner="tool", tool="release")           # 借现成的阶段换成缺字段的 release
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "build.json").write_text(json.dumps({k: v for k, v in t.items() if k != "extends"}, ensure_ascii=False))
+            (Path(d) / "design.json").write_text((pipeline.TEMPLATES / "design.json").read_text(encoding="utf-8"))
+            with mock.patch.object(pipeline, "TEMPLATES", Path(d)):
+                with self.assertRaisesRegex(ValueError, "release 工具需要 tag"):
+                    pipeline.load_template("pipeline/build")
+
+
 class RunCheckTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

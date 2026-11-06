@@ -10,10 +10,11 @@ from cockpit.controller import Controller, start_run
 from cockpit.store import Run
 
 CFG = (Path(__file__).resolve().parents[1] / "config.yaml").read_text(encoding="utf-8")
-LIMITS = {"design_review_rounds": 3, "check_rounds": 3, "code_review_rounds": 3, "step_retries": 2,
-          "step_timeout_minutes": 60}
+LIMITS = {"design_review_rounds": 3, "check_rounds": 3, "code_review_rounds": 3, "acceptance_rounds": 2,
+          "step_retries": 2, "step_timeout_minutes": 60}
 OUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"], "S4": ["exec-report.md"],
-        "S6": ["review.md"]}
+        "S6": ["review.md"], "S8": ["acceptance.md"]}
+REVIEW_FILES = ("review.md", "acceptance.md")
 
 
 class Agent:
@@ -27,13 +28,13 @@ class Agent:
         g = lambda k: re.search(rf"^{k}: (.+)$", text, re.M).group(1).strip()
         stage, rid = g("stage"), g("id")
         self.inputs.append((stage, int(g("round")), text))
-        verdict = {"S1": "ACCEPT", "S2": "DONE", "S3": "PASS", "S6": "PASS"}.get(stage)
+        verdict = {"S1": "ACCEPT", "S2": "DONE", "S3": "PASS", "S6": "PASS", "S8": "PASS"}.get(stage)
         if stage == "S4":
             verdict = self.s4.pop(0) if self.s4 else "DONE"
             n = len([i for i in self.inputs if i[0] == "S4"])        # 每次内容不同，否则第 2 次在检查点之上“没有改动”会被判无效
             (self.root / "workspace" / "projects" / "toy" / rid / "todo.py").write_text(f"x = {n}\n")
         for f in OUTS[stage]:
-            (Path(sd) / f).write_text("## 原文对照\nx\n" if f == "review.md" else "x")   # 审查产物必须有这个小节
+            (Path(sd) / f).write_text("## 原文对照\nx\n" if f in REVIEW_FILES else "x")   # 审查产物必须有这个小节
         (Path(sd) / "done.json").write_text(json.dumps({
             "id": rid, "stage": stage, "round": int(g("round")), "role": g("role"), "outputs": OUTS[stage],
             "verdict": verdict, "summary": "测试"}))
@@ -54,12 +55,23 @@ class ResumeTest(unittest.TestCase):
         def passing_check(ctx):
             (Path(ctx["sd"]) / "check.log").write_text("ok")
             return {"verdict": "PASS", "summary": "假检查通过", "outputs": ["check.log"]}
+        def fake_release(ctx):
+            (Path(ctx["sd"]) / "release.log").write_text("ok")
+            return {"verdict": "PASS", "summary": "假发布", "outputs": ["release.log"]}
         ctrl = Controller(self.root, parse_agents(CFG), parse_roles(CFG), LIMITS, invoke_fn=agent,
-                          tools={"check": passing_check})
+                          tools={"check": passing_check, "release": fake_release})
         rid = start_run(self.root, "做个待办", "toy", ctrl, today=datetime(2026, 11, 6), kind="pipeline/build")
         rd = self.root / "workspace" / "runs" / rid
         ctrl.run_all(rd, log=lambda m: None)
         return agent, ctrl, rd
+
+    def finish(self, ctrl, rd):
+        """跑到 S9 前的人工关口，再批准，走完。需求原本就在等人（被 BLOCK 的）时，调用方要先 resume。"""
+        ctrl.run_all(rd, log=lambda m: None)
+        st = Run(rd).read()
+        if st["human"].get("pending_decision") == "gate:S9":
+            ctrl.resume(rd, "continue", note="批准", stage="S9")
+            ctrl.run_all(rd, log=lambda m: None)
 
     def events(self, rd):
         return [json.loads(l)["type"] for l in (rd / "events.jsonl").read_text().splitlines()]
@@ -70,7 +82,7 @@ class ResumeTest(unittest.TestCase):
         ctrl.resume(rd, "rework", note="不要用 setuptools，用单文件脚本", stage="S2")
         st = Run(rd).read()
         self.assertEqual((st["status"], st["stage"], st["round"], st["human"]["waiting"]), ("active", "S2", 2, False))
-        ctrl.run_all(rd, log=lambda m: None)
+        self.finish(ctrl, rd)                                # 重新走完，在 S9 前的关口批准
         self.assertEqual(Run(rd).read()["status"], "done")
         reply = (rd / "human" / "reply-1.md").read_text(encoding="utf-8")
         self.assertIn("不要用 setuptools", reply)
@@ -91,7 +103,7 @@ class ResumeTest(unittest.TestCase):
         ctrl.resume(rd, "continue", note="环境已装好，继续")
         st = Run(rd).read()
         self.assertEqual((st["stage"], st["round"]), ("S4", 2))
-        ctrl.run_all(rd, log=lambda m: None)
+        self.finish(ctrl, rd)
         self.assertEqual(Run(rd).read()["status"], "done")
         self.assertTrue((rd / "S4-code" / "round-1").exists() and (rd / "S4-code" / "round-2").exists())  # 旧一轮保留
 
@@ -102,7 +114,7 @@ class ResumeTest(unittest.TestCase):
         Run(rd).commit(state, "test.setup")
         ctrl.resume(rd, "continue")
         self.assertEqual(Run(rd).read()["counters"],
-                         {"design_review_rounds": 0, "check_rounds": 0, "code_review_rounds": 0})
+                         {"design_review_rounds": 0, "check_rounds": 0, "code_review_rounds": 0, "acceptance_rounds": 0})
 
     def test_reject_ends_the_request(self):
         agent, ctrl, rd = self.blocked_run()
@@ -122,7 +134,7 @@ class ResumeTest(unittest.TestCase):
     def test_bad_requests_change_nothing(self):
         agent, ctrl, rd = self.blocked_run()
         before = Run(rd).read()
-        for args in (("rework", "", "S9"), ("explode", "", None)):
+        for args in (("rework", "", "S99"), ("explode", "", None)):
             with self.subTest(args=args):
                 with self.assertRaises(ValueError):
                     ctrl.resume(rd, args[0], note=args[1], stage=args[2])
@@ -130,10 +142,11 @@ class ResumeTest(unittest.TestCase):
         self.assertFalse((rd / "human").exists())           # 校验失败不能留下回复文件
 
     def test_cannot_resume_a_request_that_is_not_waiting(self):
-        agent, ctrl, rd = self.blocked_run(s4=())
-        self.assertEqual(Run(rd).read()["status"], "done")
+        agent, ctrl, rd = self.blocked_run()
+        ctrl.resume(rd, "reject", note="不做了")
+        self.assertEqual(Run(rd).read()["status"], "rejected")
         with self.assertRaisesRegex(ValueError, "不在等待人工"):
-            ctrl.resume(rd, "continue")
+            ctrl.resume(rd, "continue")                       # 已经结束的需求不能再 resume
 
 
 if __name__ == "__main__":

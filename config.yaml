@@ -47,7 +47,7 @@ roles:                    # 审查角色与作者的模型厂商必须不同
   design_reviewer: { agent: codex }
   coder:           { agent: codex }
   code_reviewer:   { agent: claude-opus }
-  acceptor:        { agent: agy }
+  acceptor:        { agent: claude-opus }   # 设计原定 agy；agy 的实际模型/用量没验证过、规则生成也还不支持它，先用 Claude，见 DECISIONS D015
   retrospector:    { agent: claude-opus }
   retro_reviewer:  { agent: codex }
 

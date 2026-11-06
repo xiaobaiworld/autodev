@@ -1,7 +1,7 @@
 {
  "kind": "pipeline/build",
  "extends": "pipeline/design",
- "order": ["S1", "S2", "S3", "S4", "S5", "S6"],
+ "order": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9"],
  "stages": {
   "S3": {
    "on": {
@@ -44,11 +44,53 @@
    "inputs": ["request", "analysis", "design", "plan", "full_diff", "check_now", "workdir_ro", "human"],
    "workdir": "readonly",
    "on": {
-    "PASS": "done",
+    "PASS": {"goto": "S7", "round": "same"},
     "REWORK": {"goto": "S4", "round": "inc", "counter": "code_review_rounds"}
    },
    "required_sections": {"review.md": "原文对照"},
    "task": "审查代码目录里的实现：对照需求原文、分析里的验收标准、设计稿和开发计划，写 review.md，frontmatter 含 verdict、findings（列表，每项含 id、severity、location、problem、expected）。分析是对需求的转述，转述可能悄悄改了需求：先逐句读“需求”原文，不要只信分析。review.md 里必须有一个标题为“原文对照”的小节（写成 Markdown 标题，如 ## 原文对照），在里面逐条列出需求原文的每一个要求，注明它在代码和测试里对应哪里；原文有、分析或设计或代码里没有（或被改写了）的，单独标出，并在 findings 里按其影响定级。重点看：需求里要求的每一条是否都实现了且被测试覆盖、测试是否真的在验证需求（而不只是证明代码自洽）、错误路径、数据安全。不报风格。程序已经运行过测试（见“本轮检查结果”），测试通过只说明代码通过了自己的测试，不说明测试覆盖了需求。你只读，不要修改代码目录里任何文件，也不要执行 git 命令；verdict 为 PASS 时不得有 critical 或 high 级别的问题。"
+  },
+  "S7": {
+   "dir": "S7-release",
+   "runner": "tool",
+   "tool": "release",
+   "role": "releaser",
+   "tag": "rc",
+   "version": "0.1.0",
+   "outputs": ["release.log"],
+   "verdicts": ["PASS", "BLOCK"],
+   "workdir": "use",
+   "on": {"PASS": {"goto": "S8", "round": "same"}},
+   "task": "程序在代码目录的本地 git 里打发布候选标签（只在本地，不推送、不部署）。"
+  },
+  "S8": {
+   "dir": "S8-acceptance",
+   "role": "acceptor",
+   "outputs": ["acceptance.md"],
+   "verdicts": ["PASS", "REWORK", "BLOCK"],
+   "inputs": ["request", "analysis", "design", "plan", "full_diff", "check_now", "workdir_ro", "human"],
+   "workdir": "readonly",
+   "required_sections": {"acceptance.md": "原文对照"},
+   "on": {
+    "PASS": {"goto": "S9", "round": "same"},
+    "REWORK": {"goto": "S4", "round": "inc", "counter": "acceptance_rounds"}
+   },
+   "task": "以使用者的身份验收：不要重复 S6 的代码审查，只回答“需求原文要的东西，现在拿到手能不能用”。写 acceptance.md，frontmatter 含 verdict、findings（列表，每项含 id、severity、location、problem、expected）。必须有一个标题为“原文对照”的小节（Markdown 标题），逐条列出需求原文的每个要求，注明你怎么确认它满足（看到什么、运行了什么），以及结果。如果要运行代码：把 HOME 和 TMPDIR 指到一个临时目录，数据文件用环境变量指到临时位置，不要写用户真实目录；你只读，不要修改代码目录里任何文件，也不要执行 git 命令。原文要的东西拿不到手（例如要求直接运行 todo 命令但并没有这个命令）就是 REWORK，并在 findings 里写清楚缺什么。verdict 为 PASS 时不得有 critical 或 high 级别的问题。"
+  },
+  "S9": {
+   "dir": "S9-publish",
+   "runner": "tool",
+   "tool": "release",
+   "role": "publisher",
+   "tag": "final",
+   "version": "0.1.0",
+   "note": "命令行待办工具",
+   "gate": "human",
+   "outputs": ["release.log"],
+   "verdicts": ["PASS", "BLOCK"],
+   "workdir": "use",
+   "on": {"PASS": "done"},
+   "task": "程序在代码目录的本地 git 里打正式标签并写 CHANGELOG（只在本地，不推送）。进入前必须由人确认（gate: human）。"
   }
  }
 }

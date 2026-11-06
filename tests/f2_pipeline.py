@@ -73,7 +73,12 @@ def main(fake=False, build=False):
         rid = start_run(work, REQUEST, "toy", ctrl, kind="pipeline/build" if build else "pipeline/design")
         rd = work / "workspace" / "runs" / rid
         t0 = time.time()
-        ctrl.run_all(rd, log=lambda m: print(f"[{time.time() - t0:5.0f}s] {m}", flush=True), max_steps=40)
+        say = lambda m: print(f"[{time.time() - t0:5.0f}s] {m}", flush=True)
+        ctrl.run_all(rd, log=say, max_steps=60)
+        if build and Run(rd).read()["human"].get("pending_decision") == "gate:S9":
+            say("停在 S9 前的人工关口；脚本代替人批准")
+            ctrl.resume(rd, "continue", note="联机脚本批准", stage="S9")
+            ctrl.run_all(rd, log=say, max_steps=60)
         st = Run(rd).read()
         events = [json.loads(l)["type"] for l in (rd / "events.jsonl").read_text().splitlines()]
         print("\n最终:", st["status"], st["stage"], "轮次", st["round"], "| 事件:", " ".join(events))
@@ -92,7 +97,12 @@ def main(fake=False, build=False):
             p2, p3 = rd / "S4-code" / "round-2" / "diff.patch", rd / "S4-code" / "round-3" / "diff.patch"
             c = lambda n: (rd / "S5-check" / f"round-{n}" / "check.log").read_text() if (rd / "S5-check" / f"round-{n}" / "check.log").exists() else ""
             full = rd / "S6-code-review" / "round-3" / "full.patch"       # 轮号跟着编码轮走：S6 只在 S5 通过后才进，所以是第 2、3 轮
-            ok = (st["status"] == "done" and st["stage"] == "S6"
+            tags = subprocess.run(["git", "tag", "--list"], cwd=wd, capture_output=True, text=True).stdout.split()
+            changelog = (wd / "CHANGELOG.md").read_text(encoding="utf-8") if (wd / "CHANGELOG.md").exists() else ""
+            ok = (st["status"] == "done" and st["stage"] == "S9"
+                  and sorted(tags) == ["v0.1.0", "v0.1.0-rc.1"] and "## v0.1.0" in changelog         # 候选和正式标签、CHANGELOG 都是真的 git 操作
+                  and (rd / "S7-release").exists() and (rd / "S8-acceptance").exists() and (rd / "S9-publish").exists()
+                  and st["human"].get("approved") == ["S9"]
                   and len(rounds("S4-code")) == 3 and len(rounds("S5-check")) == 3 and len(rounds("S6-code-review")) == 2
                   and "退出码 1" in c(1) and "退出码 0" in c(2) and "退出码 0" in c(3)
                   and "-VERSION = 1" in p2.read_text() and "+VERSION = 2" in p2.read_text()    # 第 2 轮在第 1 轮代码上改
@@ -100,7 +110,7 @@ def main(fake=False, build=False):
                   and full.exists() and "VERSION = 3" in full.read_text()                       # 第 2 次审查看到完整改动
                   and not bad)
             print(f"S4 {len(rounds('S4-code'))} 轮，S5 {len(rounds('S5-check'))} 轮，S6 {len(rounds('S6-code-review'))} 轮；"
-                  f"代码目录 {sorted(p.name for p in wd.iterdir() if p.name != '.git')}；记录 {len(recs)} 份")
+                  f"标签 {sorted(tags)}；代码目录 {sorted(p.name for p in wd.iterdir() if p.name != '.git')}；记录 {len(recs)} 份")
         elif fake:  # 3 次 REWORK 用完审查轮次，必须停在 needs-human，且发生过 limit.exceeded，S2 做过 3 轮
             ok = (st["status"] == "needs-human" and "limit.exceeded" in events
                   and len(list(rd.glob("S2-design/round-*"))) == 3 and st["counters"]["design_review_rounds"] == 3

@@ -12,7 +12,7 @@ AGENTS = {
     "agy": {"cli": "agy", "vendor": "google", "model": "x"},
 }
 ROLES = {"analyst": "claude-opus", "designer": "claude-opus", "design_reviewer": "codex", "coder": "codex",
-         "code_reviewer": "claude-opus"}
+         "code_reviewer": "claude-opus", "acceptor": "claude-opus"}
 BASE = {"sources": {"local": {"name": "本机"}}, "agents": {"agent": {"worker": "mac1"}}, "rules": [{"name": "old"}]}
 
 
@@ -35,7 +35,9 @@ class BuildRulesTest(unittest.TestCase):
     def test_one_rule_per_stage_routed_by_role(self):
         r = self.build()
         by = {x["name"]: x for x in r["rules"]}
-        self.assertEqual(sorted(by), ["s1-analyst", "s2-designer", "s3-design_reviewer", "s4-coder", "s6-code_reviewer"])
+        # 程序步骤（S5 检查、S7 发布候选、S9 正式发布）没有 Agent，不生成派活规则
+        self.assertEqual(sorted(by), ["s1-analyst", "s2-designer", "s3-design_reviewer", "s4-coder",
+                                      "s6-code_reviewer", "s8-acceptor"])
         self.assertEqual(by["s3-design_reviewer"]["to"], "codex")
         self.assertEqual(by["s4-coder"]["when"], {"source": "local", "types": ["stage.s4"]})
         self.assertEqual(by["s1-analyst"]["when"], {"source": "local", "types": ["stage.s1"]})

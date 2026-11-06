@@ -26,6 +26,8 @@ def _check_transitions(t, path):
         if rs is not None and (not isinstance(rs, dict) or not all(
                 isinstance(k, str) and isinstance(v, str) and v.strip() and k in spec["outputs"] for k, v in rs.items())):
             raise ValueError(f"模板 {path} 阶段 {name} 的 required_sections 必须是 {{产物文件名: 小节标题}}，且文件名要在 outputs 里")
+        if spec.get("gate") not in (None, "human"):
+            raise ValueError(f"模板 {path} 阶段 {name} 的 gate 只能是 human，写的是 {spec.get('gate')!r}")
         if spec.get("workdir") not in (None, "write", "use", "readonly"):
             raise ValueError(f"模板 {path} 阶段 {name} 的 workdir 只能是 write / use / readonly，写的是 {spec.get('workdir')!r}")
         if "readonly" == spec.get("workdir") and spec.get("runner") == "tool":
@@ -35,6 +37,8 @@ def _check_transitions(t, path):
                 raise ValueError(f"模板 {path} 阶段 {name} 用了没有注册的工具 {spec.get('tool')!r}：{sorted(TOOLS)}")
             if spec["tool"] == "check" and not spec.get("command"):
                 raise ValueError(f"模板 {path} 阶段 {name} 的 check 工具缺少 command")
+            if spec["tool"] == "release" and (spec.get("tag") not in ("rc", "final") or not spec.get("version")):
+                raise ValueError(f"模板 {path} 阶段 {name} 的 release 工具需要 tag（rc 或 final）和 version（x.y.z）")
         for v, act in on.items():
             if v not in spec["verdicts"]:
                 raise ValueError(f"模板 {path} 阶段 {name} 的 on 里有不允许的结论 {v}")
@@ -157,7 +161,7 @@ class SetupError(Exception):
     pass
 
 
-PAIRS = (("designer", "design_reviewer"), ("coder", "code_reviewer"))  # （作者，审查者）
+PAIRS = (("designer", "design_reviewer"), ("coder", "code_reviewer"), ("coder", "acceptor"))  # （作者，审查者）
 
 
 def check_vendors(agents, roles):
