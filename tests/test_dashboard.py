@@ -184,7 +184,7 @@ class FrameWidthTest(unittest.TestCase):
     def test_no_line_wider_than_pane(self):
         import tempfile
         from unittest import mock
-        from cockpit.status import _w
+        from dashboard.width import _w
         from dashboard import __main__ as m
 
         class H:

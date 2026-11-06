@@ -158,10 +158,10 @@ original_filename: tag-filter.md
 | step.agent | 实际使用的 Agent | string | 同上 | `config.yaml` 中 `agents` 的键；记录启动时的值，配置后改不影响已启动步骤 |
 | step.model | 实际使用的模型 | string | 否 | 同上 |
 | step.dir | 本步骤目录 | string | 是 | 相对 `runs/<id>/` |
-| step.pane_id | herdr pane | string | running 时必填 | herdr 返回值 |
+| step.pane_id | 旧字段：herdr pane | string | 否 | **2026-11-06 起新记录不再写**（F6 移除窗格驱动）；老记录里仍可能有，读取时忽略 |
 | step.deadline_at | 超时时刻 | datetime | running 时必填 | `started_at + step_timeout_minutes` |
 | step.attempt | 本步骤第几次尝试 | int | 是 | 1 到 `step_retries + 1` |
-| step.fail_reason | 失败原因 | enum | failed 时必填 | `timeout` / `pane_lost` / `invalid_output` / `command_failed` / `agent_blocked` |
+| step.fail_reason | 失败原因 | enum | failed 时必填 | `timeout` / `pane_lost`（旧记录） / `invalid_output` / `command_failed` / `agent_blocked` |
 | counters.* | 各关口已用轮次 | int | 是 | 不超过 `config.yaml` 对应上限；用户 `continue` 时由程序清零 |
 | git.base_commit | 开始时目标分支提交 | sha | 建 worktree 后必填 | |
 | git.round_start_commit | 本轮编码开始时的提交 | sha | S4 时必填 | 重做编码前回到此提交 |
@@ -174,7 +174,7 @@ original_filename: tag-filter.md
 
 1. `status` 与需求文件所在目录一致。
 2. `seq` 与 `events.jsonl` 最后一条的 `seq` 一致。
-3. `step.state = running` 时，`pane_id`、`started_at`、`deadline_at` 非空。
+3. `step.state = running` 时，`started_at`、`deadline_at` 非空（`pane_id` 已不再写）。
 4. 任一 `counters.*` 不超过对应上限。
 
 ### 5.3 写入顺序

@@ -25,3 +25,6 @@
 - 新增 reference/agent-autoloop-classification.md：autoloop 作者自己怎么给任务分类（读线上 main d3e6d26）
 - state.json 加 kind 字段（路径写法 大类/子类，现仅 pipeline/design），未登记的类型在写文件前被拒绝；看板显示 kind 并按窗格宽度截断每行
 - next.md 补“换窗口接手时要知道”；INDEX 补 kinds.py
+- F4：阶段表、角色、产物、结论、任务说明移到 templates/pipeline/design.json，pipeline.py 与规则生成都从它读；新增 tests/test_templates.py
+- F5：新增 tests/f5_crash.py（假 Agent、真实中台）：Agent 卡住被超时取消并重试且无残留进程；驱动 kill -9 后重启不重复发同一轮；中台 kill -9 重启后在途一轮自行完成。假 Agent 支持前 N 次卡住
+- F6：移除窗格驱动的 claim/config/main/invoke/status 及其测试，Controller 不再有 hc 与 panes，agents.py 去掉 launch_cmd，config.yaml 去掉 scheduler 与 cockpit 段，新记录不再写 pane_id；显示宽度函数挪到 src/dashboard/width.py

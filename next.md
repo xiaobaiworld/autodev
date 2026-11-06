@@ -1,6 +1,6 @@
 # next.md
 
-更新：2026-11-06 ｜ 阶段：以 agent-autoloop 为地基的集成（F0 到 F2 完成，F3 进行中）
+更新：2026-11-06 ｜ 阶段：以 agent-autoloop 为地基的集成（F0 到 F2、F4 到 F6 完成，F3 的 Web 界面未做）
 
 ## 恢复上下文时先读
 
@@ -23,16 +23,18 @@
 - F3 已用真实 Agent 验证：三格里实时显示（`docs/spikes/2026-11-06-f3-real-run-report.md`）。入口 `python3 -m driver.run`。
 - 看板列出全部需求（进行中、等你、已完成、已拒绝），进行中和等你的不折叠，较早的已结束需求折成一个数；“待你决定”把等待人工的需求和中台卡片加在一起。
 - 需求有了 `kind` 字段（路径写法，大类/子类），目前只登记 `pipeline/design`，在 `src/cockpit/kinds.py`；看板每个需求显示它，老记录显示“未分类”。
-- 测试：144 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
+- F4：阶段表在 `templates/pipeline/design.json`，`pipeline.py` 和规则生成都从它读。
+- F5（假 Agent、真实中台）：Agent 卡住被超时取消并重试；驱动被 kill -9 重启不重复发同一轮；中台被 kill -9 重启后在途一轮自行完成。入口 `python3 tests/f5_crash.py hang|ctrl-kill|hub-kill`。
+- F6：窗格驱动旧代码已删，Controller 没有 `hc` 和 `panes`。
+- 真实演示：R20261106-002（命令行待办 `todo`）S1 到 S3 跑了 3 轮，Codex 两次 REWORK 后 PASS，共 817 秒；没触发轮次上限。
+- 测试：108 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
 
 ## 下一步
 
-1. F3 剩余：Web 界面后做；真实审查者给出 REWORK 时看板和日志是否好用，还没见过。
-2. 写 `pro2` 布局重建脚本（用户问过“能否保存”，桌面应用没有保存命令，建议用脚本重建）。
-3. F4 模板：角色模板与规则从一处生成。
-4. F5 崩溃与卡住：强杀中台、强杀 worker、Agent 超时、中台重试在真实环境触发。
-5. F6 清理：移除不再需要的窗格驱动代码（`src/cockpit/` 的 `claim.py`、`invoke.py`、`config.py`、`main.py`、`status.py` 中不再用的部分），回写设计文档第 3、5、9 节。
-6. 未验证项：agy 的实际模型名与用量；真实审查者给出 REWORK 并回应意见；强度参数在 Claude 启动参数里的写法；`/v1/stream` 从序号 0 重放在历史很大时的开销。
+1. 接 S4 以后的阶段（编码、检查、代码审查、发布候选、验收、发布）：先在 `templates/pipeline/` 加模板、在 `kinds.py` 登记类型，再扩 `next_move`。目标项目 personagent 还没有可运行代码，检查命令（`config.yaml` 的 `checks`）待定。
+2. F3 剩余：Web 界面；`pro2` 布局重建脚本（桌面应用没有保存命令）。
+3. F5 没验证的：权限弹窗卡住、真实 Agent 进程崩溃、`/v1/stream` 从 0 重放在历史很大时的开销。
+4. 未验证项：agy 的实际模型名与用量；强度参数在 Claude 启动参数里的写法。
 
 ## 换窗口接手时要知道（仓库里没有的东西）
 
@@ -42,12 +44,11 @@
 - 跑真实流水线：`PYTHONPATH=src python3 -m driver.run --home /tmp/autodev-demo/home --root ~/code/autodev --request <需求.md> --effort low`（花额度）。
 - `workspace/runs/` 在 gitignore 里：`R20261105-001` 是 P4 调试留下的旧失败记录（看板里显示“等你”），`R20261106-001` 是 F3 真实跑通的那次，两条都没有 `kind`，显示“未分类”。
 - 线上 autoloop 的最新只读副本在 `/tmp/aal-latest`（`d3e6d26`），本机锁定的 `~/code/agent-autoloop` 仍是 `8f8e2ee`，没升级。
-- 已知小问题：`docs/INDEX.md` 里 `src/cockpit/` 一行没提 `kinds.py`；窗格驱动的旧代码还没清（F6）。
 
 ## 刚做完 / 马上做
 
-- 刚做完：需求加了 `kind` 字段（`src/cockpit/kinds.py`，现只登记 `pipeline/design`，路径写法，以后分子类只多登记一行）。
-- 马上做：F4 模板（角色模板与规则从一处生成，模板里要有“适用于哪个 kind”的字段）。
+- 刚做完：F4、F5、F6（见上）；真实 Agent 上第一次看到 REWORK 回路（两次）。
+- 马上做：S4 以后的阶段需要用户先定的东西很多（见下面“仍然开放的问题”），建议先和用户确认范围。
 - 等用户：`docs/design/2026-11-06-ticket-model.md` 第 5 节的 6 个待讨论问题；Agent 做分类和拆解与 D004 的协调方式（我的提议是 Agent 只提方案文件，程序校验后才执行，没确认过）。
 
 ## 仍然开放的问题（来自早期设计，与地基无关）

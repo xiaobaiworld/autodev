@@ -9,7 +9,6 @@ from cockpit.kinds import DEFAULT_KIND, KINDS, UnknownKind, check_kind, kind_lab
 from cockpit.store import Run
 
 CFG = (Path(__file__).resolve().parents[1] / "config.yaml").read_text(encoding="utf-8")
-PANES = {"claude-opus": "t1b", "codex": "t18", "agy": "t19"}
 LIMITS = {"design_review_rounds": 3, "step_retries": 2, "step_timeout_minutes": 60}
 
 
@@ -52,7 +51,7 @@ class StartRunKindTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.ctrl = Controller(self.root, None, parse_agents(CFG), parse_roles(CFG), PANES, LIMITS,
+        self.ctrl = Controller(self.root, parse_agents(CFG), parse_roles(CFG), LIMITS,
                                invoke_fn=lambda *a, **k: None)
 
     def tearDown(self):

@@ -76,7 +76,7 @@ class Env:
 
     def controller(self):
         hub = Hub(load_config(self.home))
-        return hub, Controller(self.work, None, self.agents, self.roles, {k: "hub" for k in self.agents}, self.limits,
+        return hub, Controller(self.work, self.agents, self.roles, self.limits,
                                invoke_fn=make_invoke(hub, self.limits["step_retries"], poll_s=3))
 
     def events(self, rd):
@@ -141,7 +141,7 @@ def ctrl_kill():
         code += ("import json,sys\nfrom pathlib import Path\nfrom cockpit.agents import *\n"
                  "from cockpit.controller import Controller\nfrom driver.hub import *\nfrom driver.runner import make_invoke\n"
                  "t=Path(%r).read_text();a,r,l=parse_agents(t),parse_roles(t),parse_limits(t);l['step_timeout_minutes']=%r\n"
-                 "h=Hub(load_config(Path(%r)));c=Controller(Path(%r),None,a,r,{k:'hub' for k in a},l,invoke_fn=make_invoke(h,l['step_retries'],poll_s=3))\n"
+                 "h=Hub(load_config(Path(%r)));c=Controller(Path(%r),a,r,l,invoke_fn=make_invoke(h,l['step_retries'],poll_s=3))\n"
                  "c.run_all(Path(%r),log=print,max_steps=40)\n") % (
             str(ROOT / "config.yaml"), TIMEOUT_MIN, str(e.home), str(e.work), str(rd))
         child = subprocess.Popen([sys.executable, "-c", code], env=dict(os.environ, PYTHONPATH=str(ROOT / "src")))

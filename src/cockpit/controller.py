@@ -1,5 +1,5 @@
 """最小主循环（P4）：每次 advance 只推进一步并立即落盘，重启后从 state.json 继续（设计 5.3、5.4）。
-hc、invoke 都可注入，便于测试。S4 以后不在本计划内。
+invoke_fn 必须传入（正式用 driver.runner.make_invoke，测试用假的）。S4 以后不在本计划内。
 """
 import json
 import re
@@ -7,13 +7,9 @@ import shlex
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from cockpit.agents import launch_cmd
-from cockpit.invoke import invoke as real_invoke
 from cockpit.kinds import DEFAULT_KIND, check_kind
 from cockpit.pipeline import STAGES, SetupError, check_vendors, next_move, step_dir, validate_done, write_input
 from cockpit.store import Run, atomic_write, now_iso
-
-EXIT_KEYS = ("ctrl+c", "ctrl+c")
 
 
 def start_run(root, request_text, project, ctrl, today=None, kind=DEFAULT_KIND):
@@ -39,9 +35,9 @@ def start_run(root, request_text, project, ctrl, today=None, kind=DEFAULT_KIND):
 
 
 class Controller:
-    def __init__(self, root, hc, agents, roles, panes, limits, invoke_fn=real_invoke, clock=None):
-        self.root, self.hc = Path(root), hc
-        self.agents, self.roles, self.panes, self.limits = agents, roles, panes, limits
+    def __init__(self, root, agents, roles, limits, invoke_fn, clock=None):
+        self.root = Path(root)
+        self.agents, self.roles, self.limits = agents, roles, limits
         self.invoke_fn = invoke_fn
         self.now = clock or (lambda: datetime.now().astimezone())
         check_vendors(agents, roles)
@@ -73,10 +69,10 @@ class Controller:
     def _start(self, run, state):
         step = dict(state["step"])
         started = self.now()
-        step.update(state="running", pane_id=self.panes[step["agent"]], started_at=started.isoformat(timespec="seconds"),
+        step.update(state="running", started_at=started.isoformat(timespec="seconds"),
                     deadline_at=(started + timedelta(minutes=self.limits["step_timeout_minutes"])).isoformat(timespec="seconds"))
         self._write_input(run.dir, dict(state, step=step))
-        run.commit(dict(state, step=step), "step.started", data={"role": step["role"], "agent": step["agent"], "pane_id": step["pane_id"]})
+        run.commit(dict(state, step=step), "step.started", data={"role": step["role"], "agent": step["agent"]})
         return f"{state['stage']} 启动 {step['agent']}"
 
     def _run(self, run, state):
@@ -89,10 +85,7 @@ class Controller:
         inp = self._write_input(run.dir, state)
         agent = self.agents[step["agent"]]
         res = self.invoke_fn(
-            self.hc, step["pane_id"], sd,
-            launch_cmd(agent, sd, writable=True, add_dirs=[self.root / "workspace"]),
-            f"请读取 {inp}，按其中要求把产物和 done.json 写到 {sd}，做完后只回复 DONE。",
-            timeout_s=self.limits["step_timeout_minutes"] * 60, exit_keys=EXIT_KEYS)
+            sd, timeout_s=self.limits["step_timeout_minutes"] * 60)
         if res["ok"]:
             bad = validate_done(run.dir, state)
             if bad is None:
@@ -110,8 +103,7 @@ class Controller:
 
     def _after_failure(self, run, state):
         step = state["step"]
-        # 窗格丢了，重试只会立刻再失败，要人恢复窗格
-        if step["fail_reason"] != "pane_lost" and step["attempt"] <= self.limits["step_retries"]:
+        if step["attempt"] <= self.limits["step_retries"]:
             new = self._new_step(state, step["attempt"] + 1)
             run.commit(dict(state, step=new), "step.retried", data={"reason": step["fail_reason"]})
             return f"{state['stage']} 重试第 {new['attempt']} 次"
@@ -153,5 +145,5 @@ def _new_step(state, attempt, ctrl):
     agent = ctrl.roles[role]
     model = ctrl.agents[agent].get("model")
     return {"state": "pending", "role": role, "agent": agent, "model": model,
-            "dir": step_dir(stage, state["round"]), "pane_id": None, "started_at": None,
+            "dir": step_dir(stage, state["round"]), "started_at": None,
             "deadline_at": None, "attempt": attempt, "fail_reason": None}

@@ -71,7 +71,7 @@ class RunnerTest(unittest.TestCase):
             yield from orig(after, timeout)
         hub.facts = facts
         inv = make_invoke(hub, retries, clock=self.clock.now, sleep=self.clock.sleep)
-        return inv(None, "x", self.sd, "", "", timeout_s=timeout_s, exit_keys=("ctrl+c",))
+        return inv(self.sd, timeout_s=timeout_s)
 
     def test_subject_and_event_id_shape(self):
         s = subject_of(Run(self.run_dir).read())

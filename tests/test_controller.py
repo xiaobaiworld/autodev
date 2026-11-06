@@ -10,7 +10,6 @@ from cockpit.controller import Controller, SetupError, check_vendors, start_run
 from cockpit.store import Run
 
 CFG = (Path(__file__).resolve().parents[1] / "config.yaml").read_text(encoding="utf-8")
-PANES = {"claude-opus": "t1b", "codex": "t18", "agy": "t19"}
 LIMITS = {"design_review_rounds": 3, "step_retries": 2, "step_timeout_minutes": 60}
 OUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"]}
 
@@ -27,14 +26,14 @@ class FakeAgent:
         self.fail_first, self.crash_on = fail_first, crash_on
         self.calls = []
 
-    def __call__(self, hc, pane, sd, launch, prompt, timeout_s, exit_keys):
+    def __call__(self, sd, timeout_s):
         fm = (Path(sd) / "input.md").read_text(encoding="utf-8")
         g = lambda k: re.search(rf"^{k}: (.+)$", fm, re.M).group(1)
         stage, rnd = g("stage"), int(g("round"))
-        self.calls.append((stage, rnd, pane))
-        if self.crash_on == (stage, rnd) and len(self.calls) and self.calls.count((stage, rnd, pane)) == 1:
+        self.calls.append((stage, rnd))
+        if self.crash_on == (stage, rnd) and len(self.calls) and self.calls.count((stage, rnd)) == 1:
             raise CrashError()
-        if self.fail_first == stage and self.calls.count((stage, rnd, pane)) == 1:
+        if self.fail_first == stage and self.calls.count((stage, rnd)) == 1:
             return {"ok": False, "reason": "timeout"}
         for f in OUTS[stage]:
             (Path(sd) / f).write_text("x")
@@ -54,7 +53,7 @@ class ControllerTest(unittest.TestCase):
         self.tmp.cleanup()
 
     def make(self, agent):
-        return Controller(self.root, None, parse_agents(CFG), parse_roles(CFG), PANES, LIMITS, invoke_fn=agent)
+        return Controller(self.root, parse_agents(CFG), parse_roles(CFG), LIMITS, invoke_fn=agent)
 
     def go(self, ctrl):
         rid = start_run(self.root, "给 calc 加 divide", "toy", ctrl, today=datetime(2026, 11, 5))
@@ -68,7 +67,6 @@ class ControllerTest(unittest.TestCase):
         st = Run(rd).read()
         self.assertEqual((rid, st["status"], st["stage"]), ("R20261105-001", "done", "S3"))
         self.assertEqual([c[0] for c in ag.calls], ["S1", "S2", "S3"])
-        self.assertEqual([c[2] for c in ag.calls], ["t1b", "t1b", "t18"])  # 作者与审查者不同窗格
         seqs = [json.loads(x)["seq"] for x in (rd / "events.jsonl").read_text().splitlines()]
         self.assertEqual(seqs, list(range(1, len(seqs) + 1)))
         self.assertEqual(Run(rd).load()["seq"], seqs[-1])
@@ -111,18 +109,6 @@ class ControllerTest(unittest.TestCase):
         self.assertIn("step.failed", types)
         self.assertIn("step.retried", types)
         self.assertEqual(Run(rd).read()["status"], "done")
-
-    def test_pane_lost_goes_to_needs_human_without_retry(self):
-        calls = []
-
-        def lost(hc, pane, sd, launch, prompt, timeout_s, exit_keys):
-            calls.append(pane)
-            return {"ok": False, "reason": "pane_lost"}
-        ctrl = self.make(lost)
-        _, rd = self.go(ctrl)
-        ctrl.run_all(rd, log=lambda m: None)
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(Run(rd).read()["status"], "needs-human")
 
     def test_crash_mid_step_then_restart_continues(self):
         ag = FakeAgent({"S1": ["ACCEPT"], "S2": ["DONE"], "S3": ["PASS"]}, crash_on=("S2", 1))

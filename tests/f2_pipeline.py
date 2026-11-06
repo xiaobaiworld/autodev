@@ -65,8 +65,7 @@ def main(fake=False):
                     break
             time.sleep(0.1)
         hub = Hub(load_config(home))
-        panes = {k: "hub" for k in agents}
-        ctrl = Controller(work, None, agents, roles, panes, limits,
+        ctrl = Controller(work, agents, roles, limits,
                           invoke_fn=make_invoke(hub, limits["step_retries"]))
         rid = start_run(work, REQUEST, "toy", ctrl)
         rd = work / "workspace" / "runs" / rid

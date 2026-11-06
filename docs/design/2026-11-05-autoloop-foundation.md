@@ -1,6 +1,6 @@
 # 以 agent-autoloop 为地基：融合方案（2026-11-05）
 
-状态：已接受（D014，2026-11-06 记录）。进度：F0、F1、F2 完成，F3 进行中，F4 到 F6 未做；每步结果见 `docs/spikes/` 下的报告，当前步骤见 `next.md`。
+状态：已接受（D014，2026-11-06 记录）。进度：F0、F1、F2、F4、F5、F6 完成，F3 的命令行部分完成（Web 界面未做）；每步结果见 `docs/spikes/` 下的报告，当前步骤见 `next.md`。
 
 与 `2026-11-02-autodev-design.md` 第 3.2、3.3、5 节冲突时，以本文为准（那几节顶部已加说明）。驾驶舱窗格方案已归档到 `docs/archive/`。
 
@@ -75,9 +75,9 @@ $AL why 1
 | F1（完成） | 真实 Agent 无界面：规则里配 Claude、Codex、agy，模型一律写完整 ID（`docs/MODELS.md`） | 各跑一轮写文件的任务；日志里的实际模型名与配置一致；权限不弹窗卡住 |
 | F2（完成） | 流水线驱动：用 Python 标准库经 `emit` 或 `POST /v1/events` 发事件，经 `/v1/stream` 得知一轮结束，再校验产物 | S1 到 S3 跑通，REWORK 回路有轮次上限，作者与审查者厂商不同时才放行 |
 | F3（进行中） | 界面：命令行（Herdr 窗格里看）与 Web，读同一份中台数据 | 两个界面同时开，显示一致；关掉任何一个不影响流程 |
-| F4 | 模板：角色模板和规则从一处生成 | 改一处模板，`check` 通过，新一轮用新模板 |
-| F5 | 崩溃与卡住：强杀中台、强杀 worker、Agent 超时、权限弹窗 | 恢复后不重复、不丢；卡住的被判出来并给出处理 |
-| F6 | 清理：驾驶舱里不再需要的窗格驱动代码移除，文档回写 | 测试通过，`docs/INDEX.md` 与 `next.md` 同步 |
+| F4（完成） | 模板：阶段表、角色、产物、结论、任务说明在 `templates/pipeline/design.json`，规则的阶段与角色由它派生 | 改一处模板，`check` 通过，新一轮用新模板 |
+| F5（完成，假 Agent） | 崩溃与卡住：`tests/f5_crash.py` 的 hang、ctrl-kill、hub-kill 三项通过；权限弹窗卡住与真实 Agent 崩溃未验证。强杀中台、强杀 worker、Agent 超时、权限弹窗 | 恢复后不重复、不丢；卡住的被判出来并给出处理 |
+| F6（完成） | 清理：驾驶舱里不再需要的窗格驱动代码移除，文档回写 | 测试通过，`docs/INDEX.md` 与 `next.md` 同步 |
 
 ### F0、F1 的通过标准
 
@@ -137,9 +137,8 @@ F1，Claude、Codex、agy 各跑一轮"在临时目录写指定内容的文件"�
 | --- | --- |
 | `src/cockpit/pipeline.py`（阶段表、done 校验、转移规则） | 保留，成为流水线驱动的核心 |
 | `src/cockpit/store.py`（原子写、锁、先事件后状态） | 保留给驱动自己的阶段状态；中台自己的状态不碰 |
-| `src/cockpit/controller.py` | 改写：不再往窗格发键盘，改为发事件、等结束 |
-| `src/cockpit/invoke.py`、`claim.py`、窗格相关的 `main.py` | F6 移除（Herdr 窗格不再是流程的一部分） |
-| `src/cockpit/status.py`、`config.py` | 状态区渲染可能复用于命令行界面，F3 再定 |
+| `src/cockpit/controller.py` | 已改写（F6）：不再有 `hc` 和窗格，调用 Agent 的函数由外部传入（`driver.runner.make_invoke`） |
+| `src/cockpit/invoke.py`、`claim.py`、`config.py`、`main.py`、`status.py` | F6 已移除（Herdr 窗格不再是流程的一部分）；显示宽度函数挪到 `src/dashboard/width.py` |
 | 巡检（L008） | 上游内核已有租约、心跳、失联、连续失败上限，不再自己做；卡住时走它的卡片 |
 | 厂商不同（D008）、产物契约 | 我们独有，留在驱动里 |
 | `docs/MODELS.md` | 继续有效，且更重要：规则里的模型必须是完整 ID |

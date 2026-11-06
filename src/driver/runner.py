@@ -1,6 +1,6 @@
 """把 Controller 的"调用一次 Agent"换成：向 autoloop 中台发事件，读事实流等这一轮结束。
 
-返回值和 cockpit.invoke.invoke 一致：{"ok": bool, "reason": None|timeout|command_failed}。
+返回值：{"ok": bool, "reason": None|timeout|command_failed}。
 完成与否仍由 Controller 按 done.json 校验，这里只回答"中台那一轮有没有跑完"。
 """
 import re
@@ -25,7 +25,7 @@ def subject_of(state):
 def make_invoke(hub, step_retries, tracker=None, clock=time.monotonic, sleep=time.sleep, poll_s=30):
     tracker = tracker or RunTracker()  # ponytail: 从序号 0 重放整个日志；历史很大时改为只读最近序号
 
-    def invoke(_hc, _pane, sd, _launch, _prompt, timeout_s, exit_keys=None):  # 与 Controller 的调用签名一致
+    def invoke(sd, timeout_s):  # Controller 的调用签名：步骤目录和超时秒数
         run_dir = sd.parents[1]
         state = Run(run_dir).read()
         key = event_id(state)
