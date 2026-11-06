@@ -11,7 +11,7 @@ from cockpit.kinds import DEFAULT_KIND, check_kind
 from cockpit.pipeline import (SetupError, check_vendors, counters_for, next_move, step_dir, template_for,
                               validate_done, workdir_of, write_input)
 from cockpit.tools import TOOLS
-from cockpit.workdir import checkpoint, head, prepare, reset, snapshot
+from cockpit.workdir import checkpoint, fingerprint, head, prepare, reset, snapshot
 from cockpit.store import Run, atomic_write, now_iso
 
 
@@ -84,12 +84,22 @@ class Controller:
             while sd.with_name(f"{sd.name}.prev-{n}").exists():
                 n += 1
             sd.rename(sd.with_name(f"{sd.name}.prev-{n}"))
-        if self._spec(state).get("workdir"):
+        mode = self._spec(state).get("workdir")                  # write（改代码）/ use（程序用，不改）/ readonly（Agent 只读）
+        if mode:
             wd = workdir_of(self.root, state)
-            prepare(wd)  # 第一次建仓库；已有就不动
-            # 起点：每个编码轮开始前把上一轮的代码提交成检查点，作为这一轮的起点。这样 S5 检查失败退回 S4 时，
-            # Agent 是在已有代码上修，不会被清空；同一轮内的失败重试仍回到这个起点。S5 不改代码，起点就是当前 HEAD。
-            step["base_commit"] = checkpoint(wd, f"{state['stage']} 第 {state['round']} 轮起点") if state["stage"] == "S4" else head(wd)
+            first = prepare(wd)                                  # 第一次建仓库；已有就不动。返回仓库的第一个提交
+            step["first_commit"] = first
+            if mode in ("write", "readonly"):
+                # 起点：会改动或可能被改动代码的步骤开始前，先把当前代码提交成检查点，作为这一步的起点。
+                # write：检查失败或审查打回退回 S4 时，Agent 是在已有代码上修，不会被清空；同一轮内的失败重试回到这个起点。
+                # readonly：审查者越权改了代码时，要恢复到“审查前的真实状态”，不能恢复到更早的提交（那会把编码者的代码一起清掉）。
+                label = "审查前" if mode == "readonly" else "起点"
+                step["base_commit"] = checkpoint(wd, f"{state['stage']} 第 {state['round']} 轮{label}")
+            else:
+                step["base_commit"] = head(wd)
+            if mode == "readonly":
+                step["tree_before"] = fingerprint(wd)            # 审查前的指纹，审查后比对，改了就判无效
+                snapshot(wd, first, run.dir / step["dir"] / "full.patch")   # 审查者要看的完整改动：从最初起点到现在
         self._write_input(run.dir, dict(state, step=step))
         run.commit(dict(state, step=step), "step.started", data={"role": step["role"], "agent": step["agent"]})
         return f"{state['stage']} 启动 {step['agent']}"
@@ -127,23 +137,36 @@ class Controller:
         sd = run.dir / step["dir"]
         if self._spec(state).get("runner") == "tool":
             return self._run_tool(run, state)
-        wd = workdir_of(self.root, state) if self._spec(state).get("workdir") else None
+        mode = self._spec(state).get("workdir")
+        wd = workdir_of(self.root, state) if mode else None
         if (sd / "done.json").exists() and validate_done(run.dir, state) is None:
-            # 崩溃可能发生在 Agent 写完、快照之前：编码阶段补做快照，确认真有改动才算完成；没有改动就当没做过，往下重做
-            if wd is None or snapshot(wd, step["base_commit"], sd / "diff.patch"):
-                return self._finish(run, state)  # 崩溃前其实已完成（设计 5.4）
+            # 崩溃可能发生在 Agent 写完、快照之前：编码阶段补做快照，确认真有改动才算完成；没有改动就当没做过，往下重做。
+            # 只读阶段（审查）则确认代码没被动过。
+            if mode == "write":
+                if snapshot(wd, step["base_commit"], sd / "diff.patch"):
+                    return self._finish(run, state)  # 崩溃前其实已完成（设计 5.4）
+            elif mode == "readonly":
+                if fingerprint(wd) == step["tree_before"]:
+                    return self._finish(run, state)
+            else:
+                return self._finish(run, state)
         # ponytail: 重启后一律从 input.md 重做，不接续等待仍存活的 pane；
         # 想省一次重做时再加"pane 存活且未超时则继续等"。
         inp = self._write_input(run.dir, state)
         agent = self.agents[step["agent"]]
         (sd / "done.json").unlink(missing_ok=True)  # 重做前清掉上一次的完成标记，免得被当成这次的结果
-        if wd:
+        if mode == "write":
             reset(wd, step["base_commit"])  # 每次都从同一个起点开始，失败重试不会带着上次的半成品
         res = self.invoke_fn(
             sd, timeout_s=self.limits["step_timeout_minutes"] * 60)
-        if res["ok"] and wd:
+        if res["ok"] and mode == "write":
             if not snapshot(wd, step["base_commit"], sd / "diff.patch"):
                 res = {"ok": False, "reason": "invalid_output", "detail": "代码目录没有任何改动，不能算编码完成"}
+        elif res["ok"] and mode == "readonly":
+            if fingerprint(wd) != step["tree_before"]:
+                # 审查者动了代码：它的结论不可信（可能改了代码再放行）。把代码恢复成审查前的样子，按无效输出重试
+                reset(wd, step["base_commit"])
+                res = {"ok": False, "reason": "invalid_output", "detail": "审查者修改了代码目录，结果作废，代码已恢复"}
         if res["ok"]:
             bad = validate_done(run.dir, state)
             if bad is None:

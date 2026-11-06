@@ -10,8 +10,10 @@ from cockpit.controller import Controller, start_run
 from cockpit.store import Run
 
 CFG = (Path(__file__).resolve().parents[1] / "config.yaml").read_text(encoding="utf-8")
-LIMITS = {"design_review_rounds": 3, "check_rounds": 3, "step_retries": 2, "step_timeout_minutes": 60}
-OUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"], "S4": ["exec-report.md"]}
+LIMITS = {"design_review_rounds": 3, "check_rounds": 3, "code_review_rounds": 3, "step_retries": 2,
+          "step_timeout_minutes": 60}
+OUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"], "S4": ["exec-report.md"],
+        "S6": ["review.md"]}
 
 
 class Agent:
@@ -25,7 +27,7 @@ class Agent:
         g = lambda k: re.search(rf"^{k}: (.+)$", text, re.M).group(1).strip()
         stage, rid = g("stage"), g("id")
         self.inputs.append((stage, int(g("round")), text))
-        verdict = {"S1": "ACCEPT", "S2": "DONE", "S3": "PASS"}.get(stage)
+        verdict = {"S1": "ACCEPT", "S2": "DONE", "S3": "PASS", "S6": "PASS"}.get(stage)
         if stage == "S4":
             verdict = self.s4.pop(0) if self.s4 else "DONE"
             n = len([i for i in self.inputs if i[0] == "S4"])        # 每次内容不同，否则第 2 次在检查点之上“没有改动”会被判无效
@@ -99,7 +101,8 @@ class ResumeTest(unittest.TestCase):
         state["counters"]["design_review_rounds"] = 3
         Run(rd).commit(state, "test.setup")
         ctrl.resume(rd, "continue")
-        self.assertEqual(Run(rd).read()["counters"], {"design_review_rounds": 0, "check_rounds": 0})
+        self.assertEqual(Run(rd).read()["counters"],
+                         {"design_review_rounds": 0, "check_rounds": 0, "code_review_rounds": 0})
 
     def test_reject_ends_the_request(self):
         agent, ctrl, rd = self.blocked_run()

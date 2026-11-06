@@ -7,7 +7,9 @@
 # ponytail: 每个需求一个新仓库，不从目标项目的真实仓库克隆。接真实项目（personagent）时改成
 # `git worktree add` 或 clone，prepare 的接口不变。
 """
+import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 from cockpit.store import atomic_write
@@ -55,6 +57,20 @@ def checkpoint(workdir, message="检查点"):
     if _git(workdir, "status", "--porcelain").strip():
         _git(workdir, "commit", "-q", "-m", message)
     return head(workdir)
+
+
+def fingerprint(workdir):
+    """代码目录当前内容的指纹（已跟踪文件、新文件、改动都算进去，不含 .git 和被 .gitignore 忽略的缓存）。
+    只读阶段（审查）前后各取一次，不一样就说明有人改了代码。不改变仓库状态、不产生提交。"""
+    workdir = Path(workdir)
+    # 用 git 自己的哈希：把工作区临时写成树对象，但不碰真实暂存区（用临时索引文件）
+    with tempfile.TemporaryDirectory() as t:
+        env = dict(os.environ, GIT_INDEX_FILE=str(Path(t) / "idx"))
+        subprocess.run(["git", *_ID, "add", "-A"], cwd=workdir, env=env, capture_output=True, check=True)
+        r = subprocess.run(["git", *_ID, "write-tree"], cwd=workdir, env=env, capture_output=True, text=True)
+        if r.returncode != 0:
+            raise GitError(f"git write-tree 失败：{r.stderr.strip()}")
+        return r.stdout.strip()
 
 
 def reset(workdir, base):

@@ -1,7 +1,7 @@
 {
  "kind": "pipeline/build",
  "extends": "pipeline/design",
- "order": ["S1", "S2", "S3", "S4", "S5"],
+ "order": ["S1", "S2", "S3", "S4", "S5", "S6"],
  "stages": {
   "S3": {
    "on": {
@@ -14,8 +14,8 @@
    "role": "coder",
    "outputs": ["exec-report.md"],
    "verdicts": ["DONE", "BLOCK"],
-   "inputs": ["request", "analysis", "design", "plan", "workdir", "check_prev", "human"],
-   "workdir": true,
+   "inputs": ["request", "analysis", "design", "plan", "workdir", "check_prev", "review_code_prev", "human"],
+   "workdir": "write",
    "on": {
     "DONE": {"goto": "S5", "round": "same"}
    },
@@ -29,12 +29,25 @@
    "command": ["python3", "-m", "unittest", "discover", "-s", "tests"],
    "outputs": ["check.log"],
    "verdicts": ["PASS", "FAIL", "BLOCK"],
-   "workdir": true,
+   "workdir": "use",
    "on": {
-    "PASS": "done",
+    "PASS": {"goto": "S6", "round": "same"},
     "FAIL": {"goto": "S4", "round": "inc", "counter": "check_rounds"}
    },
    "task": "程序在代码目录里运行检查命令，退出码为 0 且确实跑了测试才算通过。"
+  },
+  "S6": {
+   "dir": "S6-code-review",
+   "role": "code_reviewer",
+   "outputs": ["review.md"],
+   "verdicts": ["PASS", "REWORK", "BLOCK"],
+   "inputs": ["request", "analysis", "design", "plan", "full_diff", "check_now", "workdir_ro", "human"],
+   "workdir": "readonly",
+   "on": {
+    "PASS": "done",
+    "REWORK": {"goto": "S4", "round": "inc", "counter": "code_review_rounds"}
+   },
+   "task": "审查代码目录里的实现：对照需求、分析里的验收标准、设计稿和开发计划，写 review.md，frontmatter 含 verdict、findings（列表，每项含 id、severity、location、problem、expected）。重点看：需求里要求的每一条是否都实现了且被测试覆盖、测试是否真的在验证需求（而不只是证明代码自洽）、错误路径、数据安全。不报风格。程序已经运行过测试（见“本轮检查结果”），测试通过只说明代码通过了自己的测试，不说明测试覆盖了需求。你只读，不要修改代码目录里任何文件，也不要执行 git 命令；verdict 为 PASS 时不得有 critical 或 high 级别的问题。"
   }
  }
 }

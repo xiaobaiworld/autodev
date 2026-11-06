@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from cockpit.workdir import GitError, head, prepare, reset, snapshot
+from cockpit.workdir import GitError, fingerprint, head, prepare, reset, snapshot
 
 
 class WorkdirTest(unittest.TestCase):
@@ -67,6 +67,25 @@ class WorkdirTest(unittest.TestCase):
         (self.wd / "__pycache__").mkdir()
         (self.wd / "__pycache__" / "a.pyc").write_bytes(b"\x00")
         self.assertEqual(snapshot(self.wd, base, Path(self.tmp.name) / "p.patch"), [])
+
+    def test_fingerprint_changes_with_content_and_ignores_cache_and_leaves_repo_untouched(self):
+        base = prepare(self.wd, {"a.py": "1\n"})
+        f0 = fingerprint(self.wd)
+        self.assertEqual(f0, fingerprint(self.wd))                       # 没变就一样
+        (self.wd / "__pycache__").mkdir()
+        (self.wd / "__pycache__" / "a.pyc").write_bytes(b"\x00")
+        self.assertEqual(f0, fingerprint(self.wd))                       # 缓存文件不算
+        (self.wd / "a.py").write_text("2\n")
+        f1 = fingerprint(self.wd)
+        self.assertNotEqual(f0, f1)                                      # 改内容
+        (self.wd / "new.py").write_text("x\n")
+        self.assertNotEqual(f1, fingerprint(self.wd))                    # 新文件
+        (self.wd / "new.py").unlink()
+        self.assertEqual(f1, fingerprint(self.wd))                       # 改回去就回到原来的值
+        self.assertEqual(head(self.wd), base)                            # 没产生提交
+        status = __import__("subprocess").run(["git", "status", "--porcelain"], cwd=self.wd,
+                                              capture_output=True, text=True).stdout
+        self.assertEqual(status.strip(), "M a.py")                       # 没有改动暂存区
 
     def test_no_changes_gives_empty_patch_and_no_files(self):
         base = prepare(self.wd, {"a.py": "1\n"})

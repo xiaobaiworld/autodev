@@ -21,6 +21,10 @@ def _check_transitions(t, path):
         for v in spec["verdicts"]:
             if v != "BLOCK" and v not in on:  # BLOCK 一律转人工，由程序处理，不用写
                 raise ValueError(f"模板 {path} 阶段 {name} 的结论 {v} 没有写去哪")
+        if spec.get("workdir") not in (None, "write", "use", "readonly"):
+            raise ValueError(f"模板 {path} 阶段 {name} 的 workdir 只能是 write / use / readonly，写的是 {spec.get('workdir')!r}")
+        if "readonly" == spec.get("workdir") and spec.get("runner") == "tool":
+            raise ValueError(f"模板 {path} 阶段 {name}：只读模式是给 Agent 审查用的，程序步骤用 use")
         if spec.get("runner") == "tool":
             if spec.get("tool") not in TOOLS:
                 raise ValueError(f"模板 {path} 阶段 {name} 用了没有注册的工具 {spec.get('tool')!r}：{sorted(TOOLS)}")
@@ -138,17 +142,31 @@ class SetupError(Exception):
     pass
 
 
+PAIRS = (("designer", "design_reviewer"), ("coder", "code_reviewer"))  # （作者，审查者）
+
+
 def check_vendors(agents, roles):
-    """D008：设计作者与设计审查者的模型厂商必须不同。"""
-    a, b = agents[roles["designer"]], agents[roles["design_reviewer"]]
-    if a.get("vendor") == b.get("vendor"):
-        raise SetupError(f"designer 与 design_reviewer 同为 {a.get('vendor')}，违反 D008")
+    """D008：每一对作者与审查者的模型厂商必须不同。只检查 config 里两个角色都配了的对。"""
+    for author, reviewer in PAIRS:
+        if author not in roles or reviewer not in roles:
+            continue
+        a, b = agents[roles[author]], agents[roles[reviewer]]
+        if a.get("vendor") == b.get("vendor"):
+            raise SetupError(f"{author} 与 {reviewer} 同为 {a.get('vendor')}，违反 D008")
 
 
 def _latest_round(run_dir, stage, kind):
     d = Path(run_dir) / load_template(kind)["stages"][stage]["dir"]
     nums = [int(p.name[6:]) for p in d.glob("round-*") if p.name[6:].isdigit()]
     return max(nums) if nums else None
+
+
+def _verdict_of(step_dir_path):
+    """读某个步骤目录里 done.json 的结论；读不到返回 None。"""
+    try:
+        return json.loads((Path(step_dir_path) / "done.json").read_text(encoding="utf-8")).get("verdict")
+    except (OSError, ValueError):
+        return None
 
 
 def workdir_of(root, state):
@@ -176,6 +194,11 @@ def write_input(root, run_dir, state):
         "workdir": ("代码目录（只改这里的文件，不要执行 git 命令）", lambda: workdir_of(root, state)),
         "check_prev": ("上轮检查结果（由程序运行测试得到，先读它，在已有代码上修复，不要推倒重来）",
                        lambda: at("S5", rnd - 1) / "check.log"),
+        "review_code_prev": ("上轮代码审查意见（逐条处理，在已有代码上改，不要推倒重来）",
+                             lambda: at("S6", rnd - 1) / "review.md"),
+        "workdir_ro": ("代码目录（只读：不要修改里面任何文件，也不要执行 git 命令）", lambda: workdir_of(root, state)),
+        "full_diff": ("完整改动（从起点到现在，程序生成）", lambda: run_dir / step["dir"] / "full.patch"),
+        "check_now": ("本轮检查结果（程序运行测试得到）", lambda: at("S5", rnd) / "check.log"),
     }
     files = []
     replies = sorted((run_dir / "human").glob("reply-*.md")) if (run_dir / "human").exists() else []
@@ -189,8 +212,10 @@ def write_input(root, run_dir, state):
             raise ValueError(f"模板阶段 {st} 的 inputs 里有未知名字 {name!r}")
         label, make = paths[name]
         p = make()
-        if name == "check_prev" and not p.is_file():
-            continue  # 不是从检查失败退回来的（第 1 轮，或人工处理后继续），就没有这份文件
+        if name in ("check_prev", "review_code_prev") and not p.is_file():
+            continue  # 不是从那一步退回来的（第 1 轮，或人工处理后继续），就没有这份文件
+        if name == "check_prev" and _verdict_of(p.parent) != "FAIL":
+            continue  # 上一轮检查是通过的（这一轮是代码审查打回来的），不能把通过的结果当成"没通过"塞给编码者
         files.append(f"- {label}：{p}")
     out = run_dir / step["dir"]
     body = (
