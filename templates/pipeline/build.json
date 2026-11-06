@@ -71,7 +71,7 @@
    "outputs": ["usage.log"],
    "verdicts": ["PASS", "FAIL", "BLOCK"],
    "workdir": "use",
-   "env": {"TODO_FILE": "{scratch}/data/todo.json"},
+   "env": {"TODO_FILE": "{scratch}/todo.json"},
    "script": [
     {"cmd": ["bin/todo", "add", "买牛奶"], "rc": 0, "contains": ["1"]},
     {"cmd": ["bin/todo", "add", "写周报"], "rc": 0, "contains": ["2"]},
