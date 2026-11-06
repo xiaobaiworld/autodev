@@ -10,8 +10,8 @@ from cockpit.controller import Controller, start_run
 from cockpit.store import Run
 
 CFG = (Path(__file__).resolve().parents[1] / "config.yaml").read_text(encoding="utf-8")
-LIMITS = {"design_review_rounds": 3, "check_rounds": 3, "code_review_rounds": 3, "acceptance_rounds": 2,
-          "step_retries": 2, "step_timeout_minutes": 60}
+LIMITS = {"design_review_rounds": 3, "check_rounds": 3, "code_review_rounds": 3, "usage_rounds": 3,
+          "acceptance_rounds": 2, "step_retries": 2, "step_timeout_minutes": 60}
 OUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"], "S4": ["exec-report.md"],
         "S6": ["review.md"], "S8": ["acceptance.md"]}
 REVIEW_FILES = ("review.md", "acceptance.md")
@@ -55,11 +55,15 @@ class ResumeTest(unittest.TestCase):
         def passing_check(ctx):
             (Path(ctx["sd"]) / "check.log").write_text("ok")
             return {"verdict": "PASS", "summary": "假检查通过", "outputs": ["check.log"]}
+        def passing_usage(ctx):
+            (Path(ctx["sd"]) / "usage.log").write_text("ok")
+            return {"verdict": "PASS", "summary": "假使用验证", "outputs": ["usage.log"]}
+
         def fake_release(ctx):
             (Path(ctx["sd"]) / "release.log").write_text("ok")
             return {"verdict": "PASS", "summary": "假发布", "outputs": ["release.log"]}
         ctrl = Controller(self.root, parse_agents(CFG), parse_roles(CFG), LIMITS, invoke_fn=agent,
-                          tools={"check": passing_check, "release": fake_release})
+                          tools={"check": passing_check, "release": fake_release, "usage": passing_usage})
         rid = start_run(self.root, "做个待办", "toy", ctrl, today=datetime(2026, 11, 6), kind="pipeline/build")
         rd = self.root / "workspace" / "runs" / rid
         ctrl.run_all(rd, log=lambda m: None)
@@ -114,7 +118,8 @@ class ResumeTest(unittest.TestCase):
         Run(rd).commit(state, "test.setup")
         ctrl.resume(rd, "continue")
         self.assertEqual(Run(rd).read()["counters"],
-                         {"design_review_rounds": 0, "check_rounds": 0, "code_review_rounds": 0, "acceptance_rounds": 0})
+                         {"design_review_rounds": 0, "check_rounds": 0, "code_review_rounds": 0, "usage_rounds": 0,
+                          "acceptance_rounds": 0})
 
     def test_reject_ends_the_request(self):
         agent, ctrl, rd = self.blocked_run()

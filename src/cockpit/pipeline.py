@@ -37,6 +37,12 @@ def _check_transitions(t, path):
                 raise ValueError(f"模板 {path} 阶段 {name} 用了没有注册的工具 {spec.get('tool')!r}：{sorted(TOOLS)}")
             if spec["tool"] == "check" and not spec.get("command"):
                 raise ValueError(f"模板 {path} 阶段 {name} 的 check 工具缺少 command")
+            if spec["tool"] == "usage":
+                from cockpit.tools import validate_usage_script
+                try:
+                    validate_usage_script(spec.get("script"))
+                except ValueError as e:
+                    raise ValueError(f"模板 {path} 阶段 {name} 的 usage 工具：{e}") from None
             if spec["tool"] == "release" and (spec.get("tag") not in ("rc", "final") or not spec.get("version")):
                 raise ValueError(f"模板 {path} 阶段 {name} 的 release 工具需要 tag（rc 或 final）和 version（x.y.z）")
         for v, act in on.items():
@@ -218,6 +224,8 @@ def write_input(root, run_dir, state):
         "workdir_ro": ("代码目录（只读：不要修改里面任何文件，也不要执行 git 命令）", lambda: workdir_of(root, state)),
         "full_diff": ("完整改动（从起点到现在，程序生成）", lambda: run_dir / step["dir"] / "full.patch"),
         "check_now": ("本轮检查结果（程序运行测试得到）", lambda: at("S5", rnd) / "check.log"),
+        "usage_now": ("使用记录（程序按人写好的使用脚本，在隔离环境里把它真的用了一遍的原始输出，你自己不能运行命令）",
+                      lambda: at("S7U", rnd) / "usage.log"),
     }
     files = []
     replies = sorted((run_dir / "human").glob("reply-*.md")) if (run_dir / "human").exists() else []

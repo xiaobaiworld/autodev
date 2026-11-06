@@ -32,6 +32,7 @@
 - 记录里新增归一的 tokens（总输入/缓存/输出，Claude 与 Codex 同口径）；新增 python3 -m driver.record <需求目录> 汇总 token
 - 新增 src/driver/compare.py（摘要 digest.json 与两次运行的确定性比对）；模板加 scope，输入加“范围”说明；新增 docs/OPTIMIZATIONS.md 记录每次流程优化（O001）
 - S4 编码阶段：转移规则与各步输入改由模板驱动（on、inputs、extends）；新增类型 pipeline/build（driver.run --kind）；新增 src/cockpit/workdir.py（代码目录的起点提交、重做前回到起点、diff.patch，git 全由程序做）；S4 报 DONE 但没有改动判为无效。修了一个 bug：失败重试时旧的 done.json 被当成已完成。假 Agent 联机跑通编码阶段（f2_pipeline.py --build）；真实 Agent（R20261106-006）S4 DONE，代码和测试经手工核对
+- S7U 使用验证（O009）：S7 与 S8 之间新增程序步骤，工具 usage（src/cockpit/tools.py run_usage）按模板里人写的使用脚本，在隔离环境（最小环境变量、HOME 与数据文件指向草稿目录、不经 shell、超时杀进程组）把做出来的东西真的用一遍，原始输出写 usage.log 交给 S8；命令不存在或没有可执行位判 FAIL 退回 S4（usage_rounds 上限 3）；S8 任务说明改为优先引用使用记录。假 Agent 联机验证它抓到了 S5、S6 都放过的“bin/todo 没有可执行位”；11 个新单元测试
 - 真实 Agent 第一次把需求从 S1 跑到 S9（R20261106-010，523 秒到 S9 前的人工关口，批准后发布）。新增 src/driver/reply.py（人工回复命令，批准或退回或拒绝，拿单实例锁）及 6 个测试；看板的“待你决定”写清在等什么并给出回复命令（wait_reason）；文档同步：next.md、docs/INDEX.md、设计第 8 节、DATA_SPEC 第 7.4 和第 8 节加“实现状态”说明；OPTIMIZATIONS 记下“S8 验收者没法亲手运行代码”待定事项
 - 流水线接完 S7 到 S9：新工具 release（src/cockpit/tools.py，本地 git 打候选标签 v0.1.0-rc.N、正式标签 v0.1.0 并写 CHANGELOG.md，同名正式标签拒绝覆盖，不推送）；模板 gate: human（S9 前停下等批准，resume continue 放行）；S8 验收者先绑 Claude（D015）；D008 检查扩到 coder 与 acceptor；“修改权限”红线收窄；两个审查产物加必须有“原文对照”小节（required_sections）；删掉 pipeline.py 里 return 之后的旧代码。假 Agent 联机跑完整 S1 到 S9
 - 修“Agent 进程崩溃要等 45 分钟才转人工”：make_invoke 默认不允许中台自己重试（hub_retries=0），中台第一次失败就取消并报 command_failed，由 Controller 的步骤重试接手；新增联机场景 f5_crash.py crash（3 次崩溃 4 秒转人工）；假 Agent 支持每次崩溃

@@ -58,6 +58,7 @@ limits:
   design_review_rounds: 3
   check_rounds: 3
   code_review_rounds: 3
+  usage_rounds: 3         # S7U 使用验证失败退回编码的上限
   acceptance_rounds: 2
   step_retries: 2
   step_timeout_minutes: 60

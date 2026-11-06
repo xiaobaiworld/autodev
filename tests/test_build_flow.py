@@ -11,12 +11,18 @@ from cockpit.pipeline import workdir_of
 from cockpit.store import Run
 
 CFG = (Path(__file__).resolve().parents[1] / "config.yaml").read_text(encoding="utf-8")
-LIMITS = {"design_review_rounds": 3, "check_rounds": 3, "code_review_rounds": 3, "acceptance_rounds": 2,
-          "step_retries": 2, "step_timeout_minutes": 60}
+LIMITS = {"design_review_rounds": 3, "check_rounds": 3, "code_review_rounds": 3, "usage_rounds": 3,
+          "acceptance_rounds": 2, "step_retries": 2, "step_timeout_minutes": 60}
 OUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"], "S4": ["exec-report.md"],
         "S6": ["review.md"], "S8": ["acceptance.md"]}
 VERDICT = {"S1": "ACCEPT", "S2": "DONE", "S3": "PASS", "S4": "DONE", "S8": "PASS"}
 REVIEW_FILES = ("review.md", "acceptance.md")                          # 这两个产物必须有“原文对照”小节
+
+
+def fake_usage(ctx):
+    """假的使用验证：总是通过。真的使用验证在 test_tools.py 里测。"""
+    (Path(ctx["sd"]) / "usage.log").write_text("假使用验证")
+    return {"verdict": "PASS", "summary": "假使用验证通过", "outputs": ["usage.log"]}
 
 
 def fake_release(ctx):
@@ -83,8 +89,8 @@ class BuildFlowTest(unittest.TestCase):
             return {"verdict": v, "summary": f"假检查 {v}", "outputs": ["check.log"]}
         self.releases = []
         ctrl = Controller(self.root, parse_agents(CFG), parse_roles(CFG), LIMITS, invoke_fn=agent,
-                          tools={"check": fake_check, "release": lambda c: (self.releases.append(c["spec"]["tag"]) or
-                                                                           fake_release(c))})
+                          tools={"check": fake_check, "usage": fake_usage,
+                                 "release": lambda c: (self.releases.append(c["spec"]["tag"]) or fake_release(c))})
         rid = start_run(self.root, "做个待办", "toy", ctrl, today=datetime(2026, 11, 6), kind="pipeline/build")
         rd = self.root / "workspace" / "runs" / rid
         ctrl.run_all(rd, log=lambda m: None)
@@ -235,7 +241,8 @@ class BuildFlowTest(unittest.TestCase):
         def boom(ctx):
             calls.append(1)
             raise OSError("磁盘满了")
-        ctrl = Controller(self.root, parse_agents(CFG), parse_roles(CFG), LIMITS, invoke_fn=agent, tools={"check": boom})
+        ctrl = Controller(self.root, parse_agents(CFG), parse_roles(CFG), LIMITS, invoke_fn=agent,
+                          tools={"check": boom, "usage": fake_usage})
         rid = start_run(self.root, "x", "toy", ctrl, today=datetime(2026, 11, 6), kind="pipeline/build")
         rd = self.root / "workspace" / "runs" / rid
         ctrl.run_all(rd, log=lambda m: None)

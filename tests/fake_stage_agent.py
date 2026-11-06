@@ -4,6 +4,7 @@
 策略文件是 JSON：{"S3": ["REWORK", "REWORK"]} 表示 S3 前两次给 REWORK，之后用默认结论。
 """
 import json
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -30,6 +31,28 @@ if stage == "S4":  # 编码阶段：往输入里写明的代码目录里放文�
     (wd / "tests" / "test_todo.py").write_text(
         "import unittest\nfrom todo import VERSION\nclass T(unittest.TestCase):\n"
         f"    def test_v(self):\n        self.assertEqual(VERSION, {99 if broken else rnd})\n", encoding="utf-8")
+    # 一个真能用的最小 todo 命令（给 S7U 使用验证用）。策略 no_exec_round 指定某一轮写出来没有可执行位：
+    # 演练“测试都过、但命令拿到手用不了 -> S7U 判 FAIL -> 退回 S4 -> 补上 -> 通过”
+    (wd / "bin").mkdir(exist_ok=True)
+    exe = wd / "bin" / "todo"
+    exe.write_text(
+        "#!/usr/bin/env python3\nimport json, os, sys\n"
+        "p = os.environ.get('TODO_FILE') or os.path.expanduser('~/.todo.json')\n"
+        "d = json.load(open(p)) if os.path.exists(p) else {'items': []}\n"
+        "a = sys.argv[1:]\n"
+        "if a[:1] == ['add']:\n"
+        "    n = max([i['id'] for i in d['items']], default=0) + 1\n"
+        "    d['items'].append({'id': n, 'text': a[1], 'done': False}); print(n)\n"
+        "elif a[:1] == ['done']:\n"
+        "    m = [i for i in d['items'] if str(i['id']) == a[1]]\n"
+        "    if not m: print('编号不存在', file=sys.stderr); sys.exit(1)\n"
+        "    m[0]['done'] = True\n"
+        "elif a[:1] == ['list']:\n"
+        "    for i in d['items']:\n"
+        "        if '--all' in a or not i['done']: print(('[x] ' if i['done'] else '[ ] ') + str(i['id']) + ' ' + i['text'])\n"
+        "os.makedirs(os.path.dirname(p), exist_ok=True)\n"
+        "json.dump(d, open(p, 'w'))\n", encoding="utf-8")
+    exe.chmod(0o644 if (policy_now.get("no_exec_round") == rnd) else 0o755)     # 指定那一轮故意不给可执行位
 policy = json.loads(policy_path.read_text())
 if policy.get("crash", {}).get(stage):  # F5：这一阶段的进程每次都崩溃（非零退出），模拟确定性的 bug
     print(f"假 {stage} 崩溃", file=sys.stderr)

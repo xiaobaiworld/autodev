@@ -26,7 +26,8 @@
 | S5 检查 | **程序** | 运行 `python3 -m unittest discover -s tests`，不信 Agent 自述；失败退回 S4 |
 | S6 代码审查 | Claude | 看完整改动 `full.patch`；审查者只读，程序比对代码指纹，改了就作废 |
 | S7 发布候选 | **程序** | 本地 git 打 `v0.1.0-rc.N` |
-| S8 验收 | Claude（D015，原定 agy） | 以使用者身份对照原文；**不能亲手运行代码**，见下面“待你定” |
+| S7U 使用验证（O009） | **程序** | 按模板里**人写的使用脚本**，在隔离环境（临时 HOME 和数据文件）把做出来的东西真的用一遍，原始输出写 `usage.log`；用不了（命令不存在、没有可执行位、结果不符）退回 S4。**脚本现在是演示项目 `todo` 的，写死在 `build.json` 的 S7U 里，换项目要换一份** |
+| S8 验收 | Claude（D015，原定 agy） | 以使用者身份对照原文；自己不能运行命令，优先引用 S7U 的使用记录 |
 | S9 正式发布 | **程序，前面有人工关口** | 停在进入前等你批准；本地 git 打 `v0.1.0` 并写 `CHANGELOG.md`；**不推送、不部署** |
 
 - 地基：agent-autoloop 检出在 `~/code/agent-autoloop`，锁定提交 `8f8e2ee`，不改它的内核。中台管派活、排队、租约、事实日志；Agent 以无界面进程运行。
@@ -36,7 +37,7 @@
 - **每步记录**：`done.json` 必填 `summary`；每步写 `record-a<次>.json`（实际模型、归一的 token、中台运行号等）和 `agent-a<次>.log`。字段见 `docs/DATA_SPEC.md` 7.2.1。程序步骤没有中台运行和 Agent 日志，记录里标 `tool`。
 - **比对与优化记录**：`python3 -m driver.compare digest|diff` 做确定性比对；每次流程优化记在 `docs/OPTIMIZATIONS.md`（只追加，没量过写“未测”）。
 - **崩溃与卡住**（假 Agent、真实中台，`tests/f5_crash.py`）：`hang` 超时重试、`crash` 每次崩溃 4 秒转人工（以前 45 分钟，O006）、`ctrl-kill`、`hub-kill` 都通过。
-- 测试：201 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。联机用假 Agent、不花额度：`python3 tests/f2_pipeline.py --build`（跑完整 S1 到 S9，含真实 git 标签）、`--fake-rework`，`tests/f5_crash.py hang|crash|ctrl-kill|hub-kill`。
+- 测试：212 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。联机用假 Agent、不花额度：`python3 tests/f2_pipeline.py --build`（跑完整 S1 到 S9，含真实 git 标签）、`--fake-rework`，`tests/f5_crash.py hang|crash|ctrl-kill|hub-kill`。
 
 ### 真实运行的证据（演示需求：命令行待办 `todo`）
 
@@ -54,14 +55,14 @@
 
 ## 待你定
 
-- **S8 验收者没法亲手运行代码**（R010 的验收报告 A2 自己承认）。原因是所有 Agent 的 `access` 都是 `edit`，不能执行任意命令。三个选项和我的倾向（A：程序在隔离环境替它“用一遍”）写在 `docs/OPTIMIZATIONS.md` 的“待定”一节。
+- ~~S8 验收者没法亲手运行代码~~：你选了 A，已做（S7U，O009）。**真实 Agent 跑 S7U 还没做**，使用脚本也没有拆成项目配置。
 - `docs/design/2026-11-06-ticket-model.md` 第 5 节的 6 个待讨论问题；Agent 做分类和拆解与 D004 的协调方式（我的提议是 Agent 只提方案文件，程序校验后才执行，没确认过）。
 - D015（验收者先绑 Claude 而不是 agy）是我按“自动往下走”的授权选的默认，没单独确认过。
 
 ## 下一步
 
 1. 按你的说法：流程已经全部走通，接下来一遍遍雕细节。细节清单：
-   - S8 能亲手运行（上面“待你定”）。
+   - 真实 Agent 跑一遍 S7U，看 Codex 写的 `bin/todo` 能不能过；把使用脚本从 `build.json` 拆成每个项目一份的配置。
    - 每个阶段的任务说明用真实运行的数据打磨，每次改动记一条 O 编号并和上一次比。
    - 设计审查返工偏多（多次要 2 到 3 轮才过），看是不是说明写得不够清楚。
 2. F3 剩余：Web 界面；`pro2` 布局重建脚本（桌面应用没有保存命令）。

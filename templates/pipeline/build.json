@@ -1,7 +1,7 @@
 {
  "kind": "pipeline/build",
  "extends": "pipeline/design",
- "order": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9"],
+ "order": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S7U", "S8", "S9"],
  "stages": {
   "S3": {
    "on": {
@@ -60,22 +60,46 @@
    "outputs": ["release.log"],
    "verdicts": ["PASS", "BLOCK"],
    "workdir": "use",
-   "on": {"PASS": {"goto": "S8", "round": "same"}},
+   "on": {"PASS": {"goto": "S7U", "round": "same"}},
    "task": "程序在代码目录的本地 git 里打发布候选标签（只在本地，不推送、不部署）。"
+  },
+  "S7U": {
+   "dir": "S7U-usage",
+   "runner": "tool",
+   "tool": "usage",
+   "role": "user-simulator",
+   "outputs": ["usage.log"],
+   "verdicts": ["PASS", "FAIL", "BLOCK"],
+   "workdir": "use",
+   "env": {"TODO_FILE": "{scratch}/data/todo.json"},
+   "script": [
+    {"cmd": ["bin/todo", "add", "买牛奶"], "rc": 0, "contains": ["1"]},
+    {"cmd": ["bin/todo", "add", "写周报"], "rc": 0, "contains": ["2"]},
+    {"cmd": ["bin/todo", "done", "1"], "rc": 0},
+    {"cmd": ["bin/todo", "list"], "rc": 0, "contains": ["写周报"], "not_contains": ["买牛奶"]},
+    {"cmd": ["bin/todo", "list", "--all"], "rc": 0, "contains": ["买牛奶", "写周报"]},
+    {"cmd": ["bin/todo", "done", "999"], "rc": "nonzero"},
+    {"cmd": ["bin/todo", "add", "用默认路径"], "rc": 0, "unset": ["TODO_FILE"], "expect_file": "{scratch}/.todo.json"}
+   ],
+   "on": {
+    "PASS": {"goto": "S8", "round": "same"},
+    "FAIL": {"goto": "S4", "round": "inc", "counter": "usage_rounds"}
+   },
+   "task": "程序按模板里写的使用脚本，在隔离的 HOME 和数据文件下把做出来的东西真的用一遍。使用脚本由人写在模板里（这份是演示项目 todo 的），Agent 改不了；换项目要换一份。命令用不了就退回编码。"
   },
   "S8": {
    "dir": "S8-acceptance",
    "role": "acceptor",
    "outputs": ["acceptance.md"],
    "verdicts": ["PASS", "REWORK", "BLOCK"],
-   "inputs": ["request", "analysis", "design", "plan", "full_diff", "check_now", "workdir_ro", "human"],
+   "inputs": ["request", "analysis", "design", "plan", "full_diff", "check_now", "usage_now", "workdir_ro", "human"],
    "workdir": "readonly",
    "required_sections": {"acceptance.md": "原文对照"},
    "on": {
     "PASS": {"goto": "S9", "round": "same"},
     "REWORK": {"goto": "S4", "round": "inc", "counter": "acceptance_rounds"}
    },
-   "task": "以使用者的身份验收：不要重复 S6 的代码审查，只回答“需求原文要的东西，现在拿到手能不能用”。写 acceptance.md，frontmatter 含 verdict、findings（列表，每项含 id、severity、location、problem、expected）。必须有一个标题为“原文对照”的小节（Markdown 标题），逐条列出需求原文的每个要求，注明你怎么确认它满足（看到什么、运行了什么），以及结果。如果要运行代码：把 HOME 和 TMPDIR 指到一个临时目录，数据文件用环境变量指到临时位置，不要写用户真实目录；你只读，不要修改代码目录里任何文件，也不要执行 git 命令。原文要的东西拿不到手（例如要求直接运行 todo 命令但并没有这个命令）就是 REWORK，并在 findings 里写清楚缺什么。verdict 为 PASS 时不得有 critical 或 high 级别的问题。"
+   "task": "以使用者的身份验收：不要重复 S6 的代码审查，只回答“需求原文要的东西，现在拿到手能不能用”。你自己不能运行命令；“使用记录”是程序按人写好的使用脚本，在隔离环境里把它真的用了一遍的原始输出（含每一步的命令、输出、退出码），它是“能不能用”最直接的证据，逐条对照需求原文时优先引用它。使用脚本没覆盖到的需求要求，才靠读代码和检查结果判断，并在“原文对照”里写明“只是读出来的，没有真的用过”。写 acceptance.md，frontmatter 含 verdict、findings（列表，每项含 id、severity、location、problem、expected）。必须有一个标题为“原文对照”的小节（Markdown 标题），逐条列出需求原文的每个要求，注明你怎么确认它满足（看到什么、运行了什么），以及结果。你只读，不要修改代码目录里任何文件，也不要尝试运行命令或 git。原文要的东西拿不到手（例如要求直接运行 todo 命令但并没有这个命令）就是 REWORK，并在 findings 里写清楚缺什么。verdict 为 PASS 时不得有 critical 或 high 级别的问题。"
   },
   "S9": {
    "dir": "S9-publish",
