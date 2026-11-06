@@ -2,6 +2,7 @@
 阶段表和转移都写在 templates/pipeline/<类型>.json 里；这里的函数按 state["kind"] 取模板，不写死阶段名。
 """
 import json
+import re
 from pathlib import Path
 
 from cockpit.kinds import DEFAULT_KIND, KINDS
@@ -21,6 +22,10 @@ def _check_transitions(t, path):
         for v in spec["verdicts"]:
             if v != "BLOCK" and v not in on:  # BLOCK 一律转人工，由程序处理，不用写
                 raise ValueError(f"模板 {path} 阶段 {name} 的结论 {v} 没有写去哪")
+        rs = spec.get("required_sections")
+        if rs is not None and (not isinstance(rs, dict) or not all(
+                isinstance(k, str) and isinstance(v, str) and v.strip() and k in spec["outputs"] for k, v in rs.items())):
+            raise ValueError(f"模板 {path} 阶段 {name} 的 required_sections 必须是 {{产物文件名: 小节标题}}，且文件名要在 outputs 里")
         if spec.get("workdir") not in (None, "write", "use", "readonly"):
             raise ValueError(f"模板 {path} 阶段 {name} 的 workdir 只能是 write / use / readonly，写的是 {spec.get('workdir')!r}")
         if "readonly" == spec.get("workdir") and spec.get("runner") == "tool":
@@ -119,6 +124,11 @@ def validate_done(run_dir, state):
     for need in stage["outputs"]:
         if need not in outs or not (run_dir / step["dir"] / need).is_file():
             return f"缺少产物 {need}"
+    # 模板要求某个产物里必须有的小节标题（例如审查必须单列“原文对照”）。程序只检查标题在不在，写得对不对它判断不了。
+    for fname, heading in (stage.get("required_sections") or {}).items():
+        body = (run_dir / step["dir"] / fname).read_text(encoding="utf-8", errors="replace")
+        if not re.search(rf"^#{{1,6}}\s*{re.escape(heading)}\s*$", body, re.M):
+            return f"{fname} 缺少必须的小节「{heading}」"
     return None
 
 

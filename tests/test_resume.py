@@ -33,7 +33,7 @@ class Agent:
             n = len([i for i in self.inputs if i[0] == "S4"])        # 每次内容不同，否则第 2 次在检查点之上“没有改动”会被判无效
             (self.root / "workspace" / "projects" / "toy" / rid / "todo.py").write_text(f"x = {n}\n")
         for f in OUTS[stage]:
-            (Path(sd) / f).write_text("x")
+            (Path(sd) / f).write_text("## 原文对照\nx\n" if f == "review.md" else "x")   # 审查产物必须有这个小节
         (Path(sd) / "done.json").write_text(json.dumps({
             "id": rid, "stage": stage, "round": int(g("round")), "role": g("role"), "outputs": OUTS[stage],
             "verdict": verdict, "summary": "测试"}))

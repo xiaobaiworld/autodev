@@ -46,7 +46,8 @@ verdict = queue.pop(0) if queue else DEFAULT[stage]
 policy[stage] = queue
 policy_path.write_text(json.dumps(policy))
 for name in OUTPUTS[stage]:
-    (sd / name).write_text(f"---\nverdict: {verdict}\n---\n假产物\n", encoding="utf-8")
+    extra = "\n## 原文对照\n假的逐条对照\n" if name == "review.md" else ""   # 审查产物必须有这个小节
+    (sd / name).write_text(f"---\nverdict: {verdict}\n---\n假产物\n{extra}", encoding="utf-8")
 (sd / "done.json").write_text(json.dumps({
     "id": field("id"), "stage": stage, "round": rnd, "role": field("role"),
     "outputs": OUTPUTS[stage], "verdict": verdict, "summary": f"假 {stage} 第 {rnd} 轮，结论 {verdict}",

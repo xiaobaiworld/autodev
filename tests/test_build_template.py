@@ -56,6 +56,57 @@ class BuildTransitionTest(unittest.TestCase):
         self.assertEqual(counters_for("pipeline/design"), {"design_review_rounds": 0})   # design 不带检查计数器
 
 
+class RequiredSectionTest(unittest.TestCase):
+    """审查必须单列“原文对照”：程序只检查标题在不在，内容对不对它判断不了。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.run = Path(self.tmp.name)
+        self.state = {"id": "R1", "kind": "pipeline/build", "stage": "S3", "round": 1,
+                      "step": {"role": "design_reviewer", "dir": pipeline.step_dir("S3", 1, "pipeline/build")}}
+        self.sd = self.run / self.state["step"]["dir"]
+        self.sd.mkdir(parents=True)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def put(self, review_text):
+        (self.sd / "review.md").write_text(review_text, encoding="utf-8")
+        (self.sd / "done.json").write_text(json.dumps({
+            "id": "R1", "stage": "S3", "round": 1, "role": "design_reviewer", "outputs": ["review.md"],
+            "verdict": "PASS", "summary": "ok"}))
+        return pipeline.validate_done(self.run, self.state)
+
+    def test_review_with_the_section_passes(self):
+        for heading in ("## 原文对照", "# 原文对照", "### 原文对照  "):
+            with self.subTest(heading=heading):
+                self.assertIsNone(self.put(f"---\nverdict: PASS\n---\n\n{heading}\n- 要求 1：对应设计第 2 节\n"))
+
+    def test_review_without_the_section_is_refused(self):
+        self.assertIn("原文对照", self.put("---\nverdict: PASS\n---\n\n## 结论\n都行\n"))
+
+    def test_the_words_in_running_text_are_not_a_heading(self):
+        self.assertIn("原文对照", self.put("---\nverdict: PASS\n---\n\n我做了原文对照，没问题。\n"))
+        self.assertIn("原文对照", self.put("---\nverdict: PASS\n---\n\n## 原文对照之外的东西\n"))
+
+    def test_both_review_stages_require_it_and_design_analysis_stages_do_not(self):
+        for kind in ("pipeline/design", "pipeline/build"):
+            self.assertEqual(load_template(kind)["stages"]["S3"]["required_sections"], {"review.md": "原文对照"})
+        self.assertEqual(load_template("pipeline/build")["stages"]["S6"]["required_sections"], {"review.md": "原文对照"})
+        self.assertNotIn("required_sections", load_template("pipeline/design")["stages"]["S1"])
+
+    def test_bad_required_sections_are_refused_at_load_time(self):
+        for bad in ({"nope.md": "x"}, {"review.md": ""}, ["review.md"], {"review.md": 3}):
+            with self.subTest(bad=bad):
+                t = load_template("pipeline/design")
+                t["stages"]["S3"]["required_sections"] = bad
+                with tempfile.TemporaryDirectory() as d:
+                    (Path(d) / "design.json").write_text(json.dumps(t, ensure_ascii=False))
+                    with mock.patch.object(pipeline, "TEMPLATES", Path(d)):
+                        with self.assertRaisesRegex(ValueError, "required_sections"):
+                            load_template("pipeline/design")
+
+
 class BrokenTemplateTest(unittest.TestCase):
     def load_with(self, mutate):
         t = load_template("pipeline/design")

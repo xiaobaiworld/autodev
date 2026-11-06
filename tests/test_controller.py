@@ -36,7 +36,7 @@ class FakeAgent:
         if self.fail_first == stage and self.calls.count((stage, rnd)) == 1:
             return {"ok": False, "reason": "timeout"}
         for f in OUTS[stage]:
-            (Path(sd) / f).write_text("x")
+            (Path(sd) / f).write_text("## 原文对照\nx\n" if f == "review.md" else "x")   # 审查产物必须有这个小节
         v = self.verdicts[stage].pop(0)
         (Path(sd) / "done.json").write_text(json.dumps({
             "id": g("id"), "stage": stage, "round": rnd, "role": g("role"),

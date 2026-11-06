@@ -29,7 +29,7 @@ class ValidateTest(unittest.TestCase):
         self.run = Path(self.tmp.name)
         self.sd = self.run / step_dir("S3", 1)
         self.sd.mkdir(parents=True)
-        (self.sd / "review.md").write_text("x")
+        (self.sd / "review.md").write_text("## 原文对照\nx\n")
 
     def tearDown(self):
         self.tmp.cleanup()

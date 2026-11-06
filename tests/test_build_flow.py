@@ -42,7 +42,7 @@ class CodingAgent:
             if self.on_s6:
                 self.on_s6(self.s6_calls, wd)
         for f in OUTS[stage]:
-            (Path(sd) / f).write_text("x")
+            (Path(sd) / f).write_text("## 原文对照\nx\n" if f == "review.md" else "x")   # 审查产物必须有这个小节
         (Path(sd) / "done.json").write_text(json.dumps({
             "id": rid, "stage": stage, "round": int(g("round")), "role": g("role"), "outputs": OUTS[stage],
             "verdict": verdict, "summary": "测试"}))

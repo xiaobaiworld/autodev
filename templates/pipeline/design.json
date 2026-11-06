@@ -37,7 +37,8 @@
     "PASS": "done",
     "REWORK": {"goto": "S2", "round": "inc", "counter": "design_review_rounds"}
    },
-   "task": "审查设计稿与开发计划：写 review.md，frontmatter 含 verdict、findings（列表，每项含 id、severity、location、problem、expected）。只报会导致错误或不满足验收标准的问题，不报风格。verdict 为 PASS 时不得有 critical 或 high 级别的问题。"
+   "required_sections": {"review.md": "原文对照"},
+   "task": "审查设计稿与开发计划：写 review.md，frontmatter 含 verdict、findings（列表，每项含 id、severity、location、problem、expected）。只报会导致错误或不满足验收标准的问题，不报风格。verdict 为 PASS 时不得有 critical 或 high 级别的问题。分析是对需求的转述，转述可能悄悄改了需求：先逐句读“需求”原文，不要只信分析。review.md 里必须有一个标题为“原文对照”的小节（写成 Markdown 标题，如 ## 原文对照），在里面逐条列出需求原文的每一个要求，注明它在设计和开发计划里对应哪里；原文有、分析或设计里没有（或被改写了）的，单独标出，并在 findings 里按其影响定级。"
   }
  }
 }
