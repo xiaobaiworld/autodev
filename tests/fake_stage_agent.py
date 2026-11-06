@@ -19,6 +19,13 @@ fm = (sd / "input.md").read_text(encoding="utf-8")
 field = lambda k: re.search(rf"^{k}: (.+)$", fm, re.M).group(1).strip()
 stage, rnd = field("stage"), int(field("round"))
 policy = json.loads(policy_path.read_text())
+hang = policy.get("hang", {})
+if hang.get(stage, 0) > 0:  # F5：前 N 次在这一阶段卡住，用来触发超时
+    hang[stage] -= 1
+    policy["hang"] = hang
+    policy_path.write_text(json.dumps(policy))
+    import time
+    time.sleep(3600)
 queue = policy.get(stage, [])
 verdict = queue.pop(0) if queue else DEFAULT[stage]
 policy[stage] = queue
