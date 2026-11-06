@@ -62,16 +62,32 @@ class RunnerTest(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def call(self, hub, timeout_s=100, retries=2):
-        # 每次读空批次要推进时钟，否则超时测试会死循环
+    def call(self, hub, timeout_s=100, retries=None):
+        # 每次读空批次要推进时钟，否则超时测试会死循环。retries=None 用 make_invoke 的默认值（不允许中台自己重试）
         orig = hub.facts
 
         def facts(after=0, timeout=60):
             self.clock.sleep(30)
             yield from orig(after, timeout)
         hub.facts = facts
-        inv = make_invoke(hub, retries, clock=self.clock.now, sleep=self.clock.sleep)
+        kw = {} if retries is None else {"hub_retries": retries}
+        inv = make_invoke(hub, clock=self.clock.now, sleep=self.clock.sleep, **kw)
         return inv(self.sd, timeout_s=timeout_s)
+
+    def test_first_hub_failure_is_reported_at_once_by_default(self):
+        """Agent 进程崩溃时，中台把这一轮放回排队并自己退避重试（第 1 次 5 分钟）。默认我们不等它：
+        第一次失败就取消并报 command_failed，交给 Controller 的步骤重试。以前这里会一直等到超时（实测 45 分钟）。"""
+        hub = FakeHub([[fact(1, EV, LINK, run_row("queued")), fact(2, run_row("queued", attempts=1, error="exit 1"))]])
+        r = self.call(hub, timeout_s=3600)
+        self.assertEqual((r["ok"], r["reason"], hub.cancelled), (False, "command_failed", [7]))
+        self.assertEqual(r["detail"], "exit 1")
+        self.assertLess(self.clock.t, 120)                                # 没有等到超时，也没有等中台的退避
+
+    def test_hub_retries_can_still_be_allowed_explicitly(self):
+        hub = FakeHub([[fact(1, EV, LINK, run_row("queued")), fact(2, run_row("queued", attempts=1, error="x"))],
+                       [fact(3, run_row("claimed", attempts=1)), fact(4, run_row("nothing", attempts=1))]])
+        self.assertEqual(self.call(hub, retries=1), {"ok": True, "reason": None})
+        self.assertEqual(hub.cancelled, [])
 
     def test_subject_and_event_id_shape(self):
         s = subject_of(Run(self.run_dir).read())
@@ -96,12 +112,6 @@ class RunnerTest(unittest.TestCase):
         hub = FakeHub([[fact(1, EV, LINK, run_row("queued")), fact(2, run_row("queued", attempts=3, error="boom"))]])
         r = self.call(hub, retries=2)
         self.assertEqual((r["ok"], r["reason"], hub.cancelled), (False, "command_failed", [7]))
-
-    def test_within_retry_limit_keeps_waiting_until_success(self):
-        hub = FakeHub([[fact(1, EV, LINK, run_row("queued")), fact(2, run_row("queued", attempts=1, error="x"))],
-                       [fact(3, run_row("claimed", attempts=1)), fact(4, run_row("nothing", attempts=1))]])
-        self.assertEqual(self.call(hub), {"ok": True, "reason": None})
-        self.assertEqual(hub.cancelled, [])
 
     def test_timeout_cancels_and_reports(self):
         hub = FakeHub([[fact(1, EV, LINK, run_row("claimed"))]])

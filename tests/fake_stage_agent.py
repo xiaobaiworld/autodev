@@ -31,6 +31,9 @@ if stage == "S4":  # 编码阶段：往输入里写明的代码目录里放文�
         "import unittest\nfrom todo import VERSION\nclass T(unittest.TestCase):\n"
         f"    def test_v(self):\n        self.assertEqual(VERSION, {99 if broken else rnd})\n", encoding="utf-8")
 policy = json.loads(policy_path.read_text())
+if policy.get("crash", {}).get(stage):  # F5：这一阶段的进程每次都崩溃（非零退出），模拟确定性的 bug
+    print(f"假 {stage} 崩溃", file=sys.stderr)
+    sys.exit(3)
 hang = policy.get("hang", {})
 if hang.get(stage, 0) > 0:  # F5：前 N 次在这一阶段卡住，用来触发超时
     hang[stage] -= 1

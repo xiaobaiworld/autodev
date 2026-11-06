@@ -1,6 +1,7 @@
 """F5 崩溃与卡住（假 Agent，不花额度）：在真实 autoloop 中台上验证三种情况。
 
 python3 tests/f5_crash.py hang        # Agent 卡住：我们超时、取消、重试，最后跑通；卡住的进程不能残留
+python3 tests/f5_crash.py crash       # Agent 进程每次都崩溃：几秒内走完步骤重试并转人工（以前要等 45 分钟）
 python3 tests/f5_crash.py ctrl-kill   # 驱动被 kill -9 后重启：不重复发同一轮，最后跑通
 python3 tests/f5_crash.py hub-kill    # 中台被 kill -9 后重启：观察是否恢复、有没有重复或丢失（先观察，再定标准）
 """
@@ -77,7 +78,7 @@ class Env:
     def controller(self):
         hub = Hub(load_config(self.home))
         return hub, Controller(self.work, self.agents, self.roles, self.limits,
-                               invoke_fn=make_invoke(hub, self.limits["step_retries"], poll_s=3))
+                               invoke_fn=make_invoke(hub, poll_s=3))
 
     def events(self, rd):
         return [json.loads(l)["type"] for l in (rd / "events.jsonl").read_text().splitlines()]
@@ -105,6 +106,31 @@ def check(name, cond, detail=""):
 
 def log(t0):
     return lambda m: print(f"[{time.time() - t0:5.0f}s] {m}", flush=True)
+
+
+def crash():
+    """Agent 进程每次都崩溃（确定性 bug）：应当几秒内就走完 步骤重试 -> 转人工，而不是等中台 5 分钟起翻倍的退避。
+    以前实测 3 次崩溃拖了 45 分钟。"""
+    e = Env({"crash": {"S2": True}})
+    try:
+        e.up()
+        _, ctrl = e.controller()
+        rid = start_run(e.work, "崩溃测试", "toy", ctrl)
+        rd = e.work / "workspace" / "runs" / rid
+        t0 = time.time()
+        ctrl.run_all(rd, log=log(t0), max_steps=40)
+        took = time.time() - t0
+        st, ev = Run(rd).read(), e.events(rd)
+        keys = [k for k in e.ingested_keys() if "-S2-" in k]
+        time.sleep(1)
+        return all([check("转人工了", st["status"] == "needs-human" and st["stage"] == "S2", (st["status"], st["stage"])),
+                    check("用了 3 次尝试（1 次加 step_retries 2 次）", len(keys) == 3, keys),
+                    check("总共不到 60 秒（以前要 45 分钟）", took < 60, f"{took:.0f} 秒"),
+                    check("3 次尝试各记一条失败，用完重试后再记一条转人工的失败", ev.count("step.failed") == 4 and ev.count("step.retried") == 2, ev),
+                    check("没有残留进程", not e.leftovers(), e.leftovers())])
+    finally:
+        e.down()
+        print("目录:", e.tmp)
 
 
 def hang():
@@ -141,7 +167,7 @@ def ctrl_kill():
         code += ("import json,sys\nfrom pathlib import Path\nfrom cockpit.agents import *\n"
                  "from cockpit.controller import Controller\nfrom driver.hub import *\nfrom driver.runner import make_invoke\n"
                  "t=Path(%r).read_text();a,r,l=parse_agents(t),parse_roles(t),parse_limits(t);l['step_timeout_minutes']=%r\n"
-                 "h=Hub(load_config(Path(%r)));c=Controller(Path(%r),a,r,l,invoke_fn=make_invoke(h,l['step_retries'],poll_s=3))\n"
+                 "h=Hub(load_config(Path(%r)));c=Controller(Path(%r),a,r,l,invoke_fn=make_invoke(h,poll_s=3))\n"
                  "c.run_all(Path(%r),log=print,max_steps=40)\n") % (
             str(ROOT / "config.yaml"), TIMEOUT_MIN, str(e.home), str(e.work), str(rd))
         child = subprocess.Popen([sys.executable, "-c", code], env=dict(os.environ, PYTHONPATH=str(ROOT / "src")))
@@ -193,7 +219,7 @@ def hub_kill():
 
 if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else ""
-    fn = {"hang": hang, "ctrl-kill": ctrl_kill, "hub-kill": hub_kill}.get(which)
+    fn = {"hang": hang, "crash": crash, "ctrl-kill": ctrl_kill, "hub-kill": hub_kill}.get(which)
     if not fn:
         sys.exit(__doc__)
     ok = fn()

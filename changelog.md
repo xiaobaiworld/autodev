@@ -32,5 +32,6 @@
 - 记录里新增归一的 tokens（总输入/缓存/输出，Claude 与 Codex 同口径）；新增 python3 -m driver.record <需求目录> 汇总 token
 - 新增 src/driver/compare.py（摘要 digest.json 与两次运行的确定性比对）；模板加 scope，输入加“范围”说明；新增 docs/OPTIMIZATIONS.md 记录每次流程优化（O001）
 - S4 编码阶段：转移规则与各步输入改由模板驱动（on、inputs、extends）；新增类型 pipeline/build（driver.run --kind）；新增 src/cockpit/workdir.py（代码目录的起点提交、重做前回到起点、diff.patch，git 全由程序做）；S4 报 DONE 但没有改动判为无效。修了一个 bug：失败重试时旧的 done.json 被当成已完成。假 Agent 联机跑通编码阶段（f2_pipeline.py --build）；真实 Agent（R20261106-006）S4 DONE，代码和测试经手工核对
+- 修“Agent 进程崩溃要等 45 分钟才转人工”：make_invoke 默认不允许中台自己重试（hub_retries=0），中台第一次失败就取消并报 command_failed，由 Controller 的步骤重试接手；新增联机场景 f5_crash.py crash（3 次崩溃 4 秒转人工）；假 Agent 支持每次崩溃
 - S6 代码审查：pipeline/build 新增 S6（code_reviewer，厂商与编码者不同，D008 检查扩到每一对）；审查者看完整改动 full.patch；只读步骤前后比对代码目录指纹（src/cockpit/workdir.py 的 fingerprint），审查者改了代码就作废、恢复、重试；workdir 模板字段分 write / use / readonly；S6 退回 S4 时不把通过的检查结果当失败塞给编码者。假 Agent 联机验证 S5 失败一次、S6 打回一次的全回路；真实 Agent 跑 S6 未做
 - S5 检查：pipeline/build 新增 S5，第一个程序步骤（src/cockpit/tools.py 的 check：不经 shell、最小环境变量、HOME 指向草稿目录、超时杀进程组、“跑了 0 个测试”不算通过）；失败退回 S4（check_rounds 上限），每个编码轮开始前把上一轮代码提交成检查点，退回时在已有代码上修；resume 入口、归档重用的步骤目录；记录工具和比对工具认得程序步骤。假 Agent 联机验证 S4 -> S5 失败 -> 退回 -> 修好 -> 通过；真实 Agent 跑 S5 未做

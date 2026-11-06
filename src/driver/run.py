@@ -43,7 +43,7 @@ def main(argv=None):
         hub.state()  # 中台没起来就在这里失败，不要先改规则
         backup = install_rules(home, rules)
         ctrl = Controller(root, agents, roles, limits,
-                          invoke_fn=make_invoke(hub, limits["step_retries"]),
+                          invoke_fn=make_invoke(hub),
                           on_finish=lambda rd, st: write_record(home, rd, st))
         rid = start_run(root, Path(a.request).read_text(encoding="utf-8"), "toy", ctrl, kind=a.kind)
     except (OSError, ValueError, KeyError, LockError, SetupError, HubError) as e:

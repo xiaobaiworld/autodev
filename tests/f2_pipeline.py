@@ -68,7 +68,7 @@ def main(fake=False, build=False):
             time.sleep(0.1)
         hub = Hub(load_config(home))
         ctrl = Controller(work, agents, roles, limits,
-                          invoke_fn=make_invoke(hub, limits["step_retries"]),
+                          invoke_fn=make_invoke(hub),
                           on_finish=lambda rd, st: write_record(home, rd, st))
         rid = start_run(work, REQUEST, "toy", ctrl, kind="pipeline/build" if build else "pipeline/design")
         rd = work / "workspace" / "runs" / rid

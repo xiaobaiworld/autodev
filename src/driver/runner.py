@@ -22,7 +22,10 @@ def subject_of(state):
     return f"runs/{state['id']}/{state['step']['dir']}"
 
 
-def make_invoke(hub, step_retries, tracker=None, clock=time.monotonic, sleep=time.sleep, poll_s=30):
+def make_invoke(hub, hub_retries=0, tracker=None, clock=time.monotonic, sleep=time.sleep, poll_s=30):
+    """hub_retries: 允许中台自己重试几次。默认 0：中台第一次失败（Agent 进程崩溃、非零退出）我们就取消并报失败，
+    由 Controller 的步骤重试（step_retries，每次是新事件）接手。两层重试叠加会让确定性的崩溃等很久：
+    中台退避从 5 分钟起翻倍，3 次崩溃实测拖了 45 分钟才转人工。"""
     tracker = tracker or RunTracker()  # ponytail: 从序号 0 重放整个日志；历史很大时改为只读最近序号
 
     def invoke(sd, timeout_s):  # Controller 的调用签名：步骤目录和超时秒数
@@ -39,7 +42,7 @@ def make_invoke(hub, step_retries, tracker=None, clock=time.monotonic, sleep=tim
             try:
                 for fact in hub.facts(after=tracker.seq, timeout=poll_s):
                     tracker.feed(fact)
-                    done = _judge(hub, tracker, key, step_retries)
+                    done = _judge(hub, tracker, key, hub_retries)
                     if done:
                         return done
                     if clock() >= deadline:
@@ -49,7 +52,7 @@ def make_invoke(hub, step_retries, tracker=None, clock=time.monotonic, sleep=tim
                 sleep(min(5, max(0, deadline - clock())))
                 if clock() >= deadline:
                     return {"ok": False, "reason": "command_failed", "detail": last}
-            done = _judge(hub, tracker, key, step_retries)
+            done = _judge(hub, tracker, key, hub_retries)
             if done:
                 return done
             if clock() >= deadline:
@@ -61,7 +64,7 @@ def make_invoke(hub, step_retries, tracker=None, clock=time.monotonic, sleep=tim
     return invoke
 
 
-def _judge(hub, tracker, key, step_retries):
+def _judge(hub, tracker, key, hub_retries):
     st = tracker.status(key)
     if st is None or st["state"] == "running":
         return None
@@ -70,7 +73,7 @@ def _judge(hub, tracker, key, step_retries):
             return {"ok": False, "reason": "command_failed", "detail": st.get("summary")}
         return {"ok": True, "reason": None}
     # retrying：中台还会自己重试；超过我们允许的次数就取消，交给 Controller 决定下一步
-    if st["attempts"] > step_retries:
+    if st["attempts"] > hub_retries:
         _try_cancel(hub, st["run"])
         return {"ok": False, "reason": "command_failed", "detail": st.get("error")}
     return None
