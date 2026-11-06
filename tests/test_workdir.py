@@ -53,6 +53,21 @@ class WorkdirTest(unittest.TestCase):
         self.assertEqual((self.wd / "a.py").read_text(), "x = 1\n")
         self.assertFalse((self.wd / "junk").exists())
 
+    def test_python_cache_never_enters_the_patch(self):
+        base = prepare(self.wd, {"a.py": "1\n"})
+        (self.wd / "src" / "__pycache__").mkdir(parents=True)
+        (self.wd / "src" / "__pycache__" / "a.cpython-314.pyc").write_bytes(b"\x00\x01")
+        (self.wd / "src" / "a2.py").write_text("2\n")
+        files = snapshot(self.wd, base, Path(self.tmp.name) / "p.patch")
+        self.assertEqual(files, ["src/a2.py"])
+        self.assertNotIn("pyc", (Path(self.tmp.name) / "p.patch").read_text())
+
+    def test_a_cache_only_change_counts_as_no_change(self):
+        base = prepare(self.wd, {"a.py": "1\n"})
+        (self.wd / "__pycache__").mkdir()
+        (self.wd / "__pycache__" / "a.pyc").write_bytes(b"\x00")
+        self.assertEqual(snapshot(self.wd, base, Path(self.tmp.name) / "p.patch"), [])
+
     def test_no_changes_gives_empty_patch_and_no_files(self):
         base = prepare(self.wd, {"a.py": "1\n"})
         patch = Path(self.tmp.name) / "d.patch"

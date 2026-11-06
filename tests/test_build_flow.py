@@ -81,7 +81,7 @@ class BuildFlowTest(unittest.TestCase):
                 (wd / "real.py").write_text("x = 1\n")
         agent, rd = self.go(on_s4)
         self.assertEqual(Run(rd).read()["status"], "done")
-        self.assertEqual(seen[1], [])                                  # 第 2 次开始时目录是空的起点
+        self.assertEqual(seen[1], [".gitignore"])                      # 第 2 次开始时只有起点自带的 .gitignore
 
     def test_design_kind_never_touches_a_workdir(self):
         agent = CodingAgent(self.root, lambda n, wd: None)

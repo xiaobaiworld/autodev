@@ -37,7 +37,8 @@ def prepare(workdir, seed_files=None):
         return _git(workdir, "rev-list", "--max-parents=0", "HEAD").strip().splitlines()[0]
     workdir.mkdir(parents=True, exist_ok=True)
     _git(workdir, "init", "-q", "-b", "main")
-    for rel, text in (seed_files or {}).items():
+    seed_files = {".gitignore": "__pycache__/\n*.pyc\n", **(seed_files or {})}  # 运行测试会产生缓存，不能进补丁
+    for rel, text in seed_files.items():
         p = workdir / rel
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(text, encoding="utf-8")
