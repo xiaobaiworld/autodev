@@ -43,11 +43,11 @@
 
 | 路径 | 内容 |
 | --- | --- |
-| `src/driver/` | 向 autoloop 中台发事件、读事实流（`hub.py`、`runner.py`）；每步写记录（`record.py`）；生成并安装规则（`setup.py`）；正式入口 `run.py` |
-| `src/cockpit/` | 需求类型登记（`kinds.py`）；阶段表加载与校验（`pipeline.py`，阶段表本身在 `templates/pipeline/`）、主循环（`controller.py`）、状态落盘（`store.py`）、`config.yaml` 读取（`agents.py`）。窗格驱动的旧方案已在 F6 移除 |
-| `templates/pipeline/` | 流水线模板：每个 `pipeline/*` 类型一个 JSON，写阶段顺序、角色、产物、可选结论和任务说明；改这里即改下一次运行 |
+| `src/driver/` | 向 autoloop 中台发事件、读事实流（`hub.py`、`runner.py`）；每步写记录（`record.py`）；两次运行的确定性比对（`compare.py`）；生成并安装规则（`setup.py`）；启动一个需求 `run.py`；人工回复 `reply.py`（批准、退回、拒绝） |
+| `src/cockpit/` | 需求类型登记（`kinds.py`）；阶段表、转移规则、输入清单、产物校验（`pipeline.py`，都读 `templates/pipeline/`）；主循环与人工回复入口 `resume`（`controller.py`）；程序步骤 `check`、`release`（`tools.py`）；代码目录的 git 操作（`workdir.py`）；状态落盘（`store.py`）；`config.yaml` 读取（`agents.py`）。窗格驱动的旧方案已在 F6 移除 |
+| `templates/pipeline/` | 流水线模板：每个 `pipeline/*` 类型一个 JSON（`build` 继承 `design`），写阶段顺序、角色、产物、可选结论、结论去向、输入文件、必须有的小节、人工关口和任务说明；改这里即改下一次运行 |
 | `src/dashboard/` | 命令行看板与日志窗格 |
-| `tests/` | 单元测试；`smoke_autoloop.py`、`f1_agents.py`、`f2_pipeline.py`、`f5_crash.py` 是联机验证脚本；`f1_agents.py` 和不带 `--fake-rework` 的 `f2_pipeline.py` 花额度，`f5_crash.py` 用假 Agent 不花额度 |
+| `tests/` | 单元测试；`smoke_autoloop.py`、`f1_agents.py`、`f2_pipeline.py`、`f5_crash.py` 是联机验证脚本。`f1_agents.py` 和不带任何参数的 `f2_pipeline.py` 花额度；`f2_pipeline.py --build`（跑完整 S1 到 S9）、`--fake-rework`、`f5_crash.py` 用假 Agent，不花额度 |
 
 ## 参考资料
 

@@ -331,6 +331,8 @@ Agent 最后一步写入。程序只以此文件判断完成。
 
 ### 7.4 CheckResult（check.json）
 
+> **实现状态（2026-11-07）**：S5 现在写的是 `S5-check/round-N/check.log`（命令、退出码、输出尾部，由 `src/cockpit/tools.py` 的 `check` 工具产生），不是下面的 `check.json`；`done.json` 的 `verdict` 为 `PASS` / `FAIL`。检查命令写在模板里（`templates/pipeline/build.json` 的 S5 `command`），不读 `config.yaml` 的 `checks`；`exclude_guard`、`secret_scan` 两个内置检查**没实现**。下面是设计，保留作依据。
+
 S5 由程序执行 `config.yaml` 中项目的 `checks` 命令后写入：
 
 ```json
@@ -350,6 +352,16 @@ S5 由程序执行 `config.yaml` 中项目的 `checks` 命令后写入：
 `exclude_guard` 和 `secret_scan` 是内置检查，始终执行：前者确认 diff 未触及项目的 `exclude` 清单，后者扫描 diff 中的疑似密钥。
 
 ## 8. 人工参与：总览
+
+> **实现状态（2026-11-07）**：只实现了最小一版，和下面的设计有这些差别。
+> - **方向相反**：设计是“用户写 `reply-K.md`、程序读”。现在是用户敲命令 `python3 -m driver.reply <需求号> continue|rework|reject --note …`（`src/driver/reply.py`），**程序写** `human/reply-K.md`（frontmatter 含 `action`、`stage`、`replied_at`，正文是附言）。直接编辑文件、`autodev reply` 命令、Web 界面都没做。
+> - **只有三个 action**：`continue`（原阶段开新一轮；在人工关口上就是批准）、`rework --stage <阶段>`（退回指定阶段开新一轮）、`reject`（结束）。没有 `answer`、`approve`、`revise`、`retry`、`takeover`。
+> - **没有 `decision-K.md`**：不生成决策请求文件。看板的“待你决定”从 `state.json` 推出等待原因（`src/dashboard/render.py` 的 `wait_reason`）并给出回复命令。
+> - **kind 表里只做了两种**：`blocked`（Agent 写 BLOCK）和 `limit_exceeded`（轮次超限），以及设计表里没有的 `gate`（模板里 `gate: human` 的阶段，现在只有 S9）。`state.json` 的 `human.pending_decision` 为 `gate:S9` 表示在等关口批准，`human.approved` 记已批准的关口。
+> - **回复进入后续输入**：模板 `inputs` 里写了 `human` 的阶段，会在输入文件清单里列出所有 `reply-K.md`，标注“用户决定（优先于需求原文）”；“汇总写进 `input.md` 的小节”没做，只列路径。
+> - **回复后计数器清零**（`continue`、`rework`），批准关口不清零、不开新一轮。
+> - **没有通知**：不通过 Herdr 或别的方式主动提醒，只靠看板。
+> - 复盘（`improvement`）、需求校验（`invalid_request`）、范围批准（`approve_scope`）都没做。
 
 用户只在以下时刻被打扰，每种都有固定的决策类型（`kind`）和允许的回复：
 

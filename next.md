@@ -1,67 +1,90 @@
 # next.md
 
-更新：2026-11-06 ｜ 阶段：以 agent-autoloop 为地基的集成（F0 到 F2、F4 到 F6 完成，F3 的 Web 界面未做）
+更新：2026-11-07 ｜ 阶段：流水线 S1 到 S9 已全部连通，真实 Agent 第一次完整跑通；接下来一遍遍雕细节
 
 ## 恢复上下文时先读
 
 1. 本文件（尤其是下面的“换窗口接手时要知道”）
-2. `docs/design/2026-11-05-autoloop-foundation.md`：当前主线方案（F0 到 F6 步骤、结构、待决）
-3. `docs/DECISIONS.md`：D001 到 D014（D014 是用 autoloop 做地基）
-4. `docs/lessons.md`：L001 到 L012，开始新功能前先扫一遍
-5. `docs/MODELS.md`：模型名只写完整 ID
-6. `docs/design/2026-11-02-autodev-design.md`：流程设计（第 3.2、3.3、5 节已被地基方案部分取代，见各节顶部说明）
-7. `docs/DATA_SPEC.md`、`config.yaml`
-8. 全局规范：`~/Library/Mobile Documents/com~apple~CloudDocs/agent/coding/AI编程全局规范/GLOBAL_DEV_WORKFLOW.md`
-9. 换机器时另读 `AGENT_HANDOFF.md`
+2. `docs/OPTIMIZATIONS.md`：每次流程优化改了什么、效果量到多少（O001 到 O008）和“待定”事项
+3. `docs/design/2026-11-05-autoloop-foundation.md`：地基方案（F0 到 F6、结构、待决）
+4. `docs/DECISIONS.md`：D001 到 D015（D014 用 autoloop 做地基，D015 验收者先绑 Claude）
+5. `docs/lessons.md`：L001 到 L012，开始新功能前先扫一遍
+6. `docs/MODELS.md`：模型名只写完整 ID
+7. `docs/design/2026-11-02-autodev-design.md`：流程设计（第 3.2、3.3、5 节已被地基方案部分取代，见各节顶部说明）
+8. `docs/DATA_SPEC.md`、`config.yaml`
+9. 全局规范：`~/Library/Mobile Documents/com~apple~CloudDocs/agent/coding/AI编程全局规范/GLOBAL_DEV_WORKFLOW.md`
+10. 换机器时另读 `AGENT_HANDOFF.md`
 
 ## 当前状态
 
-- 地基：agent-autoloop 检出在 `~/code/agent-autoloop`，锁定提交 `8f8e2ee`。中台管派活、排队、重试、租约、事实日志、卡片；Agent 以无界面进程运行（Claude `-p`、Codex `exec`、agy `-p`）。
-- 我们的部分放在中台外面：`src/driver/` 向中台发事件、读事实流；`src/cockpit/pipeline.py`、`controller.py`、`store.py` 管阶段、轮次上限、厂商不同检查、产物校验与状态落盘。
-- 已验证：F0 冒烟（`tests/smoke_autoloop.py`）；F1 三个 Agent 各跑一轮；F2 真实 Agent 跑通 S1 到 S3（Opus、Opus、Codex，约 157 秒），REWORK 轮次上限在真实中台上验证。
-- F3 界面：`src/dashboard/` 命令行看板读中台 `/v1/state` 与 `state.json`；在 Herdr 桌面应用的 `pro2` 空间里用 `herdr-app` 建了三格布局（左主窗格、右上看板、右下日志）。看板还没接真实流水线。
-- F3 已用真实 Agent 验证：三格里实时显示（`docs/spikes/2026-11-06-f3-real-run-report.md`）。入口 `python3 -m driver.run`。
-- 看板列出全部需求（进行中、等你、已完成、已拒绝），进行中和等你的不折叠，较早的已结束需求折成一个数；“待你决定”把等待人工的需求和中台卡片加在一起。
-- 需求有了 `kind` 字段（路径写法，大类/子类），目前只登记 `pipeline/design`，在 `src/cockpit/kinds.py`；看板每个需求显示它，老记录显示“未分类”。
-- F4：阶段表在 `templates/pipeline/design.json`，`pipeline.py` 和规则生成都从它读。
-- F5（假 Agent、真实中台）：Agent 卡住被超时取消并重试；驱动被 kill -9 重启不重复发同一轮；中台被 kill -9 重启后在途一轮自行完成。入口 `python3 tests/f5_crash.py hang|ctrl-kill|hub-kill`。
-- F6：窗格驱动旧代码已删，Controller 没有 `hc` 和 `panes`。
-- 真实演示：R20261106-002（命令行待办 `todo`）S1 到 S3 跑了 3 轮，Codex 两次 REWORK 后 PASS，共 817 秒；没触发轮次上限。
-- 每步记录：`done.json` 必填 `summary`，每步写 `record-a<次>.json` 和 `agent-a<次>.log`（`src/driver/record.py`，字段见 `docs/DATA_SPEC.md` 7.2.1）。真实演示 R20261106-003：5 步记录齐全，实际模型与配置一致。
-- 用量比较用归一后的 `tokens`（Claude 和 Codex 同口径）；`PYTHONPATH=src python3 -m driver.record workspace/runs/<需求号>` 汇总一个需求的 token、按阶段和 Agent 拆分。
-- 优化记录在 `docs/OPTIMIZATIONS.md`（O001 第一次对比：单步输入 -4.6%，总量下降来自返工轮数不同，看不出明显效果，待多跑几遍）；比对工具 `python3 -m driver.compare digest|diff`。
-- S4 编码阶段（设计见 `docs/design/2026-11-06-s4-code-stage.md`）：转移规则和各步输入改由模板驱动（`templates/pipeline/*.json` 的 `on`、`inputs`，支持 `extends`）；新增类型 `pipeline/build`（S1 到 S4，`python3 -m driver.run --kind pipeline/build`）。代码目录在 `workspace/projects/<项目>/<需求号>/`，git 操作全由程序做（`src/cockpit/workdir.py`：起点提交、重做前回到起点、生成 `diff.patch`）；S4 报 DONE 但没有任何改动会被判无效并重试。假 Agent 联机跑通 S1 到 S4（`python3 tests/f2_pipeline.py --build`）。**真实 Agent 跑 S4 还没做**（Codex 沙箱里能否写代码目录、能否跑测试是最大的未知）。
-- 测试：145 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。
+**流水线 S1 到 S9 已全部连通，真实 Agent 第一次完整跑通（R20261106-010，2026-11-06 到 07）。** 类型 `pipeline/build`，模板在 `templates/pipeline/build.json`（继承 `design.json`）。
+
+| 阶段 | 谁做 | 说明 |
+| --- | --- | --- |
+| S1 分析 / S2 设计 / S3 设计审查 | Claude / Claude / Codex | 审查必须有“原文对照”小节（O007） |
+| S4 编码 | Codex | 在 `workspace/projects/<项目>/<需求号>/` 里写代码，git 全由程序做（`src/cockpit/workdir.py`） |
+| S5 检查 | **程序** | 运行 `python3 -m unittest discover -s tests`，不信 Agent 自述；失败退回 S4 |
+| S6 代码审查 | Claude | 看完整改动 `full.patch`；审查者只读，程序比对代码指纹，改了就作废 |
+| S7 发布候选 | **程序** | 本地 git 打 `v0.1.0-rc.N` |
+| S8 验收 | Claude（D015，原定 agy） | 以使用者身份对照原文；**不能亲手运行代码**，见下面“待你定” |
+| S9 正式发布 | **程序，前面有人工关口** | 停在进入前等你批准；本地 git 打 `v0.1.0` 并写 `CHANGELOG.md`；**不推送、不部署** |
+
+- 地基：agent-autoloop 检出在 `~/code/agent-autoloop`，锁定提交 `8f8e2ee`，不改它的内核。中台管派活、排队、租约、事实日志；Agent 以无界面进程运行。
+- 我们的部分在中台外面：`src/driver/`（`run.py` 启动、`reply.py` 回复、`runner.py` 发事件等结束、`record.py` 每步记录、`compare.py` 两次运行比对）；`src/cockpit/`（`pipeline.py` 模板与转移、`controller.py` 主循环与 `resume`、`tools.py` 程序步骤 `check` 与 `release`、`workdir.py`、`store.py`、`kinds.py`）；`src/dashboard/` 命令行看板与日志窗格。
+- **模板驱动**：阶段顺序、角色、产物、可选结论、结论去向（`on`）、每步读哪些文件（`inputs`）、必须有的小节（`required_sections`）、人工关口（`gate: human`）、工作目录模式（`workdir`: write / use / readonly）都在 `templates/pipeline/*.json`，改模板不改代码。
+- **人工回复**：流水线停在“等你”后，用 `PYTHONPATH=src python3 -m driver.reply <需求号> continue|rework|reject --note ... --home <中台目录>`（`rework` 加 `--stage S4` 等）。`continue` 在人工关口上就是批准。看板“待你决定”会写清在等什么，并给出这条命令。
+- **每步记录**：`done.json` 必填 `summary`；每步写 `record-a<次>.json`（实际模型、归一的 token、中台运行号等）和 `agent-a<次>.log`。字段见 `docs/DATA_SPEC.md` 7.2.1。程序步骤没有中台运行和 Agent 日志，记录里标 `tool`。
+- **比对与优化记录**：`python3 -m driver.compare digest|diff` 做确定性比对；每次流程优化记在 `docs/OPTIMIZATIONS.md`（只追加，没量过写“未测”）。
+- **崩溃与卡住**（假 Agent、真实中台，`tests/f5_crash.py`）：`hang` 超时重试、`crash` 每次崩溃 4 秒转人工（以前 45 分钟，O006）、`ctrl-kill`、`hub-kill` 都通过。
+- 测试：201 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。联机用假 Agent、不花额度：`python3 tests/f2_pipeline.py --build`（跑完整 S1 到 S9，含真实 git 标签）、`--fake-rework`，`tests/f5_crash.py hang|crash|ctrl-kill|hub-kill`。
+
+### 真实运行的证据（演示需求：命令行待办 `todo`）
+
+| 需求号 | 到哪 | 结果 |
+| --- | --- | --- |
+| R20261106-002 | S1 到 S3 | Codex 两次 REWORK 后 PASS，817 秒 |
+| R20261106-005 | S1 到 S4 | S4 因 setuptools 被 BLOCK（促成 O002） |
+| R20261106-006 | S1 到 S4 | S4 DONE |
+| R20261106-007 | S1 到 S5 | S5 PASS（程序运行 4 个测试） |
+| R20261106-008 | S1 到 S6 | 一次通过，但审查没抓到“需求要 `todo` 命令、设计只有 `python src/todo.py`”（促成 O007） |
+| R20261106-009 | S1 到 S4 | S3 第 1 轮抓到了命令入口缺失；S4 因我写的红线措辞把 `chmod +x` 当成改权限而 BLOCK（已修） |
+| **R20261106-010** | **S1 到 S9** | 523 秒到 S9 前，你批准后 `v0.1.0-rc.1`、`v0.1.0` 两个标签和 `CHANGELOG.md` 都在 |
+
+单次样本，只能当线索，不能当结论。
+
+## 待你定
+
+- **S8 验收者没法亲手运行代码**（R010 的验收报告 A2 自己承认）。原因是所有 Agent 的 `access` 都是 `edit`，不能执行任意命令。三个选项和我的倾向（A：程序在隔离环境替它“用一遍”）写在 `docs/OPTIMIZATIONS.md` 的“待定”一节。
+- `docs/design/2026-11-06-ticket-model.md` 第 5 节的 6 个待讨论问题；Agent 做分类和拆解与 D004 的协调方式（我的提议是 Agent 只提方案文件，程序校验后才执行，没确认过）。
+- D015（验收者先绑 Claude 而不是 agy）是我按“自动往下走”的授权选的默认，没单独确认过。
 
 ## 下一步
 
-1. 真实 Agent 跑 `pipeline/build` 到 S4（`--kind pipeline/build --effort low`，花额度），核对 `diff.patch` 与 `exec-report.md` 的 `files_changed` 是否一致。再接 S5 检查（第一个“程序步骤”：跑检查命令，退出码决定结论）、S6 代码审查、S7 到 S9。目标项目用演示需求，personagent 还没有可运行代码；检查命令先用 `python3 -m unittest`。
+1. 按你的说法：流程已经全部走通，接下来一遍遍雕细节。细节清单：
+   - S8 能亲手运行（上面“待你定”）。
+   - 每个阶段的任务说明用真实运行的数据打磨，每次改动记一条 O 编号并和上一次比。
+   - 设计审查返工偏多（多次要 2 到 3 轮才过），看是不是说明写得不够清楚。
 2. F3 剩余：Web 界面；`pro2` 布局重建脚本（桌面应用没有保存命令）。
-3. F5 没验证的：权限弹窗卡住、真实 Agent 进程崩溃、`/v1/stream` 从 0 重放在历史很大时的开销。
-4. 未验证项：agy 的实际模型名与用量；强度参数在 Claude 启动参数里的写法。
+3. 没验证的：权限弹窗卡住、真实 Agent 进程崩溃；`/v1/stream` 从 0 重放在历史很大时的开销；agy 的实际模型名与用量（换回 agy 前要先验证）；S7、S9 只在演示项目的本地 git 里测过，**没碰过真实项目，也没有推送到远端**，接 personagent 前必须先问你。
+4. S5 执行的是 Agent 刚写的代码，在 Agent 沙箱之外：做了最小环境变量、`HOME` 指向草稿目录、不经过 shell、超时杀进程组，**挡不住网络和对其他绝对路径的写入**（O004）。接真实项目前要换容器或 `sandbox-exec`。
+
 
 ## 换窗口接手时要知道（仓库里没有的东西）
 
 - 演示用中台在 `/tmp/autodev-demo`（`home/` 是 autoloop 数据目录，`al` 是带环境变量的包装脚本）。它跑在 Herdr `pro2` 空间右下窗格（`hc` 地址 `t1n`，标签 `autodev-log`），端口 3399。`/tmp` 重启后会没，丢了就重建：`init --command '<假 Agent> {prompt}' --no-service --port 3399`，再 `up`。
 - `pro2` 空间三格：左 `t1k`（日志窗格 `python3 -m dashboard.logpane --home /tmp/autodev-demo/home`）、右上 `t1m`（看板 `python3 -m dashboard --home /tmp/autodev-demo/home --root ~/code/autodev`，都要加 `PYTHONPATH=src`）、右下 `t1n`（中台）。窗格丢了用 `herdr-app` 重建，见 `docs/TOOLS.md` 第 2 节；布局重建脚本还没写。
 - `pro1` 是用户自己的空间，不要动。
-- 跑真实流水线：`PYTHONPATH=src python3 -m driver.run --home /tmp/autodev-demo/home --root ~/code/autodev --request <需求.md> --effort low`（花额度）。
-- `workspace/runs/` 在 gitignore 里：`R20261105-001` 是 P4 调试留下的旧失败记录（看板里显示“等你”），`R20261106-001` 是 F3 真实跑通的那次，两条都没有 `kind`，显示“未分类”。
+- 跑真实流水线（花额度）：`PYTHONPATH=src python3 -m driver.run --home /tmp/autodev-demo/home --root ~/code/autodev --request requests/demo-todo-cli.md --kind pipeline/build --effort low`。不加 `--kind` 默认是 `pipeline/design`（只到设计审查）。流水线跑到 S9 前会停下，之后用 `driver.reply` 批准。命令必须带 `PYTHONPATH=src`，否则找不到模块。`requests/demo-todo-cli.md` 是演示需求，不在 git 里。
+- **Bash 工具经常被拦**（自动模式的安全分类器依赖的模型时好时坏）：`.claude/settings.local.json` 里有一份白名单，命中的命令不依赖分类器，但复合命令（`&&`、管道、`cd ... &&`）和临时的 `python3 -c` 不命中，要拆成单条命令。这个文件不在 git 里（`settings.local.json`）。
+- `workspace/runs/` 在 gitignore 里：`R20261105-001` 是 P4 调试留下的旧失败记录（看板里显示“等你”），`R20261106-001` 是 F3 真实跑通的那次，两条都没有 `kind`，显示“未分类”；`R20261106-002` 以后是真实演示（见上表）。`workspace/projects/` 也在 gitignore 里，是 Agent 写的演示代码和本地 git 标签。
 - 线上 autoloop 的最新只读副本在 `/tmp/aal-latest`（`d3e6d26`），本机锁定的 `~/code/agent-autoloop` 仍是 `8f8e2ee`，没升级。
 
-## 刚做完 / 马上做
+## 仍然开放的问题（来自早期设计）
 
-- 刚做完：F4、F5、F6（见上）；真实 Agent 上第一次看到 REWORK 回路（两次）。
-- 马上做：S4 以后的阶段需要用户先定的东西很多（见下面“仍然开放的问题”），建议先和用户确认范围。
-- 等用户：`docs/design/2026-11-06-ticket-model.md` 第 5 节的 6 个待讨论问题；Agent 做分类和拆解与 D004 的协调方式（我的提议是 Agent 只提方案文件，程序校验后才执行，没确认过）。
-
-## 仍然开放的问题（来自早期设计，与地基无关）
-
-- 目标项目 personagent 目前没有可运行的产品代码，S7 发布候选和 S8 验收的具体做法、`config.yaml` 的 `checks` 都还定不了。
-- AutoDev 暂不含 GitHub PR，与 personagent 要求 Issue、TASK、PR 的规则需先协调。
-- 设计文档第 8 节与第 13 节对 S7 “只打标签还是部署”表述不一致。
+- 目标项目 personagent 目前没有可运行的产品代码。S7、S8、S9 现在在演示项目的本地 git 里跑通了，但**接 personagent 时 S7 是否要部署、S8 用什么手段验收、`checks` 写什么命令，都还定不了**（设计第 13 节第 1、2 条）。
+- AutoDev 暂不含 GitHub PR，与 personagent 要求 Issue、TASK、PR 的规则需先协调；S9 现在只在本地 git 打标签，不推送。
 - “需求变更”视图对比原文、结构化字段还是两者，未定。
-- 需求分析的审核角色、结论协议和轮次上限待设计（D013）。
+- 需求分析的审核角色、结论协议和轮次上限待设计（D013）；现在 S1 没有独立审核。
 - 跨机器 `hc --on homemac` 与 `keep` 丢失检测未测；autoloop 的 G4 提问续接、G7 外部文字隔离、熔断也未在我们的集成里测过。
 
 ## 待讨论：工单分类、拆解与成熟工具（用户 2026-11-06 提出，尚未定）
