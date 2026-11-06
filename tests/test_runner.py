@@ -70,7 +70,7 @@ class RunnerTest(unittest.TestCase):
             self.clock.sleep(30)
             yield from orig(after, timeout)
         hub.facts = facts
-        inv = make_invoke(hub, retries, clock=self.clock.now, sleep=self.clock.sleep)
+        inv = make_invoke(hub, hub_retries=retries, clock=self.clock.now, sleep=self.clock.sleep)
         return inv(None, "x", self.sd, "", "", timeout_s=timeout_s, exit_keys=("ctrl+c",))
 
     def test_subject_and_event_id_shape(self):
@@ -95,6 +95,12 @@ class RunnerTest(unittest.TestCase):
     def test_retries_beyond_limit_cancel_the_run(self):
         hub = FakeHub([[fact(1, EV, LINK, run_row("queued")), fact(2, run_row("queued", attempts=3, error="boom"))]])
         r = self.call(hub, retries=2)
+        self.assertEqual((r["ok"], r["reason"], hub.cancelled), (False, "command_failed", [7]))
+
+    def test_first_agent_crash_is_immediately_handed_to_controller(self):
+        hub = FakeHub([[fact(1, EV, LINK, run_row("queued")),
+                        fact(2, run_row("queued", attempts=1, error="exit 1"))]])
+        r = self.call(hub, retries=0)
         self.assertEqual((r["ok"], r["reason"], hub.cancelled), (False, "command_failed", [7]))
 
     def test_within_retry_limit_keeps_waiting_until_success(self):

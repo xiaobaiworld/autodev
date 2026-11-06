@@ -40,7 +40,7 @@ def main(argv=None):
         hub.state()  # 中台没起来就在这里失败，不要先改规则
         backup = install_rules(home, rules)
         ctrl = Controller(root, None, agents, roles, {k: "hub" for k in agents}, limits,
-                          invoke_fn=make_invoke(hub, limits["step_retries"]))
+                          invoke_fn=make_invoke(hub))
         rid = start_run(root, Path(a.request).read_text(encoding="utf-8"), "toy", ctrl)
     except (OSError, ValueError, KeyError, LockError, SetupError, HubError) as e:
         print(f"启动失败：{e}", file=sys.stderr)
