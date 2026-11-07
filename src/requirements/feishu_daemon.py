@@ -18,6 +18,7 @@ from requirements.flow import build_req_prompt, is_finalize_request, normalize_u
 from requirements.presentation import FeishuCardPresenter, extract_semantic_response
 from requirements.responder import FeishuResponder
 from requirements.session import ReqSessionStore
+from requirements.validator import validate_requirement_spec
 
 log = logging.getLogger("autodev.req")
 
@@ -168,6 +169,12 @@ def main() -> None:
                 archived_path = None
                 if is_final and len(reply_text) > 100:
                     try:
+                        v_res = validate_requirement_spec(reply_text)
+                        if v_res.is_valid:
+                            log.info("需求定稿文件通过程序化校验 [VALIDATED]")
+                        else:
+                            log.warning("需求定稿文件程序化校验未通过项: %s", v_res.errors)
+
                         req_dir = os.path.join(sess["cwd"], "docs", "requirements")
                         os.makedirs(req_dir, exist_ok=True)
                         ts = time.strftime("%Y%m%d-%H%M%S")
@@ -175,6 +182,10 @@ def main() -> None:
                         full_path = os.path.join(req_dir, file_name)
                         with open(full_path, "w", encoding="utf-8") as f:
                             f.write(reply_text + "\n")
+                            if v_res.is_valid:
+                                f.write("\n<!-- SPEC-VALIDATED: PASS -->\n")
+                            else:
+                                f.write(f"\n<!-- SPEC-VALIDATED: FAIL - {'; '.join(v_res.errors)} -->\n")
                         archived_path = full_path
                         log.info("需求定稿文件已落盘: %s", full_path)
                     except Exception as e:

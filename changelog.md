@@ -1,5 +1,11 @@
 # changelog
 
+## 2026-11-07：需求规格标准 (SRS v1.0) 确立与程序化校验器落地
+- **需求产出标准规范落盘**：制定 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md)，确立“输入可发散、输出必收敛、人机可共读、程序可自检”的核心契约，明确九大章节与 RULE-01~09 校验规则；
+- **程序化检查器实现（validator.py）**：落地确定性检查逻辑，毫秒级断言章节完整性、架构拓扑双维度、非目标边界、低保真原型线框图以及防技术越权规则；
+- **飞书定稿落盘自动验真**：在 `feishu_daemon.py` 定稿时无缝执行程序化校验，自动追加 `<!-- SPEC-VALIDATED: PASS -->` 合规元数据；
+- **测试套件扩增**：新增 `tests/test_requirements_validator.py`，全量测试套件扩增至 231 项持续全绿。
+
 ## 2026-11-07：飞书端需求模块全流程沉淀与九大类别规范确立
 - **Session 演进说明书落盘**：沉淀 [`docs/modules/requirements/feishu-requirement-bot.md`](docs/modules/requirements/feishu-requirement-bot.md)，完整记录从飞书长连接、多渠道呈现抽象、引导式拼图、场景举例、外部界面原型到全局架构拓扑判断的 6 大演进阶段；
 - **确立需求规格说明九大标准类别**：定义标识元数据、架构拓扑与近期关联、背景与目标、范围用例、非目标边界、界面原型草图、业务约束、验收标准、下游设计关注点等九大核心分类体系；

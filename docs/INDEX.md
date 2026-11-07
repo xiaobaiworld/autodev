@@ -22,6 +22,7 @@
 | 路径 | 职责 | 状态与权威性 |
 | --- | --- | --- |
 | `docs/design/2026-11-05-autoloop-foundation.md` | 以 agent-autoloop 为地基的方案：结构、F0 到 F6、界面共用数据、待决事项 | 当前主线 |
+| `docs/specs/REQUIREMENT_SPEC_STANDARD.md` | 软件需求规格说明书产出规范与校验标准 (SRS Standard v1.0)：九大章节契约、Linter 校验规则、机器可验断言 | 需求产物向 S2 架构交接的标准契约 |
 | `docs/modules/requirements/README.md` | 需求澄清独立模块入口：需求、完成条件、状态循环、接口与实现/测试计划 | 模块第一版已落地（含飞书长连接服务与多渠道卡片呈现） |
 | `docs/modules/requirements/feishu-requirement-bot.md` | 需求澄清模块与飞书端沉淀说明书：Session 演进全记录、九大类别体系与标准需求文档范本 | 权威说明与需求沉淀规范 |
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
