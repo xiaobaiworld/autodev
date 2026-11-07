@@ -19,7 +19,8 @@ class TestRequirementsFlow(unittest.TestCase):
     def test_build_req_prompt_new(self):
         prompt = build_req_prompt("做个定时功能", is_new=True)
         self.assertIn("新需求探讨开始", prompt)
-        self.assertIn("严格只读模式", prompt)
+        self.assertIn("req-guided-v2", prompt)
+        self.assertIn("拼图 1：确认核心目标与使用场景", prompt)
 
     def test_build_req_prompt_finalize(self):
         prompt = build_req_prompt("定稿", is_new=False)
