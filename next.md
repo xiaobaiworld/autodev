@@ -37,7 +37,7 @@
 - **每步记录**：`done.json` 必填 `summary`；每步写 `record-a<次>.json`（实际模型、归一的 token、中台运行号等）和 `agent-a<次>.log`。字段见 `docs/DATA_SPEC.md` 7.2.1。程序步骤没有中台运行和 Agent 日志，记录里标 `tool`。
 - **比对与优化记录**：`python3 -m driver.compare digest|diff` 做确定性比对；每次流程优化记在 `docs/OPTIMIZATIONS.md`（只追加，没量过写“未测”）。
 - **崩溃与卡住**（假 Agent、真实中台，`tests/f5_crash.py`）：`hang` 超时重试、`crash` 每次崩溃 4 秒转人工（以前 45 分钟，O006）、`ctrl-kill`、`hub-kill` 都通过。
-- 测试：212 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。联机用假 Agent、不花额度：`python3 tests/f2_pipeline.py --build`（跑完整 S1 到 S9，含真实 git 标签）、`--fake-rework`，`tests/f5_crash.py hang|crash|ctrl-kill|hub-kill`。
+- 测试：221 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。联机用假 Agent、不花额度：`python3 tests/f2_pipeline.py --build`（跑完整 S1 到 S9，含真实 git 标签）、`--fake-rework`，`tests/f5_crash.py hang|crash|ctrl-kill|hub-kill`。
 
 ### 真实运行的证据（演示需求：命令行待办 `todo`）
 
@@ -59,16 +59,13 @@
 - `docs/design/2026-11-06-ticket-model.md` 第 5 节的 6 个待讨论问题；Agent 做分类和拆解与 D004 的协调方式（我的提议是 Agent 只提方案文件，程序校验后才执行，没确认过）。
 - D015（验收者先绑 Claude 而不是 agy）是我按“自动往下走”的授权选的默认，没单独确认过。
 
-## 当前新增工作：需求澄清模块设计（2026-11-07）
+## 当前新增工作：需求澄清模块与专属飞书机器人落地（2026-11-07，已落地）
 
-用户要求先设计上层的需求澄清独立模块，最终落实为程序。输入来自外部，人与 Agent 多轮梳理；经验清单辅助提问，程序检查章节、清单及当前版本的人工确认，满足后停止调用模型。
-
-- 设计入口：`docs/modules/requirements/README.md`，含 requirements.md 与 design.md。
-- 已细化第一版程序协议（protocol.md）：本机 CLI/Python API、通用清单、草稿结构、每轮外部输入/模型输出及计时。未写代码、未调用真实 Agent。
-- 当前设计收口验证：需求 R01～R11 对照、文档链接、git diff --check；计时覆盖成功/失败/重试/中断，用户等待不计入调用耗时。
-- 本步涉及：以上文档、本文件及 docs/INDEX.md；验证为需求对照与文档链接检查。
-- 评审后第一步 M1：先写匿名 fixtures 和本地完成校验测试，再实现协议及 Markdown 生成；保留现有流水线行为。
-- 原有下一步清单继续保留如下，不表示需求模块已经实现。
+需求澄清模块第一版已在 AutoDev 内部完全独立落地，并提供专属的飞书交互机器人：
+- 代码模块：`src/requirements/`（`feishu_daemon.py`、`flow.py`、`agent_runner.py`、`session.py`、`presentation/`）；
+- 核心特性：只读安全模式、提示词方案选项 1/2 列表化、输入极简数字标准化、飞书彩色卡片渲染与通用纯文本呈现器；
+- 系统守护：`deploy/install-req-bot.sh` 已将服务注册为 macOS launchd 守护进程 `com.autodev.req-bot` 并常驻运行；
+- 测试验证：全量 221 个单元测试全部通过。
 
 ## 下一步
 

@@ -22,7 +22,7 @@
 | 路径 | 职责 | 状态与权威性 |
 | --- | --- | --- |
 | `docs/design/2026-11-05-autoloop-foundation.md` | 以 agent-autoloop 为地基的方案：结构、F0 到 F6、界面共用数据、待决事项 | 当前主线 |
-| `docs/modules/requirements/README.md` | 需求澄清独立模块入口：需求、完成条件、状态循环、接口与实现/测试计划 | 设计草案，尚未实现；接口及字段待评审 |
+| `docs/modules/requirements/README.md` | 需求澄清独立模块入口：需求、完成条件、状态循环、接口与实现/测试计划 | 模块第一版已落地（含飞书长连接服务与多渠道卡片呈现） |
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
 | `docs/design/2026-11-02-autodev-design.md` | 九阶段流水线、角色、产物、人工参与、Web 界面、复盘、规则 | 当前设计基线；第 3.2、3.3、5 节的执行与调度部分已被地基方案部分取代，各节顶部有说明 |
 | `docs/OPTIMIZATIONS.md` | 流程优化记录：每次小优化改了什么、为什么、怎么回退、效果量到多少；只追加，回退和反复都如实记 | 只记优化这一件事；没量过写“未测” |
@@ -48,6 +48,8 @@
 | --- | --- |
 | `src/driver/` | 向 autoloop 中台发事件、读事实流（`hub.py`、`runner.py`）；每步写记录（`record.py`）；两次运行的确定性比对（`compare.py`）；生成并安装规则（`setup.py`）；启动一个需求 `run.py`；人工回复 `reply.py`（批准、退回、拒绝） |
 | `src/cockpit/` | 需求类型登记（`kinds.py`）；阶段表、转移规则、输入清单、产物校验（`pipeline.py`，都读 `templates/pipeline/`）；主循环与人工回复入口 `resume`（`controller.py`）；程序步骤 `check`、`release`（`tools.py`）；代码目录的 git 操作（`workdir.py`）；状态落盘（`store.py`）；`config.yaml` 读取（`agents.py`）。窗格驱动的旧方案已在 F6 移除 |
+| `src/requirements/` | 需求澄清专属模块：飞书长连接守护服务（`feishu_daemon.py`）、提示词与选项列表约束（`flow.py`）、多渠道呈现适配器（`presentation/`，支持飞书高颜值交互卡片与纯文本）、只读 Agent 会话驱动（`agent_runner.py`）与项目会话存储（`session.py`） |
+| `deploy/` | 系统守护管理脚本：`install-req-bot.sh`（把需求分析机器人安装为 macOS launchd 服务 `com.autodev.req-bot` 并自启）、`uninstall-req-bot.sh` |
 | `templates/pipeline/` | 流水线模板：每个 `pipeline/*` 类型一个 JSON（`build` 继承 `design`），写阶段顺序、角色、产物、可选结论、结论去向、输入文件、必须有的小节、人工关口和任务说明；改这里即改下一次运行 |
 | `src/dashboard/` | 命令行看板与日志窗格 |
 | `tests/` | 单元测试；`smoke_autoloop.py`、`f1_agents.py`、`f2_pipeline.py`、`f5_crash.py` 是联机验证脚本。`f1_agents.py` 和不带任何参数的 `f2_pipeline.py` 花额度；`f2_pipeline.py --build`（跑完整 S1 到 S9）、`--fake-rework`、`f5_crash.py` 用假 Agent，不花额度 |

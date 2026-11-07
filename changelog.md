@@ -1,5 +1,13 @@
 # changelog
 
+## 2026-11-07：需求澄清模块与专属飞书机器人落地（v0.2.0）
+- **独立模块实现**：在 AutoDev 项目内落地独立的专属需求澄清模块（`src/requirements/`），完全自包含与解耦，不依赖外部项目；
+- **专属飞书机器人常驻**：基于官方 WebSocket 长连接实现 `feishu_daemon.py`，点开即聊需求；强制只读安全模式（Plan Mode），杜绝误改代码；支持 `/new` 开始新需求、`/project` 切换目录、回复 `定稿` 生成《需求规格说明草案》并自动落盘；
+- **多渠道呈现层抽象（Presentation Adapter）**：创建 `presentation/` 抽象层，提炼渠道无关的领域语义模型（`RequirementResponse`、`RequirementChoice`）；实现 `FeishuCardPresenter`（飞书高颜值交互卡片）与 `PlainTextPresenter`（微信/控制台纯文本），后续拓展 Web 或微信只需新增 Presenter；
+- **问答选项列表化与极简数字决策**：强化提示词将方案抉择收敛为精简编号的 1、2 选项；输入层实现 `normalize_user_input`，支持手机端直接回复 `1`、`2` 自动规范化为清晰决策意图；
+- **系统守护脚本**：新增 `deploy/install-req-bot.sh` 与 `uninstall-req-bot.sh`，将服务注册为 macOS LaunchAgent（`com.autodev.req-bot`，开机自启、崩溃自愈）；
+- **全量测试通过**：新增 9 个单元测试，测试套件扩增至 221 项全量通过（`Ran 221 tests OK`）。
+
 ## 2026-11-07：需求澄清模块设计
 - 细化第一版程序协议：CLI/Python 调用、初始通用清单、需求 JSON 与原始输入输出、逐次调用开始/结束/耗时；明确用户等待不计入、失败重试分别计时、中断未知不伪造数值。补 R11 验收、更新设计与 next.md；仅设计，文档链接及差异检查通过，尚未实现。
 - 按用户进一步限定，原始交流记录收窄为外部输入与大模型输出，撤回此前向工具调用、内部过程等底层审计的设计扩展；需求版本、人工确认和必要运行状态保留。仅文档调整，差异格式检查通过。
