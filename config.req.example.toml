@@ -1,0 +1,15 @@
+# AutoDev 需求分析师专属机器人配置示例
+# 复制为 config.req.toml 并填入真实凭证；config.req.toml 已被 .gitignore 排除
+
+default_agent = "cc"             # 默认使用 Claude 进行深度需求分析 (cc=claude, codex=codex)
+task_timeout  = 1800             # 需求澄清分析超时(秒)
+output_limit  = 3500             # 回传文本上限
+default_cwd   = "~/code/autodev" # 默认绑定的目标开发项目路径
+
+[feishu]
+app_id     = "cli_xxxxxxxx"       # 飞书需求分析应用 App ID
+app_secret = "xxxxxxxxxxxx"       # 飞书需求分析应用 App Secret
+
+[allow]
+users = ["ou_xxxxxxxx"]          # 用户在该应用下的专属 open_id 白名单
+dirs  = ["/Users/bai/code"]      # 允许切换与引用的项目根目录

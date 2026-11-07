@@ -11,3 +11,7 @@ workspace/.lock
 
 # requirement clarification conversations and audit data
 workspace/requirements/
+.venv/
+logs/
+config.req.toml
+.req_session.json
