@@ -4,8 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from cockpit.pipeline import SetupError
-from cockpit.store import Run
+from cockpit.controller import allocate_run_id
+from cockpit.pipeline import SetupError, wait_reason
+from cockpit.store import LockError, Run, acquire_lock
 from web.api import (
     AUTODEV_ROOT,
     evaluate_srs_rules_detail,
@@ -18,6 +19,7 @@ from web.api import (
     update_roles_config,
 )
 from requirements.handoff import handoff_srs_to_pipeline
+from requirements.session import ReqSessionStore
 
 
 class TestWebUnifiedClient(unittest.TestCase):
@@ -102,6 +104,15 @@ class TestWebUnifiedClient(unittest.TestCase):
                     expected_hash="wrong_hash_000",
                 )
 
+            # C2: 尝试将流水线角色绑定到尚未接入 autoloop 规则生成器的 agy 时明确拦截
+            with self.assertRaises(SetupError) as agy_ctx:
+                update_roles_config(
+                    root,
+                    new_roles={"acceptor": "agy"},
+                    expected_hash=cfg["version_hash"],
+                )
+            self.assertIn("仅支持", str(agy_ctx.exception))
+
             # 合法更新（analyst 切换为 claude-sonnet）
             updated = update_roles_config(
                 root,
@@ -109,6 +120,51 @@ class TestWebUnifiedClient(unittest.TestCase):
                 expected_hash=cfg["version_hash"],
             )
             self.assertEqual(updated["roles"]["analyst"], "claude-sonnet")
+
+    def test_o1_o3_o4_c3_optimizations(self):
+        from datetime import datetime
+
+        srs_path = AUTODEV_ROOT / "docs" / "requirements" / "REQ-WEB-UNIFIED_CLIENT-20261107.md"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copy(AUTODEV_ROOT / "config.yaml", root / "config.yaml")
+            req_dir = root / "docs" / "requirements"
+            req_dir.mkdir(parents=True, exist_ok=True)
+            local_srs = req_dir / srs_path.name
+            shutil.copy(srs_path, local_srs)
+
+            # O1: ReqSessionStore 自动将历史遗留 "cc" 归一为 "claude-sonnet" 并返回活跃飞书会话 ID
+            sfile = root / ".req_session.json"
+            sfile.write_text(
+                json.dumps({"oc_feishu_123": {"cwd": str(root), "agent": "cc", "session_id": "sid-999"}}),
+                encoding="utf-8",
+            )
+            store = ReqSessionStore(str(sfile), str(root), "claude-sonnet")
+            self.assertEqual(store.get_active_chat_id(), "oc_feishu_123")
+            self.assertEqual(store.get("oc_feishu_123")["agent"], "claude-sonnet")
+
+            # O3: 删除中间编号目录后 allocate_run_id 不会撞号
+            fixed_day = datetime(2026, 11, 7)
+            (root / "workspace" / "runs" / "R20261107-002").mkdir(parents=True, exist_ok=True)
+            next_rid = allocate_run_id(root, today=fixed_day)
+            self.assertEqual(next_rid, "R20261107-003")
+
+            # C3: 当 workspace/.lock 被占用时，handoff_srs_to_pipeline 拒绝并发写入
+            held_lock = acquire_lock(root / "workspace" / ".lock")
+            try:
+                with self.assertRaises(LockError):
+                    handoff_srs_to_pipeline(local_srs, root=root, project="autodev")
+            finally:
+                held_lock.close()
+
+            # O4: wait_reason 在看板与 Web 端保持一致
+            sample_waiting = {
+                "stage": "S9",
+                "status": "needs-human",
+                "human": {"waiting": True, "pending_decision": "gate:S9"},
+                "step": {"state": "pending"},
+            }
+            self.assertEqual(wait_reason(sample_waiting), "要你批准才进 S9")
 
     def test_redact_secrets(self):
         raw = 'app_secret = "9f8e7d6c5b4a3210" and key sk-1234567890abcdefghij'

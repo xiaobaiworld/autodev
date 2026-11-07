@@ -463,7 +463,7 @@
       <div class="brand">
         <span class="brand-mark">A</span>
         <span>AutoDev 统一网页工作台</span>
-        <span class="pill blue">v0.3.1</span>
+        <span class="pill blue">v0.3.2</span>
       </div>
       <div class="nav-tabs" role="tablist">
         <button class="nav-tab active" data-tab="tab-req" onclick="switchMainTab('tab-req')">
@@ -1182,11 +1182,14 @@
 
       const humanPanel = document.getElementById("cockpit-human-panel");
       const humanPill = document.getElementById("human-status-pill");
+      const humanDesc = document.getElementById("human-decision-desc");
       if (st.status === "needs-human") {
         humanPanel.style.opacity = "1";
-        humanPill.textContent = `⚠️ 待决定 (${st.human && st.human.pending_decision ? st.human.pending_decision : st.stage})`;
+        humanPill.textContent = `⚠️ 待决定 (${run.wait_reason || st.stage})`;
+        humanDesc.textContent = `当前暂停原因：${run.wait_reason || '等待人工处理'}。请在下方选择处理动作（提交后写入 human/reply-K.md）：`;
       } else {
         humanPill.textContent = `当前状态: ${st.status} (仅在 needs-human 时需要提交)`;
+        humanDesc.textContent = "当流水线停在 S9 发布前确认或审查达到轮次上限时，可在此直接拍板（写入 human/reply-K.md）：";
       }
     }
 

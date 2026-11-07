@@ -1,6 +1,6 @@
-# 第一版程序协议
+# 第一版程序协议（早期草案，已被 `SPEC-REQ-STANDARD-v1.0` 取代）
 
-状态：2026-11-07 实施设计，尚未实现。上游需求见 [requirements.md](requirements.md)，循环与实现步骤见 [design.md](design.md)。
+> **状态说明（2026-11-07 更新，C1 收敛）**：本文件中的 6 项 `checklist.json` 与 `requirements.json` 草案协议已被正式的九大章节标准契约 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](../../specs/REQUIREMENT_SPEC_STANDARD.md)（`SPEC-REQ-STANDARD-v1.0`，配套检查器 [`src/requirements/validator.py`](../../../src/requirements/validator.py) 与 S2 交接器 [`src/requirements/handoff.py`](../../../src/requirements/handoff.py)）取代；第 4 节关于每次调用记录开始/结束时间、耗时与原始输入输出的要求已落地于 [`src/requirements/service.py`](../../../src/requirements/service.py)（`workspace/requirements/audit.jsonl`）。本文件仅作早期方案追溯保留。
 
 ## 1. 模块结构和调用方式
 

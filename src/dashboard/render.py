@@ -1,6 +1,7 @@
 """命令行看板的渲染：输入中台 /v1/state 和我们自己的 state.json，输出一屏文字。纯函数，不碰网络。"""
 from datetime import datetime
 
+from cockpit.pipeline import wait_reason
 from dashboard.width import _w  # 按显示宽度对齐中文
 
 RUN_STATE = {"claimed": "运行中", "queued": "排队", "nothing": "已结束", "done": "已结束", "cancelled": "已取消"}
@@ -68,25 +69,6 @@ def _request_line(p):
         step = p.get("step") or {}
         line += f"  {step.get('role') or '-'} / {step.get('agent') or '-'}：{step.get('state') or '-'}"
     return line
-
-
-def wait_reason(p):
-    """一个等人的需求在等什么。全部从 state.json 已有的字段推出来，推不出就老实写“等你处理”，不编原因。"""
-    h, step = p.get("human") or {}, p.get("step") or {}
-    stage = p.get("stage", "-")
-    gate = str(h.get("pending_decision") or "")
-    if gate.startswith("gate:"):
-        return f"要你批准才进 {gate[5:]}"
-    if step.get("state") == "failed":
-        return f"{stage} 步骤失败（{step.get('fail_reason') or '原因未记录'}），重试用完"
-    verdict = step.get("verdict")
-    if verdict == "BLOCK":
-        return f"{stage} 的 Agent 报 BLOCK，要你判断"
-    if verdict == "CLARIFY":
-        return f"{stage} 需求不清楚，要你澄清"
-    if verdict in ("REWORK", "FAIL"):
-        return f"{stage} 返工轮次用完，仍是 {verdict}"
-    return "等你处理"
 
 
 def render(state, pipelines, now, error=None, max_runs=12, width=70, max_requests=6, reply_cmd=None):

@@ -1,6 +1,10 @@
-# 需求澄清模块：需求与验收
+# 需求澄清模块：需求与验收（早期草案，已被 v0.3.2 标准规范吸收与取代）
 
-状态：设计阶段。来源：2026-11-07 用户与 Agent 的本次讨论；未实现未验证。接口细节见 design.md，不把设计提议写成已确认需求。
+> **状态说明（2026-11-07 更新，C1 收敛）**：本文件为会话早期的设计讨论底稿。其中的核心需求（多轮引导澄清、标准结构检查、人工确认定稿、第 7 节“保留外部输入与大模型原始输出及每轮调用耗时审计”）已全部吸收并正式落地；而早期第 5 节中“不包括 Web 界面”的临时边界已被后续正式需求 [`docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md`](../../requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md) 扩展取代。  
+> **当前现行权威文档请直接查阅**：
+> 1. 产出物标准契约：[`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](../../specs/REQUIREMENT_SPEC_STANDARD.md)（9 章节 SRS Standard v1.0 与 `RULE-01~09`）
+> 2. 模块实现说明书：[`docs/modules/requirements/feishu-requirement-bot.md`](feishu-requirement-bot.md)
+> 3. 全系统统一网页客户端规格：[`docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md`](../../requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md)
 
 ## 1. 已确认的目标
 

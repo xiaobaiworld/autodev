@@ -1,5 +1,12 @@
 # changelog
 
+## 2026-11-07：全项目代码重叠合并与冲突隐患收敛优化（`O1~O4` + `C1~C3`，`v0.3.2`）
+- **O1（统一飞书与 Web 需求澄清编排与耗时审计，`src/requirements/service.py`）**：抽离 `execute_clarification_turn` 与 `load_audit_log`/`append_audit_entry`（统一写入 `workspace/requirements/audit.jsonl`）；`ReqSessionStore` 新增 `get_active_chat_id()` 并在加载时自动将历史遗留 `"cc"` 归一为 `"claude-sonnet"`，使飞书端与 Web 客户端共享同一活跃会话；
+- **O2（统一 SRS 章节解析与规则透视，`src/requirements/validator.py`）**：将章节正文切分、元数据提取（`extract_srs_metadata`）与 9 章节 + `RULE-01~09` 逐项红绿灯透视（`inspect_srs_document`）全部收敛至 `validator.py`，消除 `handoff.py` 与 `web/api.py` 的重复正则；
+- **O3（统一运行号防碰撞分配与状态初始化，`src/cockpit/controller.py`）**：提炼 `allocate_run_id`（取已有最大序号 + 1，防止删除中间目录后撞号）与 `build_initial_state`，供 `start_run` 与 `handoff_srs_to_pipeline` 共用；
+- **O4（统一命令行看板与 Web 驾驶舱等待原因推断，`src/cockpit/pipeline.py`）**：将 `wait_reason` 下沉至 `cockpit.pipeline`，使命令行看板与 Web 驾驶舱对 `needs-human` 的原因展示 100% 一致；
+- **C1~C3（消除早期草案冲突、拦截 `agy` 流水线角色误绑、补齐 Web 写操作单实例锁）**：为 `docs/modules/requirements/` 下的三份早期草案加上明确的吸收/取代声明；在 `update_roles_config` 中校验流水线角色 CLI 是否受 `driver.setup.USE` 支持；在 `handoff_srs_to_pipeline` 与 `submit_human_decision` 中统一加 `acquire_lock(workspace/.lock)` 保护。全库 245 项单元测试通过。
+
 ## 2026-11-07：全项目重构优化前基线文档与版本号统一同步（`v0.3.1`）
 - **统一全库文档与前端界面版本号至 `v0.3.1`**：消除 `README.md`、`REQUIREMENT_SPEC_STANDARD.md`、`feishu-requirement-bot.md`、`ui.html` 与 `INDEX.md`/`next.md` 之间的版本号跨度残余（`v0.2.2` vs `v0.3.0`），形成全项目代码审查与重构优化前的干净基线快照 `v0.3.1`。
 

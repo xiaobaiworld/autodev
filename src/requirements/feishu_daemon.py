@@ -1,4 +1,4 @@
-# 定位: feishu_daemon.py AutoDev 专属需求分析师飞书机器人服务入口。
+# 定位: feishu_daemon.py AutoDev 专属需求分析师飞书机器人服务入口（委托给 requirements.service 统一编排与审计）。
 from __future__ import annotations
 
 import glob
@@ -6,22 +6,18 @@ import json
 import logging
 import os
 import sys
-import time
 from concurrent.futures import ThreadPoolExecutor
 
 import lark_oapi as lark
 from lark_oapi.api.im.v1 import P2ImMessageReceiveV1
 
-from requirements.agent_runner import run_agent_turn
 from requirements.config import load_req_config
-from requirements.context_detector import build_project_context_summary
-from requirements.flow import build_req_prompt, is_finalize_request, normalize_user_input
 from requirements.handoff import handoff_srs_to_pipeline
 from requirements.llm_provider import load_model_registry, resolve_model_spec
-from requirements.presentation import FeishuCardPresenter, extract_semantic_response
+from requirements.presentation import FeishuCardPresenter
 from requirements.responder import FeishuResponder
+from requirements.service import execute_clarification_turn
 from requirements.session import ReqSessionStore
-from requirements.validator import validate_requirement_spec
 
 log = logging.getLogger("autodev.req")
 
@@ -135,7 +131,7 @@ def main() -> None:
                     lines.append(
                         f"{mark} `{name}` → `{spec.full_model_id}` (厂商: `{spec.vendor}`, CLI: `{spec.cli}`)"
                     )
-                lines.append("\n💡 发送 `/model <名称>`（如 `/model gpt` 或 `/model claude-opus`）即可随时切换模型，历史问答上下文会自动保留。")
+                lines.append("\n💡 发送 `/model <名称>`（如 `/model codex` 或 `/model claude-opus`）即可随时切换模型，历史问答上下文会自动保留。")
                 send_pool.submit(responder.send_text, chat_id, "\n".join(lines))
                 return
 
@@ -264,101 +260,40 @@ def main() -> None:
             send_pool.submit(responder.send_text, chat_id, help_msg)
             return
 
-        sess = store.get(chat_id)
-        current_session_id = sess["session_id"] or None
-        current_mode = sess.get("mode", "cli_session")
-        current_history = sess.get("history") or []
-        is_new = (current_session_id is None) and (len(current_history) == 0)
-        is_final = is_finalize_request(clean_text)
-
-        normalized_input = normalize_user_input(clean_text)
-        project_context = build_project_context_summary(sess["cwd"])
-        agent_prompt = build_req_prompt(
-            normalized_input,
-            is_new=is_new,
-            project_context_summary=project_context,
-        )
-
         def run_task() -> None:
-            log.info(
-                "开始调用需求 Agent: agent=%s mode=%s cwd=%s resume=%s",
-                sess["agent"],
-                current_mode,
-                sess["cwd"],
-                bool(current_session_id),
-            )
-            result = run_agent_turn(
-                sess["agent"],
-                agent_prompt,
-                sess["cwd"],
-                session_id=current_session_id,
+            outcome = execute_clarification_turn(
+                store=store,
+                chat_id=chat_id,
+                user_text=clean_text,
                 timeout=cfg.task_timeout,
-                mode=current_mode,
-                history=current_history,
+                channel="feishu",
             )
-
-            if result.ok:
-                new_session_id = result.parsed.session_id
-                if new_session_id and new_session_id != current_session_id and current_mode == "cli_session":
-                    store.update_session_id(chat_id, new_session_id)
-
-                reply_text = result.parsed.reply.strip() or "（已完成分析，但未捕获到文本回复）"
-                store.append_history(chat_id, clean_text, reply_text)
-
-                archived_path = None
-                validated_ok = False
-                if is_final and len(reply_text) > 100:
-                    try:
-                        v_res = validate_requirement_spec(reply_text)
-                        validated_ok = v_res.is_valid
-                        if v_res.is_valid:
-                            log.info("需求定稿文件通过程序化校验 [VALIDATED]")
-                        else:
-                            log.warning("需求定稿文件程序化校验未通过项: %s", v_res.errors)
-
-                        req_dir = os.path.join(sess["cwd"], "docs", "requirements")
-                        os.makedirs(req_dir, exist_ok=True)
-                        ts = time.strftime("%Y%m%d-%H%M%S")
-                        file_name = f"REQ-{ts}.md"
-                        full_path = os.path.join(req_dir, file_name)
-                        with open(full_path, "w", encoding="utf-8") as f:
-                            f.write(reply_text + "\n")
-                            if v_res.is_valid:
-                                f.write("\n<!-- SPEC-VALIDATED: PASS -->\n")
-                            else:
-                                f.write(f"\n<!-- SPEC-VALIDATED: FAIL - {'; '.join(v_res.errors)} -->\n")
-                        archived_path = full_path
-                        store.set_last_archived_req(chat_id, full_path)
-                        log.info("需求定稿文件已落盘: %s", full_path)
-                    except Exception as e:
-                        log.warning("定稿文件写入失败: %s", e)
-
-                semantic_resp = extract_semantic_response(reply_text, is_finalize=is_final)
+            if outcome.ok:
                 feishu_presenter = FeishuCardPresenter()
-                card_data = feishu_presenter.render(semantic_resp)
+                card_data = feishu_presenter.render(outcome.semantic)
+                validated_ok = bool(outcome.validation and outcome.validation.is_valid)
 
                 card_sent = responder.send_card(chat_id, card_data)
                 if not card_sent:
                     log.warning("卡片发送失败，降级回退到普通文本回复")
-                    fallback_text = reply_text
-                    if archived_path:
-                        fallback_text += f"\n\n---\n📄 **需求文档已自动归档至项目**：\n`{archived_path}`"
+                    fallback_text = outcome.reply_text
+                    if outcome.archived_path:
+                        fallback_text += f"\n\n---\n📄 **需求文档已自动归档至项目**：\n`{outcome.archived_path}`"
                         if validated_ok:
                             fallback_text += "\n🚀 回复 `启动设计` 或 `/handoff` 可直接移交至下一阶段（S2 架构设计）。"
                     responder.send_text(chat_id, fallback_text[:cfg.output_limit])
                 else:
-                    if archived_path:
-                        responder.upload_text_file(chat_id, reply_text, filename=os.path.basename(archived_path))
+                    if outcome.archived_path:
+                        responder.upload_text_file(chat_id, outcome.reply_text, filename=outcome.archived_filename)
                         if validated_ok:
                             responder.send_text(
                                 chat_id,
-                                f"✅ 需求规格已归档（`{os.path.basename(archived_path)}`）并通过 9 章节标准契约校验！\n"
+                                f"✅ 需求规格已归档（`{outcome.archived_filename}`）并通过 9 章节标准契约校验！\n"
                                 f"👉 直接回复 **`启动设计`** 或 **`/handoff`**，即可跳过重复分析、直通下一阶段（**S2 架构设计**）。",
                             )
             else:
-                err_msg = result.parsed.error
-                log.warning("需求分析未成功: %s", err_msg)
-                responder.send_text(chat_id, f"⚠️ 需求分析中断：{err_msg}")
+                log.warning("需求分析未成功: %s", outcome.error)
+                responder.send_text(chat_id, outcome.reply_text)
 
         work_pool.submit(run_task)
 

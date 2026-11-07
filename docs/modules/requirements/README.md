@@ -1,9 +1,9 @@
 # 需求澄清模块 (Requirements Clarification Module)
 
-> **当前版本**：`v0.3.1` (2026-11-07)  
-> **当前状态**：**飞书端与全系统 Web 客户端双端落地运行，已直通 S2**  
+> **当前版本**：`v0.3.2` (2026-11-07)  
+> **当前状态**：**飞书端与全系统 Web 客户端双端落地运行，已直通 S2 并完成 O1~O4/C1~C3 收敛优化**  
 > **服务状态**：macOS LaunchAgent 常驻守护 (`com.autodev.req-bot`) + 本机 Web 客户端 (`python3 -m web.server`)  
-> **测试状态**：244 项单元测试全量通过 (`python -m unittest discover -s tests`)
+> **测试状态**：245 项单元测试全量通过 (`python -m unittest discover -s tests`)
 
 ---
 
@@ -42,9 +42,10 @@ AutoDev 需求澄清模块是整个研发流水线（S1~S9）的源头枢纽。�
 autodev/
 ├── src/requirements/
 │   ├── feishu_daemon.py       # 飞书官方 WebSocket 长连接常驻服务入口
+│   ├── service.py             # 飞书与 Web 共享的需求澄清单轮编排、定稿归档与耗时审计服务 (O1)
 │   ├── flow.py                # 提示词构建 (req-guided-v5)、极简数字输入标准化、定稿判断
-│   ├── validator.py           # 确定性程序化检查器 (断言 RULE-01~09，定稿时自动验真)
-│   ├── handoff.py             # 阶段交接器 (将通过校验的 SRS 直通移交主流水线 S2 架构设计)
+│   ├── validator.py           # 确定性程序化检查器、章节解析与 RULE-01~09 统一透视 (O2)
+│   ├── handoff.py             # 阶段交接器 (加锁将通过校验的 SRS 直通移交 S2 架构设计)
 │   ├── llm_provider.py        # 独立大模型注册表与调用层 (完整模型 ID 校验、cli_session/cli_stateless)
 │   ├── context_detector.py    # 项目上下文探测器 (模块概貌、近期 Git 提交、历史需求)
 │   ├── agent_runner.py        # Claude/Codex/agy CLI 驱动、只读沙箱保障、横幅过滤解析

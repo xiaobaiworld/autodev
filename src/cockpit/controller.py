@@ -15,22 +15,48 @@ from cockpit.workdir import checkpoint, fingerprint, head, prepare, reset, snaps
 from cockpit.store import Run, atomic_write, now_iso
 
 
+def allocate_run_id(root, today=None):
+    """分配当天不碰撞的运行号 R{YYYYMMDD}-{NNN}（取已有最大序号 + 1，防止删目录后撞号，O3）。"""
+    root = Path(root)
+    day = (today or datetime.now()).strftime("%Y%m%d")
+    runs_dir = root / "workspace" / "runs"
+    existing_nums = []
+    if runs_dir.exists():
+        for p in runs_dir.glob(f"R{day}-*"):
+            suffix = p.name.split("-", 1)[1] if "-" in p.name else ""
+            if suffix.isdigit():
+                existing_nums.append(int(suffix))
+    n = max(existing_nums, default=0) + 1
+    return f"R{day}-{n:03d}"
+
+
+def build_initial_state(rid, project, kind=DEFAULT_KIND, stage="S1", round_num=1):
+    """构造初始 state.json 字典（start_run 与 handoff.py 共用，O3）。"""
+    return {
+        "schema_version": 1,
+        "id": rid,
+        "project": project,
+        "kind": kind,
+        "status": "active",
+        "stage": stage,
+        "round": round_num,
+        "step": None,
+        "counters": counters_for(kind),
+        "human": {"waiting": False, "pending_decision": None, "resume_to": None},
+    }
+
+
 def start_run(root, request_text, project, ctrl, today=None, kind=DEFAULT_KIND):
     """领取需求：写 active 需求文件与初始 state.json。返回 run_id。kind 没登记就在写任何文件前拒绝。"""
     check_kind(kind)
     root = Path(root)
-    day = (today or datetime.now()).strftime("%Y%m%d")
     active = root / "workspace" / "requests" / "active"
     active.mkdir(parents=True, exist_ok=True)
-    n = len(list((root / "workspace" / "runs").glob(f"R{day}-*"))) + 1 if (root / "workspace" / "runs").exists() else 1
-    rid = f"R{day}-{n:03d}"
+    rid = allocate_run_id(root, today=today)
     atomic_write(active / f"{rid}.md",
                  f"---\nschema_version: 1\nid: {rid}\nproject: {project}\n"
                  f"submitted_at: {now_iso()}\n---\n\n{request_text}\n")
-    state = {"schema_version": 1, "id": rid, "project": project, "kind": kind, "status": "active",
-             "stage": "S1", "round": 1, "step": None,
-             "counters": counters_for(kind),
-             "human": {"waiting": False, "pending_decision": None, "resume_to": None}}
+    state = build_initial_state(rid, project, kind=kind, stage="S1", round_num=1)
     run = Run(root / "workspace" / "runs" / rid)
     state["step"] = _new_step(state, 1, ctrl)
     run.commit(state, "request.claimed")

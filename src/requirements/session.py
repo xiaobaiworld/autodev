@@ -28,10 +28,27 @@ class ReqSessionStore:
         if os.path.exists(self.path):
             try:
                 with open(self.path, "r", encoding="utf-8") as f:
-                    self._data = json.load(f)
+                    raw_data = json.load(f)
+                self._data = {
+                    cid: self._ensure_defaults(dict(entry))
+                    for cid, entry in (raw_data or {}).items()
+                    if isinstance(entry, dict)
+                }
             except Exception as e:
                 log.warning("加载需求会话存储失败: %s，使用空状态", e)
                 self._data = {}
+
+    def get_active_chat_id(self, fallback: str = "web_workbench_default") -> str:
+        """返回最近活跃的会话 ID（优先返回已建立 session_id 或有历史对话的飞书/Web 会话，使双端默认互通）。"""
+        for cid, entry in self._data.items():
+            if entry.get("session_id") or entry.get("history"):
+                return cid
+        if self._data:
+            return next(iter(self._data.keys()))
+        return fallback
+
+    def list_sessions(self) -> dict[str, dict[str, Any]]:
+        return {cid: dict(self._ensure_defaults(dict(entry))) for cid, entry in self._data.items()}
 
     def _save(self) -> None:
         tmp = f"{self.path}.tmp"

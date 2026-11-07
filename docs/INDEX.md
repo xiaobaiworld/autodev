@@ -1,6 +1,6 @@
 # 文档与关键文件索引
 
-更新日期：2026-11-07 ｜ 当前版本：`v0.3.1`
+更新日期：2026-11-07 ｜ 当前版本：`v0.3.2`
 
 本索引按用途列出当前有效的入口、设计与参考资料。状态描述的是 AutoDev 自身资料的权威性；外部参考不能覆盖项目决策。已被取代的文档在 `docs/archive/`，只供追溯。
 
@@ -51,7 +51,7 @@
 | --- | --- |
 | `src/driver/` | 向 autoloop 中台发事件、读事实流（`hub.py`、`runner.py`）；每步写记录（`record.py`）；两次运行的确定性比对（`compare.py`）；生成并安装规则（`setup.py`）；启动一个需求 `run.py`；人工回复 `reply.py`（批准、退回、拒绝） |
 | `src/cockpit/` | 需求类型登记（`kinds.py`）；阶段表、转移规则、输入清单、产物校验（`pipeline.py`，都读 `templates/pipeline/`）；主循环与人工回复入口 `resume`（`controller.py`）；程序步骤 `check`、`release`（`tools.py`）；代码目录的 git 操作（`workdir.py`）；状态落盘（`store.py`）；`config.yaml` 读取（`agents.py`）。窗格驱动的旧方案已在 F6 移除 |
-| `src/requirements/` | 需求澄清专属模块：飞书长连接守护服务（`feishu_daemon.py`）、提示词与选项列表约束（`flow.py`，支持 req-guided-v5）、确定性程序化检查器（`validator.py`，断言 RULE-01~09 规范）、直通 S2 架构设计阶段交接器（`handoff.py`）、独立大模型注册表与多调用方式层（`llm_provider.py`，遵循 `docs/MODELS.md` 完整模型 ID）、项目上下文探测（`context_detector.py`）、多渠道呈现适配器（`presentation/`）、只读 Agent 会话驱动（`agent_runner.py`）与项目会话存储（`session.py`） |
+| `src/requirements/` | 需求澄清专属模块：飞书长连接守护服务（`feishu_daemon.py`）、飞书与 Web 共享对话编排与耗时审计服务（`service.py`）、提示词与选项列表约束（`flow.py`，支持 req-guided-v5）、确定性程序化检查器与章节透视（`validator.py`，断言 RULE-01~09 规范）、直通 S2 架构设计阶段交接器（`handoff.py`）、独立大模型注册表与多调用方式层（`llm_provider.py`，遵循 `docs/MODELS.md` 完整模型 ID）、项目上下文探测（`context_detector.py`）、多渠道呈现适配器（`presentation/`）、只读 Agent 会话驱动（`agent_runner.py`）与项目会话存储（`session.py`） |
 | `src/web/` | 全系统统一本机网页客户端（`server.py`、`api.py`、`ui.html`，仅监听 `127.0.0.1`）：把「需求澄清三栏工作台（含 9 章节实时预览、RULE-01~09 校验灯、需求规模与关联网络图谱、每轮耗时审计）」与前面分析设计的「S1~S9 流水线驾驶舱（阶段进展、产物阅读器、待你决定人工回复表单、Agent 与完整模型 ID 配置）」连成一体 |
 | `deploy/` | 系统守护管理脚本：`install-req-bot.sh`（把需求分析机器人安装为 macOS launchd 服务 `com.autodev.req-bot` 并自启）、`uninstall-req-bot.sh` |
 | `templates/pipeline/` | 流水线模板：每个 `pipeline/*` 类型一个 JSON（`build` 继承 `design`），写阶段顺序、角色、产物、可选结论、结论去向、输入文件、必须有的小节、人工关口和任务说明；改这里即改下一次运行 |

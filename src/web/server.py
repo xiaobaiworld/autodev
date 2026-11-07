@@ -80,12 +80,14 @@ def make_handler(root_dir: Path):
                         for s in registry.values()
                     ]
                     store = ReqSessionStore(str(root_dir / ".req_session.json"), str(root_dir), "claude-sonnet")
+                    active_cid = store.get_active_chat_id(WEB_CHAT_ID)
                     self._send_json({
                         "ok": True,
                         "srs_list": list_srs_documents(root_dir),
                         "runs": list_pipeline_runs(root_dir),
                         "models": models,
-                        "session": store.get(WEB_CHAT_ID),
+                        "session": store.get(active_cid),
+                        "active_chat_id": active_cid,
                         "audit_log": load_audit_log(root_dir, limit=20),
                         "config": get_config_view(root_dir),
                     })
