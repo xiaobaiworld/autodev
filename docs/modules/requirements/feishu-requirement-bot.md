@@ -46,7 +46,7 @@ flowchart TD
 | 序号 | 类别名称 | 英文标识 | 核心职责与标准内容 |
 | :---: | :--- | :--- | :--- |
 | **1** | **需求标识与元数据** | Title & Metadata | 包含标准化编号（如 `REQ-CIRCULATION-BORROW`）、需求名称、提出人、提出时间、所属项目路径。 |
-| **2** | **架构拓扑与近期关联** | Topology & Affinity | **【本次重点】**<br>• **功能层级归属**：明确属于哪个顶层大业务域（如“图书流通中心”）下的细分子功能，或全新模块；<br>• **近期功能关联**：明确与近期哪几个 Git 变更/需求存在强关联、承接或复用关系。 |
+| **2** | **需求规模分类与需求关联网络** | Classification & Relations | **【本次重点】**<br>• **需求规模类别**：显式声明为史诗大需求 (Epic)、标准功能 (Feature)、子功能小需求 (Sub-feature) 还是改动增强 (Enhancement)；<br>• **功能层级归属**：明确属于哪个顶层大业务域下的细分子功能，或全新模块；<br>• **需求关联网络**：结构化声明与其他需求的关联矩阵（Parent、Depends-on、Relates-to、Blocks、Supersedes 或 None）。 |
 | **3** | **核心背景与业务目标** | Background & Objectives (Why & What) | 讲清“为什么要做”、“解决什么人在什么场景下的最痛问题”，以及衡量该需求成功的业务结果。 |
 | **4** | **业务用例与功能范围** | Scope & Core User Flows | 使用者端到端的正向操作流与异常分支，使用者第一步做什么、第二步做什么、最终得到什么。 |
 | **5** | **明确非目标与边界** | Non-Goals (Out of Scope) | **【防膨胀红线】** 明确列出本期坚决不做的特性（如“本期不接入第三方物流”、“暂不支持多语言”），严格锁死范围。 |
@@ -74,11 +74,16 @@ flowchart TD
 
 ---
 
-## 2. 架构拓扑与近期关联
-- 📂 **功能层级归属**：
+## 2. 需求规模分类与需求关联网络
+- 🏷️ **需求规模与粒度类别**：
+  **标准功能需求 (Feature)**（在 requirements 模块内形成完整借阅闭环，无需跨项目拆解）。
+- 📂 **功能层级与模块归属**：
   本项目划分为四大业务域（cockpit, dashboard, driver, requirements）。本功能归属于 **【requirements / 业务能力与用户交互】** 域下的细分子操作（终端流通借还分支）。
-- 🔗 **近期功能关联**：
-  与最近提交的 `feat(requirements): 飞书卡片呈现层抽象` 以及 `feat(requirements): 外部界面原型生成` 呈 **强承接与复用关系**。直接复用已有的 `FeishuCardPresenter` 消息推送能力和 Open ID 白名单验证机制，无需重复构建通信通道。
+- 🔗 **与其他需求的关系矩阵 (Relationship Network)**：
+  - `Parent（所属父需求）`：None（本身为标准功能）
+  - `Depends-on（前置依赖）`：`REQ-USER-AUTH`（依赖用户身份认证能力）
+  - `Relates-to（业务协同）`：`REQ-FEISHU-CARD`（强协同：复用飞书交互卡片呈现层与审批白名单）
+  - `Blocks（后置阻塞）`：`REQ-CIRCULATION-STAT`（为后续借阅数据大屏提供事实数据源）
 
 ---
 

@@ -33,9 +33,9 @@ class TestRequirementsFlow(unittest.TestCase):
     def test_build_req_prompt_new(self):
         prompt = build_req_prompt("做个定时功能", is_new=True)
         self.assertIn("新需求探讨开始", prompt)
-        self.assertIn("req-guided-v4", prompt)
-        self.assertIn("功能层级归属", prompt)
-        self.assertIn("近期功能关联", prompt)
+        self.assertIn("req-guided-v5", prompt)
+        self.assertIn("需求规模", prompt)
+        self.assertIn("模块归属", prompt)
         self.assertIn("拼图 1：确认核心目标与使用场景", prompt)
         self.assertIn("看原型", prompt)
 

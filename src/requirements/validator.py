@@ -14,7 +14,8 @@ class ValidationResult:
 
 REQUIRED_SECTIONS = [
     "## 1. 需求标识与元数据",
-    "## 2. 架构拓扑与近期关联",
+    # 第 2 节在规范中支持 "需求规模分类与需求关联网络" 或 "架构拓扑与近期关联"
+    "## 2.",
     "## 3. 核心背景与业务目标 (Why & What)",
     "## 4. 业务用例与核心流程 (Scope)",
     "## 5. 明确非目标与边界 (Non-goals)",
@@ -45,14 +46,23 @@ def validate_requirement_spec(content: str) -> ValidationResult:
 
     # RULE-02: 检查 9 大必备章节标题
     for sec in REQUIRED_SECTIONS:
-        if sec not in text:
+        if sec == "## 2.":
+            if "## 2. 需求规模分类与需求关联网络" not in text and "## 2. 架构拓扑与近期关联" not in text:
+                errors.append("[RULE-02] 缺失必备章节标题: '## 2. 需求规模分类与需求关联网络' (或兼容标题)")
+        elif sec not in text:
             errors.append(f"[RULE-02] 缺失必备章节标题: '{sec}'")
 
-    # RULE-03: 架构拓扑双维度检查
-    if "功能层级归属" not in text:
-        errors.append("[RULE-03] 第 2 节必须显式包含【功能层级归属】分析")
-    if "近期功能关联" not in text:
-        errors.append("[RULE-03] 第 2 节必须显式包含【近期功能关联】分析")
+    # RULE-03: 需求类别与拓扑矩阵检查
+    has_hierarchy = "功能层级归属" in text or "模块归属" in text
+    has_affinity = any(k in text for k in ("近期功能关联", "需求关联", "需求关系", "Parent", "Depends-on", "Relates-to"))
+    has_scale = any(k in text for k in ("需求规模", "规模类别", "大需求", "小需求", "Epic", "Feature", "Sub-feature"))
+
+    if not has_hierarchy:
+        errors.append("[RULE-03] 第 2 节必须显式包含【功能层级与模块归属】分析")
+    if not has_affinity:
+        errors.append("[RULE-03] 第 2 节必须显式包含【需求关联网络/近期功能关联】(Parent/Depends-on/Relates-to/None)")
+    if not has_scale and "## 2. 需求规模分类与需求关联网络" in text:
+        errors.append("[RULE-03] 第 2 节必须显式标明【需求规模类别】(大需求/标准功能/小需求/增强)")
 
     # RULE-04: 核心背景与业务目标检查
     if "业务背景" not in text or "业务目标" not in text:

@@ -59,6 +59,14 @@ class TestRequirementsValidator(unittest.TestCase):
         self.assertTrue(res.is_valid, f"验证失败: {res.errors}")
         self.assertEqual(len(res.errors), 0)
 
+    def test_valid_spec_with_scale_and_relations(self):
+        new_sample = VALID_SPEC_SAMPLE.replace(
+            "## 2. 架构拓扑与近期关联\n- 📂 **功能层级归属**：属于 order 模块下的结算子功能。\n- 🔗 **近期功能关联**：与近期做的 REQ-ORDER-CART 强关联，复用购物车结算实体。",
+            "## 2. 需求规模分类与需求关联网络\n- 🏷️ **需求规模类别**：标准功能 (Feature)\n- 📂 **模块归属**：order 模块\n- 🔗 **需求关联网络**：Parent: None; Depends-on: REQ-CART-01; Relates-to: REQ-PAY-GW",
+        )
+        res = validate_requirement_spec(new_sample)
+        self.assertTrue(res.is_valid, f"验证失败: {res.errors}")
+
     def test_missing_sections(self):
         # 缺少非目标和原型
         broken = VALID_SPEC_SAMPLE.replace("## 5. 明确非目标与边界 (Non-goals)", "## 5. 其他说明")

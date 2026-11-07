@@ -1,5 +1,10 @@
 # changelog
 
+## 2026-11-07：引入需求规模类别 (Epic/Feature/Sub-feature) 与网状关系矩阵表示法
+- **需求规模与粒度分类体系确立**：在 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md) 扩充第 2 节为【需求规模分类与需求关联网络】，明确支持 `史诗级大需求(Epic)`、`标准功能(Feature)`、`子功能小需求(Sub-feature)` 和 `改动增强(Enhancement)` 四大标准粒度；
+- **网状关系矩阵标准化**：确立与其他需求的标准化关系前缀（`Parent` 所属父需求、`Depends-on` 前置依赖、`Relates-to` 业务协同、`Blocks` 后置阻塞、`Supersedes` 演进替代）；
+- **提示词与程序校验器联动**：升级至 `req-guided-v5`；`validator.py` 增强 RULE-03 断言，严格校验规模声明与关系网络，全量 232 项测试全部通过。
+
 ## 2026-11-07：需求规格标准 (SRS v1.0) 确立与程序化校验器落地
 - **需求产出标准规范落盘**：制定 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md)，确立“输入可发散、输出必收敛、人机可共读、程序可自检”的核心契约，明确九大章节与 RULE-01~09 校验规则；
 - **程序化检查器实现（validator.py）**：落地确定性检查逻辑，毫秒级断言章节完整性、架构拓扑双维度、非目标边界、低保真原型线框图以及防技术越权规则；
