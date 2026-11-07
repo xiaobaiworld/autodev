@@ -8,3 +8,5 @@
 - [设计与实现计划](design.md)：状态循环、文件协议、接口、经验清单、测试和分步落地。
 
 逻辑独立，第一版仍在 AutoDev 仓库内实现：拟用 `src/requirements/`、`tests/test_requirements*.py`、本目录和 `templates/requirements/`；暂不建立独立仓库、HTTP 服务或复制现有执行器。
+
+- [程序协议](protocol.md)：第一版 CLI、草稿 JSON、清单、每轮输入输出及计时约定。
