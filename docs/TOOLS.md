@@ -82,3 +82,10 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - 模块不复用会清空旧规则的 build_rules；规则带会话命名空间、tell=never，模型文本回复由后台校验落盘，不给模型确认文件写权限。
 - Codex 用户 MCP 配置可能先于 enabled=false 校验失败；模块使用临时 CODEX_HOME，仅复制 provider/auth 配置，排除用户工具/钩子，见 L013。不能把请求的模型 ID 当成独立验证的实际模型。
 - 手机端现有飞书能力先查全局 SYSTEM_CAPABILITY_INDEX 的 feishu-agent-bridge（autosys）；本次只新增通用内部路由，未接真实平台。
+
+## 7. 飞书需求入口
+
+- 已复用 autosys 现有机器人，手机发 `/需求` 获取命令；原消息白名单和 App 不变，不另起同 App 长连接。
+- 后端中台 home=`~/.local/state/autodev/requirements-hub`，本机 launchd 服务 `com.autodev.requirements-hub`；旧 `/tmp/autodev-demo/home` 本次检查不可达，不依赖它。
+- CLI/网页会话接手机：`PYTHONPATH=src python3 -m requirements pair ID`，飞书用一次性码绑定。平台按 message_id 去重。
+- 源码在 AutoDev 的 channels.feishu / requirements.feishu 与 autosys 的 bridge.requirements_client。详细运行、停用及证据见模块 channels.md；飞书 SDK 格式以 https://open.feishu.cn/document/server-docs/im-v1/message/events/receive 为准。

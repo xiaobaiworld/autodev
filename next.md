@@ -110,3 +110,7 @@
 ## 已归档（不再维护，保留追溯）
 
 `docs/archive/`：驾驶舱设计与开发计划、autoloop 测试计划 v1 与 v2、空的 `goal.md` 模板。
+
+## 当前执行：飞书需求客户端
+
+飞书平台命令、短期一次性配对和 autosys 可选调用器已完成；已有机器人 /需求 分流已启用、重载后连上飞书。独立中台 home=~/.local/state/autodev/requirements-hub，launchd=com.autodev.requirements-hub。AutoDev 全量 257 项、桥接器 589 项（1 skip）；本地端到端通过。下一步由用户在现有飞书机器人发 /需求 做真实手机验收；未主动发测试消息。使用和完整证据见模块 channels.md。

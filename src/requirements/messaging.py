@@ -7,7 +7,9 @@ from .session import SessionError
 
 
 class RequirementsMessages:
-    def __init__(self, store):
+    def __init__(self, store, clock=None):
+        import time
+        self.clock = clock or time.time
         self.store = store
         self.base = store.root / 'workspace' / 'channels' / 'requirements'
         self.base.mkdir(parents=True, exist_ok=True)
@@ -21,7 +23,29 @@ class RequirementsMessages:
             bindings = json.loads(path.read_text()) if path.exists() else []
             action = command.get('action')
             sid = command.get('session_id')
-            if action == 'create':
+            if action == 'bind':
+                import re
+                code=command.get('code','')
+                if not isinstance(code,str) or not re.fullmatch('[a-f0-9]{12}',code):
+                    raise SessionError('invalid-pairing','配对码无效或已过期')
+                token=hashlib.sha256(code.encode()).hexdigest()
+                pairing_path=self.base.parent/'pairings'/(token+'.json')
+                pairing_lock=acquire_lock(pairing_path.with_suffix('.lock'))
+                try:
+                    if not pairing_path.is_file() or pairing_path.is_symlink():
+                        raise SessionError('invalid-pairing','配对码无效或已过期')
+                    pairing=json.loads(pairing_path.read_text())
+                    if pairing['used_by'] is not None or pairing['expires_at']<=self.clock() or pairing['demo']!=self.store.demo:
+                        raise SessionError('invalid-pairing','配对码无效或已过期')
+                    result=self.store.status(pairing['session_id'])
+                    pairing['used_by']=key
+                    atomic_write(pairing_path,json.dumps(pairing))
+                    if result['id'] not in bindings:
+                        bindings.append(result['id'])
+                    atomic_write(path,json.dumps(bindings))
+                finally:
+                    pairing_lock.close()
+            elif action == 'create':
                 result = self.store.create(command.get('project_id'), command.get('text'),
                                            analyst=command.get('analyst'), reviewer=command.get('reviewer'),
                                            review_limit=command.get('review_limit'))
@@ -49,3 +73,18 @@ class RequirementsMessages:
             return dict(application='requirements', session=result)
         finally:
             lock.close()
+
+
+def issue_pairing(store, sid, clock=None):
+    """Trusted local operation: grant one channel a short-lived, one-use binding."""
+    import secrets
+    import time
+    state=store.status(sid)
+    code=secrets.token_hex(6)
+    folder=store.root/'workspace'/'channels'/'pairings'
+    folder.mkdir(parents=True,exist_ok=True)
+    key=hashlib.sha256(code.encode()).hexdigest()
+    expires=(clock or time.time)()+300
+    atomic_write(folder/(key+'.json'),json.dumps(dict(session_id=sid,demo=state['demo'],expires_at=expires,used_by=None)))
+    (folder/(key+'.json')).chmod(0o600)
+    return dict(session_id=sid,code=code,expires_at=expires,command='/需求 绑定 '+code)

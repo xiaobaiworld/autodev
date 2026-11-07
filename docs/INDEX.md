@@ -26,7 +26,7 @@
 | `docs/modules/requirements/baselines/v0.8.md` | 包含可选模型、双模型审核及人工确认的固定需求副本 | 用户确认的 v0.8 基线，后续变更另建版本 |
 | `docs/modules/requirements/usage.md` | CLI/网页启动、演示与真实模型、恢复和测试 | 当前使用入口 |
 | `docs/modules/requirements/verification.md` | 250 项自动测试、浏览器及真实双模型证据与限制 | 验证记录 |
-| `docs/modules/requirements/channels.md` | 手机端通用组件与飞书/微信接线边界 | 通用组件已实现，平台待接 |
+| `docs/modules/requirements/channels.md` | 手机端通用组件与飞书/微信接线边界 | 通用组件及飞书已接，手机验收待用户发命令 |
 | `docs/modules/requirements/dev-plan.md` | M1～M6 的文件范围、测试、验收、复用边界及提交收口 | 当前实施计划，执行证据见 verification.md |
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
 | `docs/design/2026-11-02-autodev-design.md` | 九阶段流水线、角色、产物、人工参与、Web 界面、复盘、规则 | 当前设计基线；第 3.2、3.3、5 节的执行与调度部分已被地基方案部分取代，各节顶部有说明 |

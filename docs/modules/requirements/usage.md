@@ -68,4 +68,4 @@ python3 tests/f_requirements_real.py --real --root /tmp/requirements-real-new-ru
 
 ## 6. 手机消息入口
 
-通用消息组件见 [手机渠道接入说明](channels.md)。目前通用路由及需求适配已实现并用匿名测试验证，尚未登录、部署或发送任何飞书/微信消息。首个实际渠道及账号配置待确定。
+通用消息组件见 [手机渠道接入说明](channels.md)。飞书入口已在现有机器人启用，手机可发送 `/需求` 开始；新建/回复会调用真实模型。已有会话可用 `python3 -m requirements pair ID` 签发配对码，再在飞书绑定。没有主动发测试消息，真实手机交互待用户验收；微信未接入。
