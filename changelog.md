@@ -1,5 +1,9 @@
 # changelog
 
+## 2026-11-07：确立从模糊到清晰的渐进式需求演进流程规范
+- **四阶段演进生命周期标准化**：在 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md) 扩充第三节，正式确立“阶段 1 模糊摄入与上下文对齐 -> 阶段 2 后台自动吸收与草案整理 -> 阶段 3 关键分歧点人机确认 -> 阶段 4 标准收口与程序化验真”的标准流程；
+- **抓大放小交互契约**：明确日常细节由大模型结合工程上下文主动推断补齐，仅在关键规模边界（大需求拆解）与流程走向时向人类发起 1、2 选项确认，兼顾极简体验与确定性标准。
+
 ## 2026-11-07：引入需求规模类别 (Epic/Feature/Sub-feature) 与网状关系矩阵表示法
 - **需求规模与粒度分类体系确立**：在 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md) 扩充第 2 节为【需求规模分类与需求关联网络】，明确支持 `史诗级大需求(Epic)`、`标准功能(Feature)`、`子功能小需求(Sub-feature)` 和 `改动增强(Enhancement)` 四大标准粒度；
 - **网状关系矩阵标准化**：确立与其他需求的标准化关系前缀（`Parent` 所属父需求、`Depends-on` 前置依赖、`Relates-to` 业务协同、`Blocks` 后置阻塞、`Supersedes` 演进替代）；
