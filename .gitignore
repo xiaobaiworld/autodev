@@ -8,3 +8,6 @@ workspace/runs/
 workspace/requests/
 workspace/projects/
 workspace/.lock
+
+# requirement clarification conversations and audit data
+workspace/requirements/
