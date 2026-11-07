@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>需求工作台 · AutoDev</title><link rel="stylesheet" href="/style.css"><script defer src="/app.js"></script></head>
+<body>
+<header><a class="brand" href="/">AutoDev <span>需求工作台</span></a><span id="mode" class="badge">连接中</span><button id="new-session" class="primary">＋ 新需求</button></header>
+<div id="notice" role="status" aria-live="polite"></div>
+<main>
+<aside class="sidebar"><div class="section-label">我的需求 <button id="refresh" aria-label="刷新会话">↻</button></div><nav id="sessions" aria-label="需求会话"></nav><p class="hint">从一个想法开始。<br>先梳理，再审核，最后由你确认。</p></aside>
+<section id="empty" class="empty"><div class="eyebrow">从想法到明确的需求</div><h1>把事情说清楚，<br>再开始做。</h1><p>补充背景、回答问题、阅读审核意见。<br>每一次修改都有版本，最终决定始终在你手里。</p><button id="start" class="primary">创建第一条需求</button></section>
+<section id="workspace" class="workspace" hidden>
+<div class="workspace-title"><div><div class="eyebrow" id="session-id"></div><h1 id="project"></h1></div><span id="state" class="badge"></span></div>
+<div class="progress"><span>01 梳理需求</span><span>02 独立审核</span><span>03 确认版本</span></div>
+<div class="columns"><section class="conversation"><div class="section-label">需求交流</div><div id="messages" class="messages" aria-live="polite"></div>
+<form id="reply-form"><label for="answer">补充背景或回答问题</label><textarea id="answer" rows="4" placeholder="哪些地方需要补充或修改？"></textarea><div class="composer-actions"><label class="file-label">导入文本资料<input type="file" id="reply-file" accept=".txt,.md,.json"></label><button id="send" class="primary" type="submit">发送并继续</button></div></form>
+<div class="actions"><button id="step">继续处理</button><button id="retry" hidden>重试本次调用</button><button id="reopen" hidden>开启新修订</button></div></section>
+<section class="document"><div class="document-title"><div><div class="section-label">当前需求说明书</div><span id="version"></span></div><a id="download" hidden>下载已确认版本 ↓</a></div><pre id="document">等待第一版草稿</pre><div id="missing" class="hint"></div><div id="review" class="review"></div><div class="confirmation"><p id="confirm-hint"></p><button id="confirm" class="primary" disabled>确认当前版本并完成</button></div><details><summary>调用记录与耗时</summary><div id="calls"></div></details></section></div>
+</section>
+</main>
+<dialog id="create-dialog"><form id="create-form"><div class="eyebrow">开始一条新的需求</div><h2>你想解决什么问题？</h2><label for="project-input">项目名称</label><input id="project-input" required maxlength="100" placeholder="例如：社区活动报名"><label for="initial">原始想法</label><textarea id="initial" required rows="6" placeholder="描述目标、使用者和你已经想到的要求。暂时不清楚的可以一起梳理。"></textarea><div class="composer-actions"><button type="button" id="example">填入演示示例</button><label class="file-label">从文本导入<input id="initial-file" type="file" accept=".txt,.md,.json"></label></div><div class="model-grid"><label>梳理模型<select id="analyst"></select></label><label>审核模型<select id="reviewer"></select></label><label>自动审核上限<input type="number" id="review-limit" min="1" max="20" value="3" required></label></div><p class="hint">梳理与审核选择不同厂商。审核通过后，仍需你阅读并明确确认。</p><div class="dialog-actions"><button type="button" id="cancel-create">取消</button><button class="primary" type="submit">创建并开始梳理</button></div></form></dialog>
+</body></html>

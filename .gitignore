@@ -11,3 +11,6 @@ workspace/.lock
 
 # requirement clarification conversations and audit data
 workspace/requirements/
+
+# Platform message deduplication and private channel bindings
+workspace/channels/
