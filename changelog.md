@@ -1,5 +1,8 @@
 # changelog
 
+## 2026-11-07：全项目重构优化前基线文档与版本号统一同步（`v0.3.1`）
+- **统一全库文档与前端界面版本号至 `v0.3.1`**：消除 `README.md`、`REQUIREMENT_SPEC_STANDARD.md`、`feishu-requirement-bot.md`、`ui.html` 与 `INDEX.md`/`next.md` 之间的版本号跨度残余（`v0.2.2` vs `v0.3.0`），形成全项目代码审查与重构优化前的干净基线快照 `v0.3.1`。
+
 ## 2026-11-07：全系统统一网页客户端标准需求沉淀与落地（连接需求澄清工作台与 S1~S9 流水线驾驶舱，`v0.3.0`）
 - **沉淀全系统统一网页客户端标准需求规格（`docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md`）**：按飞书 9 章节 SRS 标准（`SPEC-REQ-STANDARD-v1.0`）完整编写并通过 `validator.py`（`RULE-01 ~ RULE-09` 零错误通过），明确规模为 `Epic`，并在关系矩阵中直接连接前面分析设计的 `2026-11-02-autodev-design.md` 第 9 节 Web 管理界面与 `autodev-workflow-prototype.html`；
 - **落地全系统统一网页客户端（`src/web/`）**：
