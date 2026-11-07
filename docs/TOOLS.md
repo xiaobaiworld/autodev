@@ -74,3 +74,11 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - `python3 -I` 会忽略 `PYTHONPATH`，跑测试不要加 `-I`。
 - 模型名一律写完整 ID，别名会被 magpie 映射成别的模型（`docs/MODELS.md`）。
 - 网页抓取：`WebFetch` 打不开 herdr.dev 时用 `curl` 取公开页面，只读。
+
+## 6. 需求工作台（2026-11-07）
+
+- 无费用网页：`PYTHONPATH=src python3 -m requirements --demo serve --port 8765`；真实模式去掉 --demo，传 --home <运行中中台目录>。CLI 与网页共用后端，详细操作见 docs/modules/requirements/usage.md。
+- 不收费集成：`python3 tests/f_requirements_hub.py`，隔离中台 + 假 command Agent；收费试用须显式 `python3 tests/f_requirements_real.py --real --root <新的数据目录>`。
+- 模块不复用会清空旧规则的 build_rules；规则带会话命名空间、tell=never，模型文本回复由后台校验落盘，不给模型确认文件写权限。
+- Codex 用户 MCP 配置可能先于 enabled=false 校验失败；模块使用临时 CODEX_HOME，仅复制 provider/auth 配置，排除用户工具/钩子，见 L013。不能把请求的模型 ID 当成独立验证的实际模型。
+- 手机端现有飞书能力先查全局 SYSTEM_CAPABILITY_INDEX 的 feishu-agent-bridge（autosys）；本次只新增通用内部路由，未接真实平台。

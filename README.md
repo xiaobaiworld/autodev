@@ -8,7 +8,9 @@ AutoDev 是本机运行的需求驱动开发流程。确定性程序控制阶段
 
 - 已跑通：真实 Agent 完成 S1 需求分析、S2 设计、S3 设计审查（`docs/spikes/2026-11-05-f2-pipeline-report.md`）。
 - 进行中：命令行看板（`src/dashboard/`），布局放在 Herdr 的 `pro2` 空间。
-- 还没做：S4 以后的阶段、Web 界面、模板、崩溃与卡住的验证。
+- S1～S9 已连通，具体当前状态与限制见 next.md；上述早期验证记录保留追溯。
+- 新增需求澄清模块：独立后端、CLI 和本机网页共用会话、双模型审核、人工确认与固定版本导出。启动无费用演示：`PYTHONPATH=src python3 -m requirements --demo serve`，打开 `http://127.0.0.1:8765`。真实配置与用法见 [使用指南](docs/modules/requirements/usage.md)。
+- 通用手机消息路由及需求适配已实现，飞书/微信真实连接待确定渠道，见 [接入说明](docs/modules/requirements/channels.md)。
 
 当前步骤和下一步见 [`next.md`](next.md)，方案见 [`docs/design/2026-11-05-autoloop-foundation.md`](docs/design/2026-11-05-autoloop-foundation.md)。
 
