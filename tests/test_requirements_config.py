@@ -28,7 +28,7 @@ dirs = ["/tmp"]
             cfg = load_req_config(path)
             self.assertEqual(cfg.app_id, "test_app")
             self.assertEqual(cfg.app_secret, "test_sec")
-            self.assertEqual(cfg.default_agent, "cc")
+            self.assertEqual(cfg.default_agent, "claude-sonnet")
             self.assertEqual(cfg.task_timeout, 600)
             self.assertIn("user1", cfg.allow_users)
         finally:

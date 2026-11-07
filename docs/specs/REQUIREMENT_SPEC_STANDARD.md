@@ -222,3 +222,15 @@ if not result.is_valid:
 ## 七、标准范本（Gold Standard Example）
 
 参见配套的标准模版样例：[`docs/modules/requirements/feishu-requirement-bot.md`](../modules/requirements/feishu-requirement-bot.md) 第三节。
+
+---
+
+## 八、向主流水线下一阶段（S2 架构设计）的标准交接协议
+
+当一份 `REQ-xxx.md` 通过本规范第五、六节的程序化校验（`ValidationResult.is_valid == True`）后，即可通过阶段交接器 [`src/requirements/handoff.py`](../../src/requirements/handoff.py) 直接移交至主流水线 **S2 架构设计** 阶段（跳过重复的 S1 需求分析）：
+
+1. **输入前置断言**：`handoff_srs_to_pipeline()` 强制执行 `validate_requirement_spec()`，任何违反 `RULE-01 ~ RULE-09` 的文档均被拒绝移交；
+2. **产物映射契约**：
+   - `workspace/requests/active/{rid}.md`：写入完整 9 章节 SRS 原文（供 S2 架构师与 S3 设计审查者逐句做“原文对照”）；
+   - `workspace/runs/{rid}/S1-analysis/round-1/{analysis.md, done.json}`：由交接器从 SRS 第 1、3、4、8 节确定性提取摘要、范围与验收标准生成 `verdict: ACCEPT` 基线产物；
+   - `workspace/runs/{rid}/state.json`：初始 `stage` 直接设为 `"S2"`，`round` 设为 `1`，`step` 指向 `S2-design/round-1`（角色 `designer`）。

@@ -21,6 +21,7 @@
 | **阶段 5：外部界面原型立体感知** | 纯文字缺乏立体感，用户看不见外部界面长什么样 | • 升级 `req-guided-v3`，支持生成移动端适配的等宽文本线框图（ASCII/Unicode UI Wireframe）<br>• 主动询问原型意愿，口语化指令标准化（“看原型”、“做个原型”） |
 | **阶段 6：模块归属与近期关联判断** | 需求容易孤立提出，缺乏全局拓扑与历史链路认知 | • 落地 `context_detector.py` 动态抽取项目主模块、近期 Git 提交和定稿文档<br>• 升级 `req-guided-v4`，强制首轮对**【功能层级归属】**与**【近期功能关联】**做确定性研判 |
 | **阶段 7：渐进式演进与网状关系规范** | 需求从模糊到清晰演进，大小需求与网状关系需标准化表达 | • 升级 `req-guided-v5` 支持 Epic/Feature/Sub-feature 粒度与 Parent/Depends-on 关系矩阵<br>• 制定 `SPEC-REQ-STANDARD-v1.0` 渐进式演进规范与 `validator.py` 自动化检查器 |
+| **阶段 8：独立模型层与直通 S2 架构设计** | 需求阶段用哪个大模型、怎么调用需独立解耦，定稿后需无缝连接主流水线下一阶段 | • 抽离 `llm_provider.py`：统一读取 `config.yaml` 完整模型 ID（遵循 `docs/MODELS.md`，严禁短别名），支持 `cli_session` 与 `cli_stateless` 双模式及 `/model`、`/mode` 在线切换<br>• 落地 `handoff.py`：定稿通过 `validator.py` 校验后，回复 `启动设计` 或 `/handoff` 自动生成 S1 基线并直通 `S2 架构设计` |
 
 ---
 
@@ -167,8 +168,35 @@ flowchart TD
 
 ---
 
-## 四、后续演进建议与待办事项
+## 四、独立大模型调用层与直通 S2 架构设计交接机制（A1 + B1）
 
-1. **落盘触发策略增强**：支持用户在飞书端直接点击卡片上的【定稿归档】按钮，避免手动键入文本；
+### 1. 独立大模型与调用方式层（[`src/requirements/llm_provider.py`](../../../src/requirements/llm_provider.py)）
+为了将“需求澄清阶段用哪一个大模型、用什么方式调用”与飞书对话逻辑彻底解耦，本模块提取了独立的 `llm_provider.py`：
+- **唯一完整模型 ID 真源（遵循 [`docs/MODELS.md`](../../MODELS.md)）**：直接从项目根目录 [`config.yaml`](../../../config.yaml) 的 `agents` 段加载模型注册表，并在 `ModelSpec.validate()` 中强制拦截 `sonnet`、`opus` 等短别名：
+  - `claude-sonnet` → `ai-code-with/claude-sonnet-5-5`（默认需求分析师引擎，兼顾响应速度与归纳质量）
+  - `claude-opus` → `ai-code-with/claude-opus-5-5`
+  - `codex`（或别名 `gpt`）→ `gpt-6-sol`
+  - `agy`（或别名 `gemini`）→ `gemini-4-argon-high`
+- **双调用方式（`cli_session` / `cli_stateless`）**：
+  - `cli_session`（默认）：利用 CLI 原生 `--resume <session_id>` 保持多轮上下文，同时在本地 `ReqSessionStore` 同步保存最近 10 轮问答历史；
+  - `cli_stateless`：每次独立无状态单次调用，由 `inject_stateless_history()` 自动将前序问答上下文注入本轮 Prompt。当用户在对话中途通过 `/model` 跨模型或跨厂商切换时，系统自动清空旧 CLI 的 `session_id` 并无缝利用本地 `history` 续接对话！
+
+### 2. 飞书端与主流水线 `S2 架构设计` 的桥接交接器（[`src/requirements/handoff.py`](../../../src/requirements/handoff.py)）
+由于飞书端产出的 9 章节《软件需求规格说明书》已经完成了比传统 `S1-analysis` 更深入的交互澄清与边界锁定，因此采用 **直通 S2 架构设计（跳过重复 S1）** 的交接方案：
+1. **前置程序化门禁**：`handoff_srs_to_pipeline()` 首先调用 `validate_requirement_spec()` 校验 `REQ-xxx.md` 是否满足 `RULE-01 ~ RULE-09`；未通过校验的文档严禁进入流水线；
+2. **D008 异构厂商预检**：读取 `config.yaml` 并调用 `check_vendors(agents, roles)`，确保下游作者与审查者厂商不同；
+3. **自动生成 S1 基线与激活需求**：
+   - 分配正式运行号 `R{YYYYMMDD}-{NNN}`，将完整 SRS 写入 `workspace/requests/active/{rid}.md`；
+   - 提取 SRS 核心元数据并在 `workspace/runs/{rid}/S1-analysis/round-1/` 下生成符合流水线契约的 `analysis.md`（`verdict: ACCEPT` + 完整 SRS 附文）与 `done.json`；
+4. **直通初始化 S2**：将 `workspace/runs/{rid}/state.json` 直接置为 `stage: "S2"`, `round: 1`, `step.role: "designer"` (`claude-opus`)，使主流水线 `Controller` 与看板无需任何硬编码分支即可直接从 `S2 架构设计` 启动推进！
+5. **两种触发方式**：
+   - **飞书内一键触发**：定稿后直接发送 `启动设计`、`移交设计` 或 `/handoff`；
+   - **命令行触发**：`PYTHONPATH=src python3 -m requirements.handoff --req docs/requirements/REQ-xxx.md`。
+
+---
+
+## 五、后续演进建议与待办事项
+
+1. **落盘触发策略增强**：支持用户在飞书端直接点击卡片上的【定稿归档】与【启动设计】按钮，避免手动键入文本；
 2. **多项目关联联动**：支持跨仓库/跨项目对比近期类似需求；
-3. **需求规格自动导入流水线**：将生成的 `REQ-xxx.md` 直接作为流水线 `driver.run --request` 的输入源，无缝进入 S2 架构设计阶段。
+3. **飞书实时进度回推**：当 `S2 架构设计` 与 `S3 设计审查` 完成或遇到人工关口时，主动向飞书对话回推设计摘要卡片。

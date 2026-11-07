@@ -1,4 +1,4 @@
-# 定位: agent_runner.py 封装 Claude/Codex CLI 只读多轮调用与横幅过滤容错解析。
+# 定位: agent_runner.py 封装大模型 CLI 只读多轮/无状态调用、完整模型 ID 传递与横幅过滤容错解析。
 from __future__ import annotations
 
 import json
@@ -8,6 +8,13 @@ import signal
 import subprocess
 import time
 from dataclasses import dataclass
+
+from requirements.llm_provider import (
+    ModelSpec,
+    build_model_argv,
+    load_model_registry,
+    resolve_model_spec,
+)
 
 log = logging.getLogger("autodev.req")
 
@@ -25,27 +32,30 @@ class RunnerResult:
     parsed: ParsedOutput
     duration_sec: float
     output: str
+    model_name: str = ""
+    full_model_id: str = ""
+    vendor: str = ""
+    mode: str = "cli_session"
 
 
-def build_argv(agent: str, prompt: str, cwd: str, session_id: str | None) -> list[str]:
-    if agent == "cc":
-        argv = ["claude", "-p", prompt, "--permission-mode", "plan", "--output-format", "json"]
-        if session_id:
-            argv.extend(["--resume", session_id])
-        return argv
-    if agent == "codex":
-        if session_id:
-            return [
-                "codex", "exec", "resume",
-                "-c", 'sandbox_mode="read-only"',
-                "--skip-git-repo-check", "--json",
-                session_id, prompt,
-            ]
-        return [
-            "codex", "exec", "-C", cwd, "-s", "read-only",
-            "--skip-git-repo-check", "--json", prompt,
-        ]
-    raise ValueError(f"未知 agent: {agent}")
+def build_argv(
+    agent: str,
+    prompt: str,
+    cwd: str,
+    session_id: str | None,
+    mode: str = "cli_session",
+    history: list[dict[str, str]] | None = None,
+    registry: dict[str, ModelSpec] | None = None,
+) -> list[str]:
+    spec = resolve_model_spec(agent, registry=registry)
+    return build_model_argv(
+        spec=spec,
+        prompt=prompt,
+        cwd=cwd,
+        session_id=session_id,
+        mode=mode,
+        history=history,
+    )
 
 
 def parse_claude_output(output: str, expected_id: str | None) -> ParsedOutput:
@@ -120,10 +130,33 @@ def parse_codex_output(output: str, expected_id: str | None) -> ParsedOutput:
     return ParsedOutput(session_id=session_id, reply=reply)
 
 
+def parse_agy_output(output: str) -> ParsedOutput:
+    cleaned = output.strip()
+    if not cleaned:
+        return ParsedOutput(error="agy 返回内容为空")
+    return ParsedOutput(session_id="", reply=cleaned)
+
+
 def run_agent_turn(
-    agent: str, prompt: str, cwd: str, session_id: str | None, timeout: int = 1800
+    agent: str,
+    prompt: str,
+    cwd: str,
+    session_id: str | None,
+    timeout: int = 1800,
+    mode: str = "cli_session",
+    history: list[dict[str, str]] | None = None,
+    registry: dict[str, ModelSpec] | None = None,
 ) -> RunnerResult:
-    argv = build_argv(agent, prompt, cwd, session_id)
+    spec = resolve_model_spec(agent, registry=registry)
+    effective_session_id = session_id if mode == "cli_session" else None
+    argv = build_model_argv(
+        spec=spec,
+        prompt=prompt,
+        cwd=cwd,
+        session_id=effective_session_id,
+        mode=mode,
+        history=history,
+    )
     start = time.monotonic()
     proc = subprocess.Popen(
         argv,
@@ -155,6 +188,10 @@ def run_agent_turn(
             parsed=ParsedOutput(error=f"Agent 执行超时 (>{timeout}s)"),
             duration_sec=duration,
             output=output,
+            model_name=spec.name,
+            full_model_id=spec.model,
+            vendor=spec.vendor,
+            mode=mode,
         )
     if exit_code != 0:
         return RunnerResult(
@@ -162,16 +199,26 @@ def run_agent_turn(
             parsed=ParsedOutput(error=f"Agent 退出码异常 (code={exit_code})"),
             duration_sec=duration,
             output=output,
+            model_name=spec.name,
+            full_model_id=spec.model,
+            vendor=spec.vendor,
+            mode=mode,
         )
 
-    if agent == "cc":
-        parsed = parse_claude_output(output, session_id)
+    if spec.cli == "claude":
+        parsed = parse_claude_output(output, effective_session_id)
+    elif spec.cli == "codex":
+        parsed = parse_codex_output(output, effective_session_id)
     else:
-        parsed = parse_codex_output(output, session_id)
+        parsed = parse_agy_output(output)
 
     return RunnerResult(
         ok=not bool(parsed.error),
         parsed=parsed,
         duration_sec=duration,
         output=output,
+        model_name=spec.name,
+        full_model_id=spec.model,
+        vendor=spec.vendor,
+        mode=mode,
     )

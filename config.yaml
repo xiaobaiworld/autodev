@@ -26,6 +26,11 @@ projects:
 #   这里的 ID 是本机相关的，换机器或换网关后要重新核对。
 #   只用启动参数指定模型，不用 `magpie <agent> <model>`（会改用户的全局默认）。
 agents:                   # 可插拔，新增 Agent 在此加一项
+  claude-sonnet:
+    cli: claude
+    vendor: anthropic
+    model: ai-code-with/claude-sonnet-5-5  # 启动参数 --model；已验证横幅显示 Sonnet 5.5
+    effort: medium
   claude-opus:
     cli: claude
     vendor: anthropic

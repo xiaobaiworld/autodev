@@ -2,7 +2,7 @@
 
 > **当前状态**：**已落地运行** (2026-11-07)  
 > **服务状态**：macOS LaunchAgent 常驻守护 (`com.autodev.req-bot`，长连接免公网穿透)  
-> **测试状态**：234 项单元测试全量通过 (`python -m unittest discover -s tests`)
+> **测试状态**：239 项单元测试全量通过 (`python -m unittest discover -s tests`)
 
 ---
 
@@ -43,18 +43,21 @@ autodev/
 │   ├── feishu_daemon.py       # 飞书官方 WebSocket 长连接常驻服务入口
 │   ├── flow.py                # 提示词构建 (req-guided-v5)、极简数字输入标准化、定稿判断
 │   ├── validator.py           # 确定性程序化检查器 (断言 RULE-01~09，定稿时自动验真)
+│   ├── handoff.py             # 阶段交接器 (将通过校验的 SRS 直通移交主流水线 S2 架构设计)
+│   ├── llm_provider.py        # 独立大模型注册表与调用层 (完整模型 ID 校验、cli_session/cli_stateless)
 │   ├── context_detector.py    # 项目上下文探测器 (模块概貌、近期 Git 提交、历史需求)
-│   ├── agent_runner.py        # Claude/Codex CLI 驱动、只读沙箱保障、横幅过滤解析
+│   ├── agent_runner.py        # Claude/Codex/agy CLI 驱动、只读沙箱保障、横幅过滤解析
 │   ├── responder.py           # 飞书消息发送、交互卡片推送、Markdown 产物上传
-│   ├── session.py             # 会话持久化与 chat_id -> session_id 映射
+│   ├── session.py             # 会话持久化 (项目路径、模型、调用模式、session_id、历史问答、最近定稿)
 │   ├── config.py              # TOML 配置加载与鉴权白名单过滤
 │   └── presentation/          # 多渠道呈现抽象层 (领域语义模型、FeishuCard、PlainText)
 ├── tests/
-│   ├── test_requirements_flow.py        # 流程与提示词断言测试
-│   ├── test_requirements_presentation.py# 卡片与文本呈现器测试
-│   ├── test_requirements_config.py      # 配置与目录校验测试
-│   ├── test_requirements_context.py     # 上下文探测测试
-│   └── test_requirements_validator.py   # 程序化规则校验器测试
+│   ├── test_requirements_flow.py           # 流程与提示词断言测试
+│   ├── test_requirements_presentation.py   # 卡片与文本呈现器测试
+│   ├── test_requirements_config.py         # 配置与目录校验测试
+│   ├── test_requirements_context.py        # 上下文探测测试
+│   ├── test_requirements_validator.py      # 程序化规则校验器与黄金范本契约测试
+│   └── test_requirements_llm_and_handoff.py# 独立模型层与直通 S2 交接器测试
 └── deploy/
     ├── install-req-bot.sh     # macOS LaunchAgent 一键安装/平滑重启脚本
     └── uninstall-req-bot.sh   # 服务安全卸载脚本
@@ -80,5 +83,8 @@ tail -f logs/req_daemon.out
 - **直接发想法**：在飞书对话框直接描述需求（无需任何命令前缀）；
 - **极简确认**：手机端直接回复 `1` 或 `2` 秒选方案；
 - **看界面原型**：回复 `看原型` 或 `做个原型` 查看等宽文本线框图；
+- **查看/切换大模型**：发送 `/model` 查看完整模型 ID 列表，发送 `/model <名称>`（如 `/model claude-opus`、`/model codex`）随时切换模型并保留历史对话；
+- **查看/切换调用方式**：发送 `/mode` 或 `/mode <cli_session|cli_stateless>`；
 - **重置新需求**：发送 `/new` 或 `新需求`；
-- **需求定稿**：回复 `定稿`，系统自动完成程序化验真并在 `docs/requirements/` 落盘 Markdown 文档。
+- **需求定稿**：回复 `定稿`，系统自动完成程序化验真并在 `docs/requirements/` 落盘 Markdown 文档；
+- **直通 S2 架构设计**：定稿后回复 `启动设计` 或 `/handoff`，跳过重复 S1 分析，直接初始化主流水线 `S2 架构设计` 任务。
