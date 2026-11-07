@@ -1,14 +1,14 @@
-# AutoDev
+# AutoDev (`v0.2.2`)
 
 AutoDev 是本机运行的需求驱动开发流程。确定性程序控制阶段、轮次和状态，Agent（Claude、Codex、agy）分别负责需求分析、设计、编码、审查和验收。
 
-## 当前状态
+## 当前状态（版本 `v0.2.2`）
 
 以 [agent-autoloop](https://github.com/KKKKhazix/agent-autoloop) 为地基（`docs/DECISIONS.md` D014）：它负责派活、排队、重试、租约、事实日志，Agent 以无界面进程运行；我们的流水线驱动放在它外面，管阶段、审查轮次上限、作者与审查者厂商不同、产物校验。Herdr 桌面应用只做显示和管理窗口。
 
-- 已跑通：真实 Agent 完成 S1 需求分析、S2 设计、S3 设计审查（`docs/spikes/2026-11-05-f2-pipeline-report.md`）。
-- 进行中：命令行看板（`src/dashboard/`），布局放在 Herdr 的 `pro2` 空间。
-- 还没做：S4 以后的阶段、Web 界面、模板、崩溃与卡住的验证。
+- **已跑通 S1 到 S9 全流程**：真实 Agent 完整跑通 S1 需求分析、S2 设计、S3 设计审查、S4 编码、S5 检查、S6 代码审查、S7 发布候选、S7U 使用验证、S8 验收与 S9 正式发布（见 [`next.md`](next.md)）。
+- **独立需求澄清模块与飞书机器人（`v0.2.2`）**：`src/requirements/` 常驻守护（`com.autodev.req-bot`），支持从模糊到清晰的 4 步拼图澄清、9 章节 SRS 标准产出与 `validator.py` 自动验真、独立完整模型 ID 调用层（`llm_provider.py`），并支持通过 `handoff.py` 跳过重复 S1、一键直通 `S2 架构设计`。
+- **命令行看板**：`src/dashboard/` 实时显示各需求阶段与日志，布局放在 Herdr 的 `pro2` 空间。
 
 当前步骤和下一步见 [`next.md`](next.md)，方案见 [`docs/design/2026-11-05-autoloop-foundation.md`](docs/design/2026-11-05-autoloop-foundation.md)。
 
@@ -26,6 +26,8 @@ python3 -I tests/smoke_autoloop.py                            # 联机冒烟，�
 入口是 [`docs/INDEX.md`](docs/INDEX.md)。最常用的：
 
 - [`next.md`](next.md)：当前状态与下一步
+- [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md)：软件需求规格说明书产出规范与校验标准（SRS Standard v1.0 / `v0.2.2`）
+- [`docs/modules/requirements/README.md`](docs/modules/requirements/README.md)：需求澄清模块与飞书机器人入口（`v0.2.2`）
 - [`docs/design/2026-11-05-autoloop-foundation.md`](docs/design/2026-11-05-autoloop-foundation.md)：当前主线方案
 - [`docs/design/2026-11-02-autodev-design.md`](docs/design/2026-11-02-autodev-design.md)：九阶段流水线设计
 - [`docs/DECISIONS.md`](docs/DECISIONS.md)：决策记录

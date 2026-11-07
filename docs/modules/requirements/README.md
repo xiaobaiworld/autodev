@@ -1,6 +1,7 @@
 # 需求澄清模块 (Requirements Clarification Module)
 
-> **当前状态**：**已落地运行** (2026-11-07)  
+> **当前版本**：`v0.2.2` (2026-11-07)  
+> **当前状态**：**已落地运行并直通 S2**  
 > **服务状态**：macOS LaunchAgent 常驻守护 (`com.autodev.req-bot`，长连接免公网穿透)  
 > **测试状态**：239 项单元测试全量通过 (`python -m unittest discover -s tests`)
 

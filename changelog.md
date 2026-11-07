@@ -1,6 +1,6 @@
 # changelog
 
-## 2026-11-07：独立大模型与调用方式层（B1）及直通 S2 架构设计阶段交接器（A1）落地
+## 2026-11-07：独立大模型与调用方式层（B1）及直通 S2 架构设计阶段交接器（A1）落地（`v0.2.2`）
 - **独立大模型注册表与多调用方式层（`src/requirements/llm_provider.py`）**：统一从 `config.yaml` 读取完整模型 ID（遵循 `docs/MODELS.md`，严禁 `sonnet`/`opus` 等短别名）；支持 `cli_session`（CLI 原生 `--resume` 续接 + 本地历史兜底）与 `cli_stateless`（无状态单次调用 + 自动注入前序问答历史，支持跨模型/跨厂商无缝切换）两种调用方式；飞书端新增 `/model` 与 `/mode` 查看和切换指令；
 - **直通 S2 架构设计阶段交接器（`src/requirements/handoff.py`）**：定稿的 `REQ-xxx.md` 经 `validator.py`（RULE-01~09）校验通过后，支持在飞书发送 `启动设计` / `/handoff` 或通过 CLI 命令一键转化为主流水线的 `workspace/requests/active/{rid}.md` 与 `S1-analysis/round-1/{analysis.md, done.json}` 基线，并将 `state.json` 直接初始化为 `stage: "S2"`（跳过重复 S1 分析，直通 S2 架构设计）；
 - **测试与文档同步**：新增 `tests/test_requirements_llm_and_handoff.py`（含假 Agent 从 S2 直通推进至 S3 完成的端到端集成测试），全量 239 项单元测试全部通过；同步更新 `REQUIREMENT_SPEC_STANDARD.md`、`feishu-requirement-bot.md`、`README.md`、`INDEX.md` 与 `next.md`。
