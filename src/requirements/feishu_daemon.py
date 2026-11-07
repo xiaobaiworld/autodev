@@ -13,6 +13,7 @@ from lark_oapi.api.im.v1 import P2ImMessageReceiveV1
 
 from requirements.agent_runner import run_agent_turn
 from requirements.config import load_req_config
+from requirements.context_detector import build_project_context_summary
 from requirements.flow import build_req_prompt, is_finalize_request, normalize_user_input
 from requirements.presentation import FeishuCardPresenter, extract_semantic_response
 from requirements.responder import FeishuResponder
@@ -140,7 +141,12 @@ def main() -> None:
         is_final = is_finalize_request(clean_text)
 
         normalized_input = normalize_user_input(clean_text)
-        agent_prompt = build_req_prompt(normalized_input, is_new=is_new)
+        project_context = build_project_context_summary(sess["cwd"])
+        agent_prompt = build_req_prompt(
+            normalized_input,
+            is_new=is_new,
+            project_context_summary=project_context,
+        )
 
         def run_task() -> None:
             log.info("开始调用需求 Agent: agent=%s cwd=%s resume=%s", sess["agent"], sess["cwd"], bool(current_session_id))
