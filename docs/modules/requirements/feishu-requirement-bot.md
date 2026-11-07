@@ -31,36 +31,36 @@
 ```mermaid
 flowchart TD
     Doc["《软件需求规格说明书》"]
-    Doc --> C1["1. 需求标识与元数据 (Title & Code)"]
-    Doc --> C2["2. 需求规模分类与需求关联网络 (Classification & Relations)"]
+    Doc --> C1["1. 需求标识与元数据"]
+    Doc --> C2["2. 需求规模分类与需求关联网络"]
     Doc --> C3["3. 核心背景与业务目标 (Why & What)"]
-    Doc --> C4["4. 业务用例与功能范围 (Scope)"]
+    Doc --> C4["4. 业务用例与核心流程 (Scope)"]
     Doc --> C5["5. 明确非目标与边界 (Non-goals)"]
     Doc --> C6["6. 外部界面原型草图 (UI Wireframe)"]
-    Doc --> C7["7. 业务约束与前置依赖 (Constraints)"]
+    Doc --> C7["7. 业务约束与前置依赖"]
     Doc --> C8["8. 可量化验收标准清单 (Acceptance Criteria)"]
-    Doc --> C9["9. 下游技术设计关注点 (Design Considerations)"]
+    Doc --> C9["9. 下游架构设计关注点"]
 ```
 
 ### 九大类别详细定义表
 
-| 序号 | 类别名称 | 英文标识 | 核心职责与标准内容 |
+| 序号 | 类别名称（固定二级标题） | 英文标识 | 核心职责与标准内容 |
 | :---: | :--- | :--- | :--- |
-| **1** | **需求标识与元数据** | Title & Metadata | 包含标准化编号（如 `REQ-CIRCULATION-BORROW`）、需求名称、提出人、提出时间、所属项目路径。 |
+| **1** | **需求标识与元数据** | Title & Metadata | 包含标准化编号（如 `REQ-CIRCULATION-BORROW`）、需求名称、提出人、分析师、归属项目、定稿时间。 |
 | **2** | **需求规模分类与需求关联网络** | Classification & Relations | **【本次重点】**<br>• **需求规模类别**：显式声明为史诗大需求 (Epic)、标准功能 (Feature)、子功能小需求 (Sub-feature) 还是改动增强 (Enhancement)；<br>• **功能层级归属**：明确属于哪个顶层大业务域下的细分子功能，或全新模块；<br>• **需求关联网络**：结构化声明与其他需求的关联矩阵（Parent、Depends-on、Relates-to、Blocks、Supersedes 或 None）。 |
-| **3** | **核心背景与业务目标** | Background & Objectives (Why & What) | 讲清“为什么要做”、“解决什么人在什么场景下的最痛问题”，以及衡量该需求成功的业务结果。 |
-| **4** | **业务用例与功能范围** | Scope & Core User Flows | 使用者端到端的正向操作流与异常分支，使用者第一步做什么、第二步做什么、最终得到什么。 |
-| **5** | **明确非目标与边界** | Non-Goals (Out of Scope) | **【防膨胀红线】** 明确列出本期坚决不做的特性（如“本期不接入第三方物流”、“暂不支持多语言”），严格锁死范围。 |
-| **6** | **外部界面原型草图** | UI Wireframe / Mockup | 使用立体、直观的等宽文本线框图（ASCII/Unicode Box-Drawing），真实呈现外部界面的排版、输入项、核心按钮与状态提示。 |
+| **3** | **核心背景与业务目标 (Why & What)** | Background & Objectives | 讲清“为什么要做”、“解决什么人在什么场景下的最痛问题”，以及衡量该需求成功的业务结果。 |
+| **4** | **业务用例与核心流程 (Scope)** | Scope & Core User Flows | 使用者端到端的正向操作流与异常分支，使用者第一步做什么、第二步做什么、最终得到什么。 |
+| **5** | **明确非目标与边界 (Non-goals)** | Non-Goals (Out of Scope) | **【防膨胀红线】** 明确列出本期坚决不做的特性（如“本期不接入第三方物流”、“暂不支持多语言”），严格锁死范围。 |
+| **6** | **外部界面原型草图 (UI Wireframe)** | UI Wireframe / Mockup | 使用立体、直观的等宽文本线框图（ASCII/Unicode Box-Drawing），真实呈现外部界面的排版、输入项、核心按钮与状态提示。 |
 | **7** | **业务约束与前置依赖** | Constraints & Prerequisites | 梳理前置业务条件（如必须拥有某种身份权限）、外部依赖（如飞书应用消息推送权限）及合规限制。 |
-| **8** | **可量化验收标准清单** | Acceptance Criteria (AC) | 站在使用者视角的验收测试用例清单（Scenario-based 或 Given-When-Then），确保下游做完后能够按步骤黑盒验证。 |
-| **9** | **下游技术设计关注点** | Downstream Design Focus | 提炼给下游 S2 架构设计阶段决策的问题（如接口协议选型、高并发考虑），但需求文档本身不越权给出代码实现。 |
+| **8** | **可量化验收标准清单 (Acceptance Criteria)** | Acceptance Criteria (AC) | 站在使用者视角的验收测试用例清单（Scenario-based 或 Given-When-Then），确保下游做完后能够按步骤黑盒验证。 |
+| **9** | **下游架构设计关注点** | Downstream Design Focus | 提炼给下游 S2 架构设计阶段决策的问题（如接口协议选型、高并发考虑），但需求文档本身不越权给出代码实现。 |
 
 ---
 
 ## 三、最终生成的需求文档模样（标准样例示范）
 
-以下为飞书端与用户充分交流后，执行 `定稿` 最终沉淀的标准需求文档完整样例：
+以下为飞书端与用户充分交流后，执行 `定稿` 最终沉淀的标准需求文档完整样例（100% 符合 [`SPEC-REQ-STANDARD-v1.0`](../../specs/REQUIREMENT_SPEC_STANDARD.md) 并通过 `validator.py` 校验）：
 
 ````markdown
 # 软件需求规格说明书（草案）
@@ -69,9 +69,9 @@ flowchart TD
 - **需求编号**：REQ-CIRCULATION-MOBILE_BORROW-20261107
 - **需求名称**：移动端扫码图书借阅与到期提醒
 - **提出人**：项目负责人
-- **分析师**：AutoDev Requirement Bot (req-guided-v4)
+- **分析师**：AutoDev Requirement Bot (req-guided-v5)
 - **归属项目**：`/Users/bai/code/autodev`
-- **生成时间**：2026-11-07 16:15:00
+- **定稿时间**：2026-11-07 16:15:00
 
 ---
 
@@ -159,7 +159,7 @@ flowchart TD
 
 ---
 
-## 9. 待下游架构设计（S2）决策的技术关注点
+## 9. 下游架构设计关注点
 1. 扫码高并发下图书借阅状态的原子并发控制方案；
 2. 催还通知定时巡检是采用 Cron 轮询还是事件驱动的延时任务队列；
 3. 图书条码索引数据结构选型。

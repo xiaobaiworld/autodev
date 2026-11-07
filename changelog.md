@@ -1,5 +1,11 @@
 # changelog
 
+## 2026-11-07：交叉审计与修复需求规范、实现说明书及索引契约一致性
+- **修复黄金范本与校验器标题偏差**：修正 [`docs/modules/requirements/feishu-requirement-bot.md`](docs/modules/requirements/feishu-requirement-bot.md) 第 9 节标题为标准 `## 9. 下游架构设计关注点`，并统一第 1 节元数据字段（`定稿时间`、`req-guided-v5`），使黄金范本 100% 通过 `validator.py`；
+- **强化定稿 Prompt 二级标题约束**：在 [`src/requirements/flow.py`](src/requirements/flow.py) 定稿分支中显式要求原样输出 `## 1.` ~ `## 9.` 固定二级标题与必填字段字样，杜绝模型输出标题微调导致程序误拦；
+- **修复规范文档相对死链与代码对齐**：修正 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md) 指向实现说明书的相对路径、RULE-09 字符阈值与第六节真实 `validator.py` 接口示例；
+- **补全模块入口与契约回归测试**：在 [`docs/modules/requirements/README.md`](docs/modules/requirements/README.md) 补齐同目录早期草案索引；在 `tests/test_requirements_validator.py` 新增黄金范本直验与本地相对链接存在性测试，全量 234 项测试通过。
+
 ## 2026-11-07：完善需求规格标准与模块说明书，同步全量权威索引
 - **模块总览入口重构**：更新 [`docs/modules/requirements/README.md`](docs/modules/requirements/README.md)，全面反映当前已落地常驻的架构、代码拓扑与两份核心文档索引；
 - **同步更新权威索引与进展**：更新 [`docs/INDEX.md`](docs/INDEX.md) 和 [`next.md`](next.md)，将需求澄清模块（232 项单元测试）纳入主线全景视图，严格遵循项目与全局开发规范。

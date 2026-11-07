@@ -1,3 +1,5 @@
+import os
+import re
 import unittest
 from requirements.validator import validate_requirement_spec
 
@@ -94,6 +96,40 @@ class TestRequirementsValidator(unittest.TestCase):
         res = validate_requirement_spec(broken)
         self.assertFalse(res.is_valid)
         self.assertTrue(any("RULE-08" in err for err in res.errors))
+
+    def test_gold_standard_sample_in_doc_is_valid(self):
+        # 读取实现说明书中的黄金范本，确保文档范本 100% 通过校验器
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        doc_path = os.path.join(root_dir, "docs", "modules", "requirements", "feishu-requirement-bot.md")
+        with open(doc_path, "r", encoding="utf-8") as f:
+            doc_text = f.read()
+        match = re.search(r"````markdown\n(.*?)\n````", doc_text, re.DOTALL)
+        self.assertIsNotNone(match, "未能在 feishu-requirement-bot.md 中找到 ````markdown 黄金范本")
+        sample_md = match.group(1)
+        res = validate_requirement_spec(sample_md)
+        self.assertTrue(res.is_valid, f"文档中的黄金范本未通过校验器: {res.errors}")
+
+    def test_doc_relative_links_exist(self):
+        # 检查核心文档中的所有本地相对链接是否真实存在
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        doc_files = [
+            os.path.join(root_dir, "docs", "specs", "REQUIREMENT_SPEC_STANDARD.md"),
+            os.path.join(root_dir, "docs", "modules", "requirements", "README.md"),
+            os.path.join(root_dir, "docs", "modules", "requirements", "feishu-requirement-bot.md"),
+        ]
+        for doc_file in doc_files:
+            self.assertTrue(os.path.exists(doc_file), f"核心文档不存在: {doc_file}")
+            with open(doc_file, "r", encoding="utf-8") as f:
+                text = f.read()
+            for m in re.finditer(r"\[[^\]]+\]\(([^)]+)\)", text):
+                link = m.group(1).split("#")[0].strip()
+                if not link or link.startswith(("http://", "https://", "mailto:", "file://")):
+                    continue
+                target_path = os.path.normpath(os.path.join(os.path.dirname(doc_file), link))
+                self.assertTrue(
+                    os.path.exists(target_path),
+                    f"文档 {doc_file} 中的相对链接失效: '{link}' -> {target_path}",
+                )
 
 
 if __name__ == "__main__":

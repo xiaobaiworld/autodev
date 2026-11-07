@@ -180,7 +180,7 @@ flowchart TD
 
 ## 五、程序化校验规则定义 (Linter Rules)
 
-自动化验证程序（如 `validate_requirement_spec.py`）将按以下规则逐项断言，任一规则失败即整体验收失败：
+自动化验证程序（[`src/requirements/validator.py`](../../src/requirements/validator.py)）将按以下规则逐项断言，任一 BLOCKER/MAJOR 规则失败即整体验收失败：
 
 | 规则编号 | 规则名称 | 校验级别 | 检查逻辑与通过标准 |
 | :---: | :--- | :---: | :--- |
@@ -189,66 +189,36 @@ flowchart TD
 | **RULE-03** | 需求类别与拓扑矩阵 | BLOCKER | 第 2 节内必须同时包含 `需求规模`、`模块归属` 与 `需求关系`（或 Parent/Depends-on/Relates-to/None），且内容不可为空。 |
 | **RULE-04** | 核心背景与目标 | MAJOR | 第 3 节内必须同时包含 `业务背景` 与 `业务目标` 字段。 |
 | **RULE-05** | 非目标边界声明 | BLOCKER | 第 5 节内必须至少包含 1 个带有 `❌` 或 `-` 的非目标条目，严禁无边界。 |
-| **RULE-06** | 界面原型线框图 | MAJOR | 第 6 节必须包含包含至少一个 ```text 且行数 ≥ 5 行的文本线框图。 |
-| **RULE-07** | 验收标准可验证 | BLOCKER | 第 8 节必须包含至少 2 个场景，且场景内必须包含触发条件与预期结果。 |
-| **RULE-08** | 禁止技术越权 | BLOCKER | 全文不得包含 `CREATE TABLE`、`def `、`class `、`import ` 等业务代码实现（原型除外）。 |
-| **RULE-09** | 篇幅与有效性 | MINOR | 全文非空有效字数须在 600 ~ 3000 字之间，防止出现过短空泛或万字发散。 |
+| **RULE-06** | 界面原型线框图 | MAJOR | 第 6 节必须包含至少一个 ```text 且有效行数 ≥ 5 行的文本线框图。 |
+| **RULE-07** | 验收标准可验证 | BLOCKER | 第 8 节必须包含具体场景条目（如 `场景 1`、`Scenario` 或编号列表），且包含触发条件与预期结果。 |
+| **RULE-08** | 禁止技术越权 | BLOCKER | 全文不得包含 `CREATE TABLE`、`ALTER TABLE`、`SELECT ... FROM`、`INSERT INTO`、`def `、`class ` 等业务代码或 SQL 实现。 |
+| **RULE-09** | 篇幅与有效性 | BLOCKER / MINOR | 全文非空字符数须 ≥ 300 字符（低于 300 报 BLOCKER，高于 15000 报 WARN），防止空泛或万字发散。 |
 
 ---
 
 ## 六、程序化检查器实现（Python 契约接口）
 
-AutoDev 需求检查程序可在流水线或机器人后台无缝调用：
+AutoDev 已在 [`src/requirements/validator.py`](../../src/requirements/validator.py) 实现该契约接口，在 `feishu_daemon.py` 定稿落盘时自动调用：
 
 ```python
-# 示例校验函数原型
-from typing import NamedTuple
+from requirements.validator import ValidationResult, validate_requirement_spec
 
-class ValidationResult(NamedTuple):
-    is_valid: bool
-    errors: list[str]
-    warnings: list[str]
-
-def validate_requirement_doc(content: str) -> ValidationResult:
-    """自动对传入的 Markdown 需求规格内容进行程序化规则检查。"""
-    errors = []
-    warnings = []
-    
-    # 1. 检查九大章节标题是否存在
-    required_sections = [
-        "## 1. 需求标识与元数据",
-        "## 2. 需求规模分类与需求关联网络",
-        "## 3. 核心背景与业务目标 (Why & What)",
-        "## 4. 业务用例与核心流程 (Scope)",
-        "## 5. 明确非目标与边界 (Non-goals)",
-        "## 6. 外部界面原型草图 (UI Wireframe)",
-        "## 7. 业务约束与前置依赖",
-        "## 8. 可量化验收标准清单 (Acceptance Criteria)",
-        "## 9. 下游架构设计关注点",
-    ]
-    for sec in required_sections:
-        if sec not in content:
-            errors.append(f"[RULE-02] 缺失必备章节: {sec}")
-            
-    # 2. 检查线框图代码块
-    if "```text" not in content:
-        errors.append("[RULE-06] 第 6 节必须包含 ```text 代码块形式的低保真线框图")
-        
-    # 3. 检查架构拓扑
-    if "功能层级归属" not in content or "近期功能关联" not in content:
-        errors.append("[RULE-03] 第 2 节必须显式分析【功能层级归属】与【近期功能关联】")
-        
-    # 4. 检查技术越权
-    forbidden_tokens = ["CREATE TABLE", "SELECT * FROM", "INSERT INTO"]
-    for token in forbidden_tokens:
-        if token in content:
-            errors.append(f"[RULE-08] 需求阶段严禁技术越权编写 SQL/代码实现: 发现 '{token}'")
-
-    return ValidationResult(is_valid=len(errors) == 0, errors=errors, warnings=warnings)
+# 返回 ValidationResult(is_valid: bool, errors: list[str], warnings: list[str])
+result: ValidationResult = validate_requirement_spec(markdown_content)
+if not result.is_valid:
+    # 拦截或标记未通过的具体 RULE 编号与原因
+    print("校验未通过:", result.errors)
 ```
+
+其核心检查项与第五节 `RULE-02` ~ `RULE-09` 一一对应：
+1. **章节完备性（RULE-02）**：逐一断言 `REQUIRED_SECTIONS` 中的 9 个二级标题；
+2. **需求规模与拓扑矩阵（RULE-03）**：断言第 2 节同时包含规模类别（`需求规模`/`大需求`/`小需求`/`Epic`/`Feature`/`Sub-feature`）、模块归属（`功能层级归属`/`模块归属`）与关联关系（`需求关联`/`Parent`/`Depends-on`/`Relates-to` 等）；
+3. **背景目标与非目标边界（RULE-04 / RULE-05）**：断言第 3 节含 `业务背景` 与 `业务目标`，第 5 节含 `❌` 或 `-` 排除项；
+4. **低保真线框图与验收场景（RULE-06 / RULE-07）**：断言第 6 节含 ` ```text ` 代码块，第 8 节含具体验收场景；
+5. **防技术越权与篇幅（RULE-08 / RULE-09）**：正则拦截 SQL/Python 函数类定义，校验字符长度区间。
 
 ---
 
 ## 七、标准范本（Gold Standard Example）
 
-参见配套的标准模版样例：[`docs/modules/requirements/feishu-requirement-bot.md`](docs/modules/requirements/feishu-requirement-bot.md) 第三节。
+参见配套的标准模版样例：[`docs/modules/requirements/feishu-requirement-bot.md`](../modules/requirements/feishu-requirement-bot.md) 第三节。

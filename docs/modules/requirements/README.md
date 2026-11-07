@@ -2,7 +2,7 @@
 
 > **当前状态**：**已落地运行** (2026-11-07)  
 > **服务状态**：macOS LaunchAgent 常驻守护 (`com.autodev.req-bot`，长连接免公网穿透)  
-> **测试状态**：232 项单元测试全量通过 (`python -m unittest discover -s tests`)
+> **测试状态**：234 项单元测试全量通过 (`python -m unittest discover -s tests`)
 
 ---
 
@@ -25,6 +25,11 @@ AutoDev 需求澄清模块是整个研发流水线（S1~S9）的源头枢纽。�
 | :--- | :--- | :--- |
 | 📘 **[`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](../../specs/REQUIREMENT_SPEC_STANDARD.md)** | **《软件需求规格说明书产出规范与校验标准 (SRS Standard v1.0)》** | **产出物标准契约**：<br>• 从模糊到清晰的四阶段演进生命周期；<br>• 九大必填标准章节与格式规范；<br>• 需求规模分类 (Epic/Feature/Sub-feature) 与网状关系矩阵表示法；<br>• 自动化规则引擎断言（RULE-01 ~ RULE-09）。 |
 | 📗 **[`docs/modules/requirements/feishu-requirement-bot.md`](feishu-requirement-bot.md)** | **《需求澄清模块与飞书端沉淀说明书》** | **模块实现与运行指南**：<br>• Session 演进全过程与核心决策全记录；<br>• 多渠道呈现层抽象（FeishuCard / PlainText）；<br>• 模型提示词演进（从 v1 到 v5）；<br>• 外部界面低保真线框图 (ASCII Wireframe) 原理；<br>• 真实场景黄金范本（Gold Standard Sample）。 |
+
+### 本目录早期设计草案（保留备查与后续阶段合入）
+- [`requirements.md`](requirements.md)：早期关于通用经验清单、版本基线与逐轮原始交互审计的需求草案；
+- [`design.md`](design.md)：早期本机 CLI 小状态循环与 `workspace/requirements/` 目录结构设计草案；
+- [`protocol.md`](protocol.md)：早期 CLI 命令、草稿 JSON 及逐轮调用计时约定草案（尚未在飞书守护进程中全量实现，供后续迭代参考）。
 
 ---
 
