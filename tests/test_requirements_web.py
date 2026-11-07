@@ -83,3 +83,10 @@ class WebTest(unittest.TestCase):
         self.assertIn('textContent', js)
         self.assertNotIn('innerHTML', js)
         self.assertEqual(self.request('/api/config')['demo'], True)
+
+    def test_web_can_pair_existing_session_without_model_call(self):
+        s=self.store.create('anonymous','idea')
+        result=self.request(f'/api/sessions/{s["id"]}/pair',{})
+        self.assertTrue(result['command'].startswith('/需求 绑定 '))
+        self.assertEqual(self.store.status(s['id'])['calls'],[])
+        self.assertGreater(result['expires_at'],time.time())

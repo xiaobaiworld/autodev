@@ -10,10 +10,12 @@
 - [设计](design.md)：状态循环、文件协议、接口和经验清单。
 - [开发计划](dev-plan.md)：实施顺序、改动范围、测试、验收、风险与阶段收口。
 
-逻辑独立，第一版仍在 AutoDev 仓库内实现：拟用 `src/requirements/`、`tests/test_requirements*.py`、本目录和 `templates/requirements/`；暂不建立独立仓库、HTTP 服务或复制现有执行器。
+逻辑独立，第一版仍在 AutoDev 仓库内实现：拟用 `src/requirements/`、`tests/test_requirements*.py`、本目录和 `templates/requirements/`；不建立独立仓库或复制现有执行器；本机 HTTP 入口作为共享后端的薄客户端。
 
 - [程序协议](protocol.md)：第一版 CLI、草稿 JSON、清单、每轮输入输出及计时约定。
 
 - [使用指南](usage.md)：CLI、网页、真实模型与无费用演示。
 - [验证报告](verification.md)：自动测试、浏览器及真实双模型证据。
 - [手机渠道](channels.md)：通用消息路由已实现，飞书已启用，手机验收待发命令；微信未接。
+
+- [网页设计](web-design.md)：工作台分区、页签、响应式及本轮交互边界。真实网页版 http://127.0.0.1:8766 。

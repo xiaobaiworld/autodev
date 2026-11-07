@@ -24,6 +24,7 @@
 | `docs/design/2026-11-05-autoloop-foundation.md` | 以 agent-autoloop 为地基的方案：结构、F0 到 F6、界面共用数据、待决事项 | 当前主线 |
 | `docs/modules/requirements/README.md` | 需求澄清独立模块入口：需求、状态循环、协议与开发计划 | v0.8 需求已确认，已实现；独立后端供 CLI、网页及上层项目复用，验证见模块 verification.md |
 | `docs/modules/requirements/baselines/v0.8.md` | 包含可选模型、双模型审核及人工确认的固定需求副本 | 用户确认的 v0.8 基线，后续变更另建版本 |
+| `docs/modules/requirements/web-design.md` | 网页工作台分区、页签、待办与真实入口 | 已实现并做浏览器验证 |
 | `docs/modules/requirements/usage.md` | CLI/网页启动、演示与真实模型、恢复和测试 | 当前使用入口 |
 | `docs/modules/requirements/verification.md` | 250 项自动测试、浏览器及真实双模型证据与限制 | 验证记录 |
 | `docs/modules/requirements/channels.md` | 手机端通用组件与飞书/微信接线边界 | 通用组件及飞书已接，手机验收待用户发命令 |

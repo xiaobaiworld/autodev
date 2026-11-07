@@ -89,3 +89,8 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - 后端中台 home=`~/.local/state/autodev/requirements-hub`，本机 launchd 服务 `com.autodev.requirements-hub`；旧 `/tmp/autodev-demo/home` 本次检查不可达，不依赖它。
 - CLI/网页会话接手机：`PYTHONPATH=src python3 -m requirements pair ID`，飞书用一次性码绑定。平台按 message_id 去重。
 - 源码在 AutoDev 的 channels.feishu / requirements.feishu 与 autosys 的 bridge.requirements_client。详细运行、停用及证据见模块 channels.md；飞书 SDK 格式以 https://open.feishu.cn/document/server-docs/im-v1/message/events/receive 为准。
+
+## 8. 网页真实入口
+
+- http://127.0.0.1:8766 为真实需求工作台，launchd=com.autodev.requirements-web，当前根与独立需求中台共用飞书数据。浏览器查看不调用模型，创建/回答会调用。
+- 临时演示页 8767，根 /tmp/autodev-requirements-preview，明确 --demo，不与真实会话混用。新版网页支持搜索、文档/审核/调用页签和飞书配对；设计见模块 web-design.md。
