@@ -1,5 +1,13 @@
 # changelog
 
+## 2026-11-07：全系统统一网页客户端标准需求沉淀与落地（连接需求澄清工作台与 S1~S9 流水线驾驶舱，`v0.3.0`）
+- **沉淀全系统统一网页客户端标准需求规格（`docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md`）**：按飞书 9 章节 SRS 标准（`SPEC-REQ-STANDARD-v1.0`）完整编写并通过 `validator.py`（`RULE-01 ~ RULE-09` 零错误通过），明确规模为 `Epic`，并在关系矩阵中直接连接前面分析设计的 `2026-11-02-autodev-design.md` 第 9 节 Web 管理界面与 `autodev-workflow-prototype.html`；
+- **落地全系统统一网页客户端（`src/web/`）**：
+  - **Tab 1（需求澄清三栏工作台，比飞书多出的桌面大屏能力）**：左栏展示需求库、`Epic/Feature/Sub-feature` 规模与关联网络图谱、每轮原始问答与耗时审计；中栏提供与飞书同源的引导式对话、1/2 选项按钮点选、完整模型 ID（`claude-sonnet`/`claude-opus`/`codex`/`agy`）与调用方式（`cli_session`/`cli_stateless`）切换；右栏提供 **9 章节 SRS 实时生长预览、`RULE-01~09` 逐项红绿灯校验器、第 6 节界面原型独立预览、Markdown 在线编辑** 以及 **【🚀 直通 S2 架构设计】** 按钮；
+  - **Tab 2（S1~S9 流水线驾驶舱，承接前面分析的系统网页客户端）**：置顶「待你决定」需求，展示 S1~S9（含 S7U）阶段进度时间线、真实落盘产物在线阅读器（含密钥脱敏）、以及「◉ 需要你参与」在线人工拍板回复表单（`continue`/`rework`/`reject`，原子写入 `human/reply-K.md`）；
+  - **Tab 3（Agent 与完整模型 ID 配置）**：支持查看与调整各阶段角色绑定的 Agent，保存前强制执行乐观锁哈希比对与 D008（作者与审查者厂商不同）校验；
+- **测试与版本同步**：新增 `tests/test_web_client.py`（含 HTTP 端到端集成测试），全库 244 项单元测试全部通过；同步更新全库文档版本号至 `v0.3.0`。
+
 ## 2026-11-07：独立大模型与调用方式层（B1）及直通 S2 架构设计阶段交接器（A1）落地（`v0.2.2`）
 - **独立大模型注册表与多调用方式层（`src/requirements/llm_provider.py`）**：统一从 `config.yaml` 读取完整模型 ID（遵循 `docs/MODELS.md`，严禁 `sonnet`/`opus` 等短别名）；支持 `cli_session`（CLI 原生 `--resume` 续接 + 本地历史兜底）与 `cli_stateless`（无状态单次调用 + 自动注入前序问答历史，支持跨模型/跨厂商无缝切换）两种调用方式；飞书端新增 `/model` 与 `/mode` 查看和切换指令；
 - **直通 S2 架构设计阶段交接器（`src/requirements/handoff.py`）**：定稿的 `REQ-xxx.md` 经 `validator.py`（RULE-01~09）校验通过后，支持在飞书发送 `启动设计` / `/handoff` 或通过 CLI 命令一键转化为主流水线的 `workspace/requests/active/{rid}.md` 与 `S1-analysis/round-1/{analysis.md, done.json}` 基线，并将 `state.json` 直接初始化为 `stage: "S2"`（跳过重复 S1 分析，直通 S2 架构设计）；

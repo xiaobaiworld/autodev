@@ -1,0 +1,1327 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>AutoDev｜全系统统一网页客户端 (需求澄清工作台 + S1~S9 流水线驾驶舱)</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202a3b;
+      --muted: #6e7d92;
+      --line: #e3e8f0;
+      --paper: #f4f6fa;
+      --card: #ffffff;
+      --blue: #3b63d1;
+      --blue-soft: #edf2ff;
+      --green: #218363;
+      --green-soft: #e8f7f0;
+      --amber: #a36a14;
+      --amber-soft: #fff6e5;
+      --violet: #6f4fc2;
+      --violet-soft: #f2edfc;
+      --red: #c24b56;
+      --red-soft: #fdecee;
+      --shadow: 0 12px 34px rgba(28, 43, 72, .06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 13.5px/1.55 -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif;
+    }
+    button, select, input, textarea { color: inherit; font: inherit; }
+    .shell { max-width: 1560px; margin: 0 auto; padding: 18px clamp(14px, 2.2vw, 32px) 42px; }
+
+    /* Top Navigation Bar */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 18px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 760; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      color: #fff;
+      background: linear-gradient(135deg, #283d70, #3b63d1);
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .nav-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .nav-tab {
+      border: 1px solid var(--line);
+      background: #f8faff;
+      color: var(--muted);
+      padding: 7px 14px;
+      border-radius: 9px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    .nav-tab:hover { border-color: #c5d3f5; color: var(--ink); }
+    .nav-tab.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(59, 99, 209, .22);
+    }
+    .top-meta { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 650;
+    }
+    .pill.green { background: var(--green-soft); color: var(--green); border: 1px solid #cceadc; }
+    .pill.amber { background: var(--amber-soft); color: var(--amber); border: 1px solid #f2ddb6; }
+    .pill.blue { background: var(--blue-soft); color: var(--blue); border: 1px solid #cddbfe; }
+    .pill.violet { background: var(--violet-soft); color: var(--violet); border: 1px solid #dcd0f9; }
+    .pill.red { background: var(--red-soft); color: var(--red); border: 1px solid #f5c8cd; }
+
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    /* Common Panels */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 16px;
+      border-bottom: 1px solid #eef2f7;
+      background: #fcfdff;
+    }
+    .panel-title { margin: 0; font-size: 13.5px; font-weight: 750; }
+    .panel-sub { color: var(--muted); font-size: 11.5px; }
+    .panel-body { padding: 14px 16px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-size: 12.5px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    .btn:hover { background: #f5f8ff; border-color: #c2d1f7; }
+    .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .btn.primary:hover { background: #2f54bd; }
+    .btn.success { background: var(--green); border-color: var(--green); color: #fff; }
+    .btn.success:hover { background: #1a6e52; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    /* TAB 1: Three-Column Requirement Clarification Workbench */
+    .req-grid {
+      display: grid;
+      grid-template-columns: 310px minmax(400px, 1fr) minmax(460px, 1.12fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .srs-item {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: .15s ease;
+      background: #fff;
+    }
+    .srs-item:hover { border-color: #bfd0f7; background: #f9fbff; }
+    .srs-item.selected { border-color: var(--blue); background: #f2f6ff; }
+    .srs-item-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; word-break: break-all; }
+    .srs-item-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); }
+
+    .rel-card {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #f8faff;
+      border: 1px solid #e5ecf8;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .rel-type { font-weight: 700; color: var(--violet); margin-right: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    /* Chat Area */
+    .chat-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      background: #f7f9fd;
+      border-bottom: 1px solid var(--line);
+      align-items: center;
+    }
+    .chat-toolbar select {
+      padding: 5px 8px;
+      border-radius: 7px;
+      border: 1px solid #d5deec;
+      background: #fff;
+      font-size: 12px;
+    }
+    .chat-stream {
+      height: 430px;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #fbfcfe;
+    }
+    .msg {
+      max-width: 92%;
+      padding: 11px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--blue);
+      color: #fff;
+      border-bottom-right-radius: 3px;
+    }
+    .msg.assistant {
+      align-self: flex-start;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-bottom-left-radius: 3px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.03);
+    }
+    .choice-box { display: grid; gap: 7px; margin-top: 10px; }
+    .choice-btn {
+      text-align: left;
+      padding: 9px 11px;
+      border-radius: 9px;
+      border: 1px solid #cad8f8;
+      background: #f4f7ff;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    .choice-btn:hover { background: #e6eeff; border-color: var(--blue); }
+    .chat-input-area {
+      padding: 12px 14px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+    .chat-input-row { display: flex; gap: 8px; }
+    .chat-input-row textarea {
+      flex: 1;
+      height: 58px;
+      padding: 8px 10px;
+      border: 1px solid #d5deec;
+      border-radius: 9px;
+      resize: vertical;
+    }
+    .quick-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+    /* Right Column: SRS Live Preview & Validator Checklist */
+    .subtabs { display: flex; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: #f8faff; }
+    .subtab {
+      padding: 5px 10px;
+      border-radius: 7px;
+      border: 1px solid transparent;
+      font-size: 12px;
+      font-weight: 650;
+      color: var(--muted);
+      cursor: pointer;
+      background: transparent;
+    }
+    .subtab.active { background: #fff; border-color: #d3ddf0; color: var(--blue); }
+    .rule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+    .rule-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 9px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font-size: 11.5px;
+      background: #fff;
+    }
+    .rule-item.pass { border-color: #cceadc; background: #f6fcf9; }
+    .rule-item.fail { border-color: #f5c8cd; background: #fff8f8; }
+    .sec-list { display: grid; gap: 7px; max-height: 360px; overflow-y: auto; }
+    .sec-card {
+      padding: 9px 11px;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .sec-card-head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 12.5px; }
+    .sec-card-preview { margin-top: 4px; font-size: 11.5px; color: var(--muted); white-space: pre-wrap; max-height: 68px; overflow: hidden; }
+    .wireframe-box {
+      background: #172030;
+      color: #e6edf7;
+      padding: 14px;
+      border-radius: 10px;
+      font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .srs-editor {
+      width: 100%;
+      height: 440px;
+      padding: 12px;
+      border: 1px solid #d5deec;
+      border-radius: 9px;
+      font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    /* TAB 2: S1~S9 Pipeline Cockpit (Inherited & Expanded from autodev-workflow-prototype.html) */
+    .run-selector-bar {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+    }
+    .run-chip {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    .run-chip:hover { border-color: #b8caf6; }
+    .run-chip.selected { border-color: var(--blue); background: #f2f6ff; box-shadow: 0 3px 10px rgba(59,99,209,.1); }
+    .overview-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      margin-bottom: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+    .metric { padding: 12px 16px; border-right: 1px solid var(--line); }
+    .metric:last-child { border-right: 0; }
+    .metric-label { color: var(--muted); font-size: 11px; }
+    .metric-value { margin-top: 3px; font-weight: 750; font-size: 14px; }
+
+    .cockpit-workspace {
+      display: grid;
+      grid-template-columns: minmax(410px, 0.96fr) minmax(480px, 1.14fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .stages { padding: 8px 14px 14px 18px; }
+    .stage-row {
+      position: relative;
+      display: grid;
+      grid-template-columns: 31px minmax(0, 1fr);
+      gap: 10px;
+      width: 100%;
+      border: 0;
+      padding: 0;
+      text-align: left;
+      background: transparent;
+      cursor: pointer;
+    }
+    .stage-row:not(:last-child) { padding-bottom: 7px; }
+    .stage-row:not(:last-child)::before {
+      content: "";
+      position: absolute;
+      left: 14px;
+      top: 30px;
+      bottom: 0;
+      width: 1px;
+      background: #e2e8f0;
+    }
+    .stage-marker {
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: 29px;
+      height: 29px;
+      border: 1px solid #dfe5ec;
+      border-radius: 50%;
+      color: #8a96a7;
+      background: #fff;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .stage-content {
+      min-width: 0;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 7px 10px 8px;
+      transition: .15s ease;
+    }
+    .stage-row:hover .stage-content { background: #f8faff; }
+    .stage-row.selected .stage-content { border-color: #cad8fb; background: #f3f7ff; }
+    .stage-row.complete .stage-marker { border-color: #b9dfcf; color: var(--green); background: var(--green-soft); }
+    .stage-row.running .stage-marker { border-color: #bdcdf8; color: var(--blue); background: var(--blue-soft); box-shadow: 0 0 0 4px #eff3ff; }
+    .stage-row.paused .stage-marker { border-color: #f0d9ad; color: var(--amber); background: var(--amber-soft); }
+    .stage-topline { display: flex; align-items: center; gap: 8px; }
+    .stage-name { font-size: 13px; font-weight: 700; }
+    .stage-id { color: #909cb0; font-size: 10.5px; font-weight: 700; }
+    .status-badge {
+      margin-left: auto;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 650;
+    }
+    .status-badge.complete { color: var(--green); background: var(--green-soft); }
+    .status-badge.running { color: var(--blue); background: var(--blue-soft); }
+    .status-badge.paused { color: var(--amber); background: var(--amber-soft); }
+    .status-badge.pending { color: #7f8c9f; background: #f1f4f8; }
+    .stage-summary { margin-top: 2px; color: var(--muted); font-size: 11.5px; }
+
+    .artifact-viewer {
+      background: #1a2232;
+      color: #e9eef7;
+      padding: 13px;
+      border-radius: 10px;
+      font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      max-height: 360px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    .human-panel {
+      border-color: #ecdcbf;
+      background: linear-gradient(130deg, #fffdf9, #fff9ee);
+      margin-top: 14px;
+    }
+    .human-options { display: grid; gap: 8px; margin: 10px 0; }
+    .human-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid #eadcc3;
+      border-radius: 8px;
+      background: rgba(255,255,255,.75);
+      cursor: pointer;
+    }
+
+    /* TAB 3: Config Table */
+    .cfg-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .cfg-table th, .cfg-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+    .cfg-table th { background: #f8faff; color: var(--muted); font-weight: 700; font-size: 12px; }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 24px;
+      padding: 11px 16px;
+      background: #1e293b;
+      color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.18);
+      font-size: 13px;
+      display: none;
+      z-index: 999;
+    }
+    @media (max-width: 1180px) {
+      .req-grid, .cockpit-workspace { grid-template-columns: 1fr; }
+      .overview-metrics { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <!-- Topbar -->
+    <nav class="topbar" aria-label="主导航">
+      <div class="brand">
+        <span class="brand-mark">A</span>
+        <span>AutoDev 统一网页工作台</span>
+        <span class="pill blue">v0.2.2</span>
+      </div>
+      <div class="nav-tabs" role="tablist">
+        <button class="nav-tab active" data-tab="tab-req" onclick="switchMainTab('tab-req')">
+          📝 1. 需求澄清工作台 (含 9 章节实时预览 & 校验)
+        </button>
+        <button class="nav-tab" data-tab="tab-cockpit" onclick="switchMainTab('tab-cockpit')">
+          🔀 2. S1~S9 流水线驾驶舱 <span id="nav-human-badge" class="pill amber" style="display:none;margin-left:4px;">待决定</span>
+        </button>
+        <button class="nav-tab" data-tab="tab-config" onclick="switchMainTab('tab-config')">
+          ⚙️ 3. Agent 与完整模型 ID 配置
+        </button>
+      </div>
+      <div class="top-meta">
+        <span class="pill green">● 127.0.0.1 本机安全模式</span>
+        <button class="btn" onclick="refreshOverview()">↻ 刷新状态</button>
+      </div>
+    </nav>
+
+    <!-- =====================================================================
+         TAB 1: 需求澄清工作台 (比飞书多出：关系网络、耗时审计、9章节实时预览、RULE-01~09红绿灯)
+         ===================================================================== -->
+    <section id="tab-req" class="view-section active">
+      <div class="req-grid">
+        <!-- 左栏：需求库、规模与关联网络图谱、每轮调用耗时审计 -->
+        <div style="display:grid;gap:14px;">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">📂 需求规格库 (docs/requirements)</h2>
+                <div class="panel-sub">与飞书共享同一套 SRS 标准产物</div>
+              </div>
+              <button class="btn primary" onclick="createNewSrsDraft()">+ 新草稿</button>
+            </div>
+            <div class="panel-body" id="srs-list-container" style="max-height:230px;overflow-y:auto;"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">🕸️ 需求规模与关联网络矩阵</h2>
+                <div class="panel-sub">比飞书多出的全局拓扑透视</div>
+              </div>
+              <span id="current-scale-badge" class="pill violet">Epic</span>
+            </div>
+            <div class="panel-body" id="relations-container"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">⏱️ 原始交流与每轮调用耗时审计</h2>
+                <div class="panel-sub">记录外部输入、原始输出、模型与耗时</div>
+              </div>
+            </div>
+            <div class="panel-body" id="audit-log-container" style="max-height:190px;overflow-y:auto;font-size:11.5px;"></div>
+          </section>
+        </div>
+
+        <!-- 中栏：引导式需求澄清对话（支持模型/调用方式独立切换、1/2 数字卡片点选） -->
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">💬 引导式需求澄清分析师 (req-guided-v5)</h2>
+              <div class="panel-sub">与飞书端互通 · 支持具体业务场景选项点选与界面原型生成</div>
+            </div>
+            <button class="btn" onclick="sendQuickChat('/new')">🌱 新需求会话</button>
+          </div>
+          <div class="chat-toolbar">
+            <label style="font-size:11.5px;font-weight:700;color:var(--muted);">底层大模型:</label>
+            <select id="req-model-select" title="完整模型 ID 源自 config.yaml"></select>
+            <label style="font-size:11.5px;font-weight:700;color:var(--muted);">调用方式:</label>
+            <select id="req-mode-select">
+              <option value="cli_session">cli_session (原生会话续接)</option>
+              <option value="cli_stateless">cli_stateless (无状态+历史注入)</option>
+            </select>
+          </div>
+          <div class="chat-stream" id="chat-stream"></div>
+          <div class="chat-input-area">
+            <div class="chat-input-row">
+              <textarea id="chat-input" placeholder="直接描述你的需求想法，或点击上方选项卡片（支持随时切换模型）..."></textarea>
+              <button class="btn primary" id="chat-send-btn" onclick="sendReqChat()">发送</button>
+            </div>
+            <div class="quick-actions">
+              <button class="btn" onclick="sendQuickChat('1')">选方案 1</button>
+              <button class="btn" onclick="sendQuickChat('2')">选方案 2</button>
+              <button class="btn" onclick="sendQuickChat('看原型')">🎨 看界面原型</button>
+              <button class="btn" onclick="sendQuickChat('定稿')">📋 定稿生成 9 章节 SRS</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 右栏：9章节 SRS 实时生长预览、RULE-01~09 校验器与一键直通 S2 -->
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title" id="preview-doc-title">📄 9章节 SRS 实时预览与规则校验器</h2>
+              <div class="panel-sub" id="preview-doc-filename">当前文件：加载中...</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span id="srs-valid-badge" class="pill green">SPEC-VALIDATED: PASS</span>
+              <button class="btn success" id="handoff-s2-btn" onclick="handoffCurrentSrsToS2()">
+                🚀 直通 S2 架构设计 ➔
+              </button>
+            </div>
+          </div>
+          <div class="subtabs">
+            <button class="subtab active" data-sub="sub-checklist" onclick="switchSrsSubTab('sub-checklist')">
+              📊 9章节拼图 & RULE-01~09 校验灯
+            </button>
+            <button class="subtab" data-sub="sub-wireframe" onclick="switchSrsSubTab('sub-wireframe')">
+              🖼️ 第6节外部界面原型草图
+            </button>
+            <button class="subtab" data-sub="sub-editor" onclick="switchSrsSubTab('sub-editor')">
+              ✏️ Markdown 源码微调与保存
+            </button>
+          </div>
+          <div class="panel-body">
+            <!-- Subtab 1: Checklist -->
+            <div id="sub-checklist" class="srs-subview">
+              <div style="margin-bottom:8px;font-size:12px;font-weight:700;color:var(--muted);">
+                程序化校验规则断言 (src/requirements/validator.py)：
+              </div>
+              <div class="rule-grid" id="rules-grid"></div>
+              <div style="margin:10px 0 6px;font-size:12px;font-weight:700;color:var(--muted);">
+                九大标准章节实时完备度 (<span id="sections-ready-counter">0/9</span>)：
+              </div>
+              <div class="sec-list" id="sections-list"></div>
+            </div>
+            <!-- Subtab 2: Wireframe -->
+            <div id="sub-wireframe" class="srs-subview" style="display:none;">
+              <div style="margin-bottom:8px;font-size:12px;color:var(--muted);">
+                提取自第 6 节 `## 6. 外部界面原型草图 (UI Wireframe)`：
+              </div>
+              <div class="wireframe-box" id="wireframe-preview">暂无界面原型草图</div>
+            </div>
+            <!-- Subtab 3: Editor -->
+            <div id="sub-editor" class="srs-subview" style="display:none;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">
+                <input id="editor-filename" style="flex:1;padding:6px 10px;border:1px solid #d5deec;border-radius:7px;" placeholder="REQ-MODULE-ACTION-YYYYMMDD.md">
+                <button class="btn" onclick="validateEditorContent()">🔍 实时校验</button>
+                <button class="btn primary" onclick="saveEditorContent()">💾 保存并落盘</button>
+              </div>
+              <textarea id="srs-markdown-editor" class="srs-editor"></textarea>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         TAB 2: S1~S9 流水线驾驶舱 (连接前面分析的 autodev-workflow-prototype.html 与第9节设计)
+         ===================================================================== -->
+    <section id="tab-cockpit" class="view-section">
+      <div class="run-selector-bar" id="run-selector-bar"></div>
+
+      <section class="overview-metrics" aria-label="任务概览">
+        <div class="metric">
+          <div class="metric-label">当前需求与进度</div>
+          <div class="metric-value" id="m-progress">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">阶段完成度</div>
+          <div class="metric-value" id="m-completed">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">当前执行角色与完整模型 ID</div>
+          <div class="metric-value" id="m-agent-model">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">运行状态与人工关口</div>
+          <div class="metric-value" id="m-status">—</div>
+        </div>
+      </section>
+
+      <div class="cockpit-workspace">
+        <!-- 左栏：S1 ~ S9 阶段列表 -->
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">🛤️ 处理步骤 (S1 ~ S9 全生命周期流水线)</h2>
+              <div class="panel-sub">点击任一阶段查看职责说明、真实落盘产物与审查原文对照</div>
+            </div>
+            <span class="panel-sub" id="run-kind-label">pipeline/build</span>
+          </div>
+          <div class="stages" id="cockpit-stage-list"></div>
+        </section>
+
+        <!-- 右栏：阶段详情 + 真实产物阅读器 + 需求变更轨迹 + 人工决策面板 -->
+        <div>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <div style="font-size:11px;font-weight:700;color:var(--muted);" id="st-detail-overline">S2 · 处理阶段 › designer</div>
+                <h2 class="panel-title" style="font-size:17px;margin-top:2px;" id="st-detail-title">方案设计与任务分解</h2>
+              </div>
+              <span class="pill blue" id="st-detail-badge">运行中</span>
+            </div>
+            <div class="panel-body">
+              <p style="margin:0 0 10px;color:var(--muted);font-size:12.5px;" id="st-detail-task"></p>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;" id="st-artifact-tabs"></div>
+              <div class="artifact-viewer" id="st-artifact-content">请选择上方产物文件查看内容...</div>
+            </div>
+          </section>
+
+          <!-- 需要你参与 (待你决定) 人工回复面板 -->
+          <section class="panel human-panel" id="cockpit-human-panel">
+            <div class="panel-head" style="background:transparent;border-bottom-color:#f0e4cd;">
+              <h2 class="panel-title" style="color:#78531a;">◉ 需要你参与（人工关口与决策回复）</h2>
+              <span class="pill amber" id="human-status-pill">等待拍板</span>
+            </div>
+            <div class="panel-body">
+              <div style="font-size:12.5px;color:#6e5d43;margin-bottom:8px;" id="human-decision-desc">
+                当流水线停在 S9 发布前确认或审查达到轮次上限时，可在此直接拍板（写入 human/reply-K.md）：
+              </div>
+              <div class="human-options">
+                <label class="human-option">
+                  <input type="radio" name="human-action" value="continue" checked>
+                  <span><strong>批准继续 (continue)</strong> — 放行当前人工关口（如批准 S9 正式发布）或在原阶段继续下一轮</span>
+                </label>
+                <label class="human-option">
+                  <input type="radio" name="human-action" value="rework">
+                  <span><strong>退回指定阶段重做 (rework)</strong> — 回到指定阶段开启新一轮并重置计数器</span>
+                  <select id="human-rework-stage" style="margin-left:auto;padding:3px 7px;border-radius:6px;border:1px solid #d8c8a8;">
+                    <option value="S2">S2 架构设计</option>
+                    <option value="S4">S4 编码实现</option>
+                    <option value="S1">S1 需求分析</option>
+                  </select>
+                </label>
+                <label class="human-option">
+                  <input type="radio" name="human-action" value="reject">
+                  <span><strong>拒绝并终止需求 (reject)</strong> — 标记为 rejected 并归档原因</span>
+                </label>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:10px;">
+                <input id="human-reply-note" style="flex:1;padding:7px 10px;border:1px solid #decba8;border-radius:8px;background:#fff;" placeholder="输入决策附言（作为「用户决定」传给后续每个 Agent，优先级高于需求原文）...">
+                <button class="btn primary" onclick="submitHumanReply()">提交决策回复</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         TAB 3: Agent 与完整模型 ID 配置 (含 D008 异构厂商校验与乐观锁)
+         ===================================================================== -->
+    <section id="tab-config" class="view-section">
+      <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:16px;align-items:start;">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">⚙️ 阶段角色与 Agent 绑定 (config.yaml)</h2>
+              <div class="panel-sub">保存前自动执行 D008 校验：作者与审查者（designer/design_reviewer、coder/code_reviewer、coder/acceptor）厂商必须不同</div>
+            </div>
+            <button class="btn primary" onclick="saveRolesConfig()">💾 校验并保存配置</button>
+          </div>
+          <div class="panel-body">
+            <table class="cfg-table" id="roles-cfg-table">
+              <thead>
+                <tr>
+                  <th>流水线角色 (Role)</th>
+                  <th>职责说明</th>
+                  <th>绑定 Agent</th>
+                  <th>对应完整模型 ID 与厂商</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">🧠 已注册完整模型 ID 表 (遵循 docs/MODELS.md)</h2>
+              <div class="panel-sub">严禁使用 sonnet/opus 等短别名，防止网关静默降级</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <table class="cfg-table" id="agents-cfg-table">
+              <thead>
+                <tr>
+                  <th>Agent 名称</th>
+                  <th>CLI</th>
+                  <th>厂商 (Vendor)</th>
+                  <th>完整模型 ID (Model)</th>
+                  <th>强度 (Effort)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STAGE_NAMES = {
+      S1: "需求分析",
+      S2: "方案设计与任务分解",
+      S3: "设计审查",
+      S4: "编码实现",
+      S5: "自动检查",
+      S6: "代码审查",
+      S7: "生成发布候选",
+      S7U: "使用验证 (隔离实跑)",
+      S8: "独立验收",
+      S9: "正式发布"
+    };
+
+    const ROLE_LABELS = {
+      analyst: "S1 需求分析者",
+      designer: "S2 方案设计者 (作者)",
+      design_reviewer: "S3 设计审查者 (须与设计者异构厂商)",
+      coder: "S4 编码实现者 (作者)",
+      code_reviewer: "S6 代码审查者 (须与编码者异构厂商)",
+      acceptor: "S8 独立验收者 (须与编码者异构厂商)"
+    };
+
+    let STATE = {
+      srsList: [],
+      runs: [],
+      models: [],
+      session: {},
+      auditLog: [],
+      config: { version_hash: "", agents: {}, roles: {}, limits: {} },
+      currentSrsFile: "",
+      currentSrsContent: "",
+      currentRunId: "",
+      currentRunDetail: null,
+      selectedStageCode: "S2"
+    };
+
+    function showToast(msg, isError = false) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.style.background = isError ? "#b93844" : "#1e293b";
+      el.style.display = "block";
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { el.style.display = "none"; }, 3600);
+    }
+
+    function switchMainTab(tabId) {
+      document.querySelectorAll(".nav-tab").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabId);
+      });
+      document.querySelectorAll(".view-section").forEach(sec => {
+        sec.classList.toggle("active", sec.id === tabId);
+      });
+    }
+
+    function switchSrsSubTab(subId) {
+      document.querySelectorAll(".subtab").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.sub === subId);
+      });
+      document.querySelectorAll(".srs-subview").forEach(div => {
+        div.style.display = div.id === subId ? "block" : "none";
+      });
+    }
+
+    async function refreshOverview() {
+      const res = await fetch("/api/overview");
+      const data = await res.json();
+      if (!data.ok) return;
+      STATE.srsList = data.srs_list || [];
+      STATE.runs = data.runs || [];
+      STATE.models = data.models || [];
+      STATE.session = data.session || {};
+      STATE.auditLog = data.audit_log || [];
+      STATE.config = data.config || STATE.config;
+
+      renderModelSelectors();
+      renderSrsList();
+      renderAuditLog();
+      renderChatHistoryFromSession();
+      renderRunsSelector();
+      renderConfigTables();
+
+      const waitingCount = STATE.runs.filter(r => r.waiting_human).length;
+      const badge = document.getElementById("nav-human-badge");
+      if (waitingCount > 0) {
+        badge.style.display = "inline-flex";
+        badge.textContent = `待你决定 ${waitingCount}`;
+      } else {
+        badge.style.display = "none";
+      }
+
+      if (!STATE.currentSrsFile && STATE.srsList.length > 0) {
+        await loadSrsDocument(STATE.srsList[0].filename);
+      }
+      if (!STATE.currentRunId && STATE.runs.length > 0) {
+        await loadRunDetail(STATE.runs[0].id);
+      }
+    }
+
+    function renderModelSelectors() {
+      const sel = document.getElementById("req-model-select");
+      const currAgent = STATE.session.agent || "claude-sonnet";
+      sel.innerHTML = STATE.models.map(m =>
+        `<option value="${m.name}" ${m.name === currAgent ? "selected" : ""}>${m.name} → ${m.full_model_id} (${m.vendor})</option>`
+      ).join("");
+      document.getElementById("req-mode-select").value = STATE.session.mode || "cli_session";
+    }
+
+    function renderSrsList() {
+      const box = document.getElementById("srs-list-container");
+      if (!STATE.srsList.length) {
+        box.innerHTML = `<div style="color:var(--muted);font-size:12px;">暂无定稿文档，可在中间对话或点击【+ 新草稿】创建。</div>`;
+        return;
+      }
+      box.innerHTML = STATE.srsList.map(item => `
+        <div class="srs-item ${item.filename === STATE.currentSrsFile ? 'selected' : ''}" onclick="loadSrsDocument('${item.filename}')">
+          <div class="srs-item-title">${item.title}</div>
+          <div class="srs-item-meta">
+            <span>${item.filename}</span>
+            <span class="pill ${item.is_valid ? 'green' : 'amber'}">${item.is_valid ? 'PASS 9/9' : item.sections_ready + '/9'}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function loadSrsDocument(filename) {
+      const res = await fetch(`/api/srs?file=${encodeURIComponent(filename)}`);
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || "加载需求文件失败", true);
+        return;
+      }
+      STATE.currentSrsFile = data.filename;
+      STATE.currentSrsContent = data.content;
+      document.getElementById("editor-filename").value = data.filename;
+      document.getElementById("srs-markdown-editor").value = data.content;
+      renderSrsList();
+      renderSrsValidationView(data.filename, data.validation);
+    }
+
+    function renderSrsValidationView(filename, v) {
+      document.getElementById("preview-doc-title").textContent = `📄 ${v.metadata.title || '软件需求规格说明书'}`;
+      document.getElementById("preview-doc-filename").textContent = `当前文件：docs/requirements/${filename}`;
+
+      const badge = document.getElementById("srs-valid-badge");
+      const btn = document.getElementById("handoff-s2-btn");
+      if (v.is_valid) {
+        badge.className = "pill green";
+        badge.textContent = "✅ SPEC-VALIDATED: PASS";
+        btn.disabled = false;
+      } else {
+        badge.className = "pill red";
+        badge.textContent = `⚠️ 待完善 (${v.errors.length} 项未过)`;
+        btn.disabled = true;
+      }
+
+      document.getElementById("current-scale-badge").textContent = v.scale || "未标定";
+      const relBox = document.getElementById("relations-container");
+      if (!v.relations || !v.relations.length) {
+        relBox.innerHTML = `<div style="color:var(--muted);font-size:12px;">未声明外部需求关联</div>`;
+      } else {
+        relBox.innerHTML = v.relations.map(r => `
+          <div class="rel-card"><span class="rel-type">${r.type}:</span><span>${r.target}</span></div>
+        `).join("");
+      }
+
+      document.getElementById("rules-grid").innerHTML = (v.rules || []).map(r => `
+        <div class="rule-item ${r.passed ? 'pass' : 'fail'}" title="${(r.errors || []).join('; ')}">
+          <span>${r.passed ? '✅' : '❌'}</span>
+          <div>
+            <strong>${r.code}</strong>: ${r.description}
+          </div>
+        </div>
+      `).join("");
+
+      document.getElementById("sections-ready-counter").textContent = `${v.sections_ready_count}/9`;
+      document.getElementById("sections-list").innerHTML = (v.sections || []).map(s => `
+        <div class="sec-card">
+          <div class="sec-card-head">
+            <span>${s.title}</span>
+            <span class="pill ${s.present ? 'green' : 'amber'}">${s.present ? '已就绪' : '待补充'}</span>
+          </div>
+          <div class="sec-card-preview">${s.preview || '（尚未填写该章节内容）'}</div>
+        </div>
+      `).join("");
+
+      document.getElementById("wireframe-preview").textContent = v.wireframe || "（当前文档第 6 节尚未包含 ```text 线框图）";
+    }
+
+    function renderAuditLog() {
+      const box = document.getElementById("audit-log-container");
+      if (!STATE.auditLog.length) {
+        box.innerHTML = `<div style="color:var(--muted);">暂无本机调用记录。发送需求对话后将自动记录每轮开始/结束时间、完整模型 ID 与耗时。</div>`;
+        return;
+      }
+      box.innerHTML = STATE.auditLog.slice().reverse().map(a => `
+        <div style="border-bottom:1px solid #eef2f7;padding:6px 0;">
+          <div style="display:flex;justify-content:space-between;font-weight:700;">
+            <span>第 ${a.turn} 轮 · ${a.full_model_id}</span>
+            <span style="color:var(--blue);">${a.duration_sec}s</span>
+          </div>
+          <div style="color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            输入: ${a.user_input}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderChatHistoryFromSession() {
+      const stream = document.getElementById("chat-stream");
+      const hist = (STATE.session && STATE.session.history) || [];
+      if (!hist.length) {
+        stream.innerHTML = `
+          <div class="msg assistant">👋 你好！我是 AutoDev 需求分析师（网页与飞书同源引擎）。
+你可以在下方直接描述想做的需求，我会自动探测项目代码模块与近期 Git 变更，用 1、2 具象业务场景选项帮你快速对齐边界，并在右侧实时点亮 9 章节标准需求规格说明书！</div>
+        `;
+        return;
+      }
+      stream.innerHTML = hist.map(turn => `
+        <div class="msg user">${escapeHtml(turn.user || "")}</div>
+        <div class="msg assistant">${escapeHtml(turn.assistant || "")}</div>
+      `).join("");
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    async function sendQuickChat(text) {
+      document.getElementById("chat-input").value = text;
+      await sendReqChat();
+    }
+
+    async function sendReqChat() {
+      const input = document.getElementById("chat-input");
+      const text = input.value.trim();
+      if (!text) return;
+      const agent = document.getElementById("req-model-select").value;
+      const mode = document.getElementById("req-mode-select").value;
+      const btn = document.getElementById("chat-send-btn");
+
+      const stream = document.getElementById("chat-stream");
+      stream.innerHTML += `<div class="msg user">${escapeHtml(text)}</div>`;
+      stream.innerHTML += `<div class="msg assistant" id="pending-msg">⏳ 正在调用 ${agent} (${mode}) 分析项目上下文与需求拼图...</div>`;
+      stream.scrollTop = stream.scrollHeight;
+      input.value = "";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("/api/req/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, agent, mode })
+        });
+        const data = await res.json();
+        const pending = document.getElementById("pending-msg");
+        if (pending) pending.remove();
+
+        let choicesHtml = "";
+        if (data.choices && data.choices.length) {
+          choicesHtml = `<div class="choice-box">` + data.choices.map(c => `
+            <button class="choice-btn" onclick="sendQuickChat('${c.index}')">
+              <strong>[${c.index}] ${escapeHtml(c.label)}</strong><br>
+              <span style="font-size:12px;color:var(--muted);">${escapeHtml(c.description)}</span>
+            </button>
+          `).join("") + `</div>`;
+        }
+        stream.innerHTML += `
+          <div class="msg assistant">${escapeHtml(data.reply || data.error || "")}${choicesHtml}</div>
+        `;
+        stream.scrollTop = stream.scrollHeight;
+
+        await refreshOverview();
+        if (data.archived_filename) {
+          await loadSrsDocument(data.archived_filename);
+          showToast(`✅ 已定稿归档: ${data.archived_filename}`);
+        }
+      } catch (e) {
+        showToast("调用失败: " + e.message, true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function createNewSrsDraft() {
+      const ts = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      const fname = `REQ-CUSTOM-NEW-${ts}.md`;
+      document.getElementById("editor-filename").value = fname;
+      switchSrsSubTab("sub-editor");
+      showToast("已在编辑器准备新文件名，修改后点击【保存并落盘】即可。");
+    }
+
+    async function validateEditorContent() {
+      const content = document.getElementById("srs-markdown-editor").value;
+      const fname = document.getElementById("editor-filename").value || "REQ-DRAFT.md";
+      const res = await fetch("/api/srs/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        renderSrsValidationView(fname, data.validation);
+        showToast(data.validation.is_valid ? "✅ 校验通过 (PASS 9/9)！" : `⚠️ 存在 ${data.validation.errors.length} 项未通过`);
+      }
+    }
+
+    async function saveEditorContent() {
+      const filename = document.getElementById("editor-filename").value.trim();
+      const content = document.getElementById("srs-markdown-editor").value;
+      const res = await fetch("/api/srs/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename, content })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || "保存失败", true);
+        return;
+      }
+      STATE.currentSrsFile = data.filename;
+      STATE.srsList = data.srs_list || STATE.srsList;
+      renderSrsList();
+      renderSrsValidationView(data.filename, data.validation);
+      showToast(`💾 已保存 ${data.filename}`);
+    }
+
+    async function handoffCurrentSrsToS2() {
+      if (!STATE.currentSrsFile) return;
+      const res = await fetch("/api/srs/handoff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: STATE.currentSrsFile, project: "autodev" })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || "移交 S2 失败", true);
+        return;
+      }
+      STATE.runs = data.runs || STATE.runs;
+      const newRunId = data.handoff.run_id;
+      showToast(`🚀 已直通移交至 S2 架构设计！运行号: ${newRunId}`);
+      renderRunsSelector();
+      await loadRunDetail(newRunId);
+      switchMainTab("tab-cockpit");
+    }
+
+    /* ==================== TAB 2: S1~S9 Pipeline Cockpit ==================== */
+    function renderRunsSelector() {
+      const bar = document.getElementById("run-selector-bar");
+      if (!STATE.runs.length) {
+        bar.innerHTML = `<div style="color:var(--muted);">暂无流水线运行记录。在 Tab 1 点击【🚀 直通 S2 架构设计】即可创建。</div>`;
+        return;
+      }
+      bar.innerHTML = STATE.runs.map(r => {
+        const pillClass = r.waiting_human ? "amber" : (r.status === "done" ? "green" : (r.status === "active" ? "blue" : "red"));
+        const statusText = r.waiting_human ? "⚠️ 待你决定" : `${r.stage} · ${r.status}`;
+        return `
+          <div class="run-chip ${r.id === STATE.currentRunId ? 'selected' : ''}" onclick="loadRunDetail('${r.id}')">
+            <div>
+              <div style="font-weight:750;font-size:12.5px;">${r.id}</div>
+              <div style="font-size:11px;color:var(--muted);max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(r.title)}</div>
+            </div>
+            <span class="pill ${pillClass}">${statusText}</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function loadRunDetail(runId) {
+      const res = await fetch(`/api/run?id=${encodeURIComponent(runId)}`);
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || "加载运行详情失败", true);
+        return;
+      }
+      STATE.currentRunId = runId;
+      STATE.currentRunDetail = data.run;
+      STATE.selectedStageCode = data.run.state.stage || "S2";
+      renderRunsSelector();
+      renderCockpitView();
+    }
+
+    function renderCockpitView() {
+      const run = STATE.currentRunDetail;
+      if (!run) return;
+      const st = run.state;
+      const step = st.step || {};
+      const doneCount = run.stages.filter(s => s.ui_status === "complete").length;
+
+      document.getElementById("m-progress").textContent = `${st.id} · ${STAGE_NAMES[st.stage] || st.stage} (第 ${st.round} 轮)`;
+      document.getElementById("m-completed").textContent = `${doneCount} / ${run.stages.length} 阶段已完成`;
+      document.getElementById("m-agent-model").textContent = `${step.agent || '程序'} (${step.model || 'tool'})`;
+      document.getElementById("m-status").textContent = st.status === "needs-human" ? "⏸️ 等待你拍板决定" : `● ${st.status}`;
+      document.getElementById("run-kind-label").textContent = st.kind || "pipeline/design";
+
+      const listEl = document.getElementById("cockpit-stage-list");
+      listEl.innerHTML = run.stages.map((s, i) => {
+        const statusLabel = { complete: "已完成", running: "运行中", paused: "等待决定", pending: "待开始" }[s.ui_status] || s.ui_status;
+        return `
+          <button class="stage-row ${s.ui_status} ${s.code === STATE.selectedStageCode ? 'selected' : ''}" onclick="selectCockpitStage('${s.code}')">
+            <span class="stage-marker">${String(i + 1).padStart(2, "0")}</span>
+            <span class="stage-content">
+              <span class="stage-topline">
+                <span class="stage-name">${STAGE_NAMES[s.code] || s.code}</span>
+                <span class="stage-id">${s.code}</span>
+                <span class="status-badge ${s.ui_status}">${statusLabel}</span>
+              </span>
+              <span class="stage-summary">${escapeHtml((s.task || "").slice(0, 68))}</span>
+            </span>
+          </button>
+        `;
+      }).join("");
+
+      selectCockpitStage(STATE.selectedStageCode);
+
+      const humanPanel = document.getElementById("cockpit-human-panel");
+      const humanPill = document.getElementById("human-status-pill");
+      if (st.status === "needs-human") {
+        humanPanel.style.opacity = "1";
+        humanPill.textContent = `⚠️ 待决定 (${st.human && st.human.pending_decision ? st.human.pending_decision : st.stage})`;
+      } else {
+        humanPill.textContent = `当前状态: ${st.status} (仅在 needs-human 时需要提交)`;
+      }
+    }
+
+    function selectCockpitStage(code) {
+      STATE.selectedStageCode = code;
+      const run = STATE.currentRunDetail;
+      if (!run) return;
+      document.querySelectorAll("#cockpit-stage-list .stage-row").forEach(btn => {
+        btn.classList.toggle("selected", btn.querySelector(".stage-id").textContent === code);
+      });
+      const stg = run.stages.find(s => s.code === code) || run.stages[0];
+      document.getElementById("st-detail-overline").textContent = `${stg.code} · ${stg.dir} › 角色: ${stg.role}`;
+      document.getElementById("st-detail-title").textContent = STAGE_NAMES[stg.code] || stg.code;
+      document.getElementById("st-detail-badge").textContent = stg.ui_status;
+      document.getElementById("st-detail-task").textContent = stg.task || "";
+
+      const tabsBox = document.getElementById("st-artifact-tabs");
+      const viewer = document.getElementById("st-artifact-content");
+
+      const items = [
+        { label: "📄 原始需求 (request.md)", content: run.request_text || "（空）" }
+      ];
+      (stg.rounds || []).forEach(r => {
+        Object.entries(r.artifacts || {}).forEach(([fname, body]) => {
+          items.push({ label: `${r.round}/${fname}`, content: body });
+        });
+      });
+      if (run.human_replies && run.human_replies.length) {
+        run.human_replies.forEach(hr => {
+          items.push({ label: `👤 human/${hr.name}`, content: hr.content });
+        });
+      }
+
+      tabsBox.innerHTML = items.map((it, idx) => `
+        <button class="btn ${idx === (items.length > 1 ? 1 : 0) ? 'primary' : ''}" onclick="showStageArtifact(${idx})">${it.label}</button>
+      `).join("");
+      window._currentStageArtifacts = items;
+      showStageArtifact(items.length > 1 ? 1 : 0);
+    }
+
+    function showStageArtifact(idx) {
+      const items = window._currentStageArtifacts || [];
+      if (!items[idx]) return;
+      document.querySelectorAll("#st-artifact-tabs .btn").forEach((b, i) => {
+        b.classList.toggle("primary", i === idx);
+      });
+      document.getElementById("st-artifact-content").textContent = items[idx].content;
+    }
+
+    async function submitHumanReply() {
+      if (!STATE.currentRunId) return;
+      const action = document.querySelector("input[name='human-action']:checked").value;
+      const note = document.getElementById("human-reply-note").value.trim();
+      const stage = action === "rework" ? document.getElementById("human-rework-stage").value : "";
+
+      const res = await fetch("/api/run/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ run_id: STATE.currentRunId, action, note, stage })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || "提交决策失败", true);
+        return;
+      }
+      showToast(`✅ ${data.message}`);
+      await refreshOverview();
+      await loadRunDetail(STATE.currentRunId);
+    }
+
+    /* ==================== TAB 3: Config & Full Model IDs ==================== */
+    function renderConfigTables() {
+      const cfg = STATE.config || {};
+      const agents = cfg.agents || {};
+      const roles = cfg.roles || {};
+
+      const roleRows = Object.entries(roles).map(([role, agentName]) => {
+        const ag = agents[agentName] || {};
+        const options = Object.keys(agents).map(k =>
+          `<option value="${k}" ${k === agentName ? 'selected' : ''}>${k}</option>`
+        ).join("");
+        return `
+          <tr>
+            <td><strong>${role}</strong></td>
+            <td style="color:var(--muted);font-size:12px;">${ROLE_LABELS[role] || role}</td>
+            <td>
+              <select class="role-agent-select" data-role="${role}" style="padding:5px 8px;border-radius:7px;border:1px solid #d5deec;">
+                ${options}
+              </select>
+            </td>
+            <td>
+              <code>${ag.model || ''}</code>
+              <span class="pill blue" style="margin-left:6px;">${ag.vendor || ''}</span>
+            </td>
+          </tr>
+        `;
+      }).join("");
+      document.querySelector("#roles-cfg-table tbody").innerHTML = roleRows;
+
+      const agentRows = Object.entries(agents).map(([name, a]) => `
+        <tr>
+          <td><strong>${name}</strong></td>
+          <td><code>${a.cli || ''}</code></td>
+          <td><span class="pill violet">${a.vendor || ''}</span></td>
+          <td><code>${a.model || ''}</code></td>
+          <td>${a.effort || ''}</td>
+        </tr>
+      `).join("");
+      document.querySelector("#agents-cfg-table tbody").innerHTML = agentRows;
+    }
+
+    async function saveRolesConfig() {
+      const newRoles = {};
+      document.querySelectorAll(".role-agent-select").forEach(sel => {
+        newRoles[sel.dataset.role] = sel.value;
+      });
+      const res = await fetch("/api/config/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roles: newRoles,
+          version_hash: STATE.config.version_hash
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        showToast("⚠️ 保存被拦截: " + (data.error || ""), true);
+        return;
+      }
+      STATE.config = data.config;
+      renderConfigTables();
+      showToast("✅ 角色与模型绑定已通过 D008 异构厂商校验并保存！");
+    }
+
+    refreshOverview();
+  </script>
+</body>
+</html>
