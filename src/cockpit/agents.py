@@ -4,6 +4,13 @@
 import re
 
 
+def validate_role(agents, role, name):
+    if name not in agents:
+        raise ValueError(f'角色 {role} 的模型 {name} 未登记或不可用')
+    if 'supported_tasks' in agents[name] and role not in agents[name]['supported_tasks']:
+        raise ValueError(f'模型 {name} 没有角色 {role} 的合格能力登记')
+
+
 def _section(text, name):
     m = re.search(rf"^{name}:[^\n]*\n((?:[ \t]+[^\n]*\n?|\n)*)", text, re.M)
     if not m:
@@ -12,6 +19,10 @@ def _section(text, name):
 
 
 def parse_agents(text):
+    if re.search(r'^agent_registry:', text, re.M):
+        from cockpit.registry import load_registry, registry_path
+        configured = re.search(r'^agent_registry:\s*(\S+)', text, re.M).group(1)
+        return load_registry(registry_path(configured)).available()
     out, cur = {}, None
     for line in _section(text, "agents").splitlines():
         m = re.match(r"^  (\S+):\s*$", line)
@@ -26,6 +37,15 @@ def parse_agents(text):
 
 def parse_roles(text):
     out = {}
+    if re.search(r'^agent_registry:', text, re.M):
+        from cockpit.registry import load_registry, registry_path
+        configured = re.search(r'^agent_registry:\s*(\S+)', text, re.M).group(1)
+        registry = load_registry(registry_path(configured))
+        out = {role: value['model'] for role, value in registry.defaults.items()}
+    if not re.search(r'^roles:', text, re.M):
+        if out:
+            return out
+        raise ValueError('配置缺少 roles 或注册表默认值')
     for line in _section(text, "roles").splitlines():
         m = re.match(r"^\s+(\w+):\s*\{\s*agent:\s*(\S+?)\s*\}\s*$", line)
         if m:

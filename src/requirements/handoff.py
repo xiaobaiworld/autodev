@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from cockpit.agents import parse_agents, parse_limits, parse_roles
+from cockpit.agents import parse_agents, parse_limits, parse_roles, validate_role
 from cockpit.controller import allocate_run_id, build_initial_state
 from cockpit.kinds import DEFAULT_KIND, check_kind
 from cockpit.pipeline import check_vendors, step_dir, template_for
@@ -103,6 +103,7 @@ def handoff_srs_to_pipeline(
     roles = parse_roles(cfg_text)
     limits = parse_limits(cfg_text)
     check_vendors(agents, roles)
+    validate_role(agents, 'designer', roles['designer'])
 
     lock = acquire_lock(root_dir / "workspace" / ".lock")
     try:

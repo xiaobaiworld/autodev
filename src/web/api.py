@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from cockpit.agents import parse_agents, parse_limits, parse_roles
+from cockpit.agents import parse_agents, parse_limits, parse_roles, validate_role
 from cockpit.controller import Controller
 from cockpit.kinds import DEFAULT_KIND
 from cockpit.pipeline import SetupError, check_vendors, template_for, wait_reason
@@ -268,6 +268,8 @@ def update_roles_config(root: str | Path, new_roles: dict[str, str], expected_ha
     agents = parse_agents(raw)
     merged_roles = parse_roles(raw)
     for role_name, agent_name in new_roles.items():
+        if role_name not in merged_roles:
+            raise ValueError('只能修改已登记角色')
         if agent_name not in agents:
             raise ValueError(f"角色 {role_name} 绑定的 Agent {agent_name!r} 不在 config.yaml 的 agents 段中")
         cli_name = agents[agent_name].get("cli", "")
@@ -279,8 +281,12 @@ def update_roles_config(root: str | Path, new_roles: dict[str, str], expected_ha
 
     # D008 异构厂商校验
     check_vendors(agents, merged_roles)
+    for role_name, agent_name in new_roles.items():
+        validate_role(agents, role_name, agent_name)
 
     updated = raw
+    if 'agent_registry:' in raw and not re.search(r'^roles:', raw, re.M):
+        updated += '\nroles:\n' + ''.join(f'  {role}: {{ agent: {name} }}\n' for role, name in merged_roles.items())
     for role_name, agent_name in merged_roles.items():
         updated = re.sub(
             rf"^(\s+{re.escape(role_name)}:\s*\{{\s*agent:\s*)\S+?(\s*\}}\s*)$",

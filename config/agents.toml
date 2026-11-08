@@ -1,0 +1,148 @@
+# 已有 config.yaml 模型配置迁移；可执行文件存在不代表服务或全部任务已验证。
+# 能力按原有角色配置登记，核对依据见 docs/MODELS.md 与 docs/DECISIONS.md。
+schema_version = 1
+machine = "local-configured"
+
+[agents.claude]
+name = "claude CLI"
+adapter = "claude"
+executable = "claude"
+invocation_modes = ["cli_session", "cli_stateless"]
+enabled = true
+availability = "installed_only"
+
+[agents.codex]
+name = "codex CLI"
+adapter = "codex"
+executable = "codex"
+invocation_modes = ["cli_session", "cli_stateless"]
+enabled = true
+availability = "installed_only"
+
+[agents.agy]
+name = "agy CLI"
+adapter = "agy"
+executable = "agy"
+invocation_modes = ["cli_session", "cli_stateless"]
+enabled = true
+availability = "installed_only"
+
+[agents.ollama]
+name = "Ollama CLI（本地文本调用）"
+adapter = "ollama"
+executable = "ollama"
+invocation_modes = ["cli_stateless"]
+enabled = true
+availability = "installed_only"
+
+[models.claude-sonnet]
+name = "claude-sonnet"
+vendor = "anthropic"
+model_id = "ai-code-with/claude-sonnet-5-5"
+agent = "claude"
+invocation_mode = "cli_session"
+effort = "medium"
+enabled = true
+availability = "installed_only"
+supported_tasks = ["analyst", "requirements_analyst", "simple_text"]
+unsupported_tasks = []
+unverified_tasks = []
+capability_notes = "沿用已有角色配置，任务声明并非模型能力保证；本轮未调用真实模型。"
+evidence = ["docs/MODELS.md", "docs/DECISIONS.md"]
+checked_at = "2026-11-08"
+[models.claude-sonnet.auth]
+type = "cli_login"
+
+[models.claude-opus]
+name = "claude-opus"
+vendor = "anthropic"
+model_id = "ai-code-with/claude-opus-5-5"
+agent = "claude"
+invocation_mode = "cli_session"
+effort = "high"
+enabled = true
+availability = "installed_only"
+supported_tasks = ["acceptor", "analyst", "code_reviewer", "designer", "requirements_analyst", "retrospector", "simple_text"]
+unsupported_tasks = []
+unverified_tasks = []
+capability_notes = "沿用已有角色配置，任务声明并非模型能力保证；本轮未调用真实模型。"
+evidence = ["docs/MODELS.md", "docs/DECISIONS.md"]
+checked_at = "2026-11-08"
+[models.claude-opus.auth]
+type = "cli_login"
+
+[models.codex]
+name = "codex"
+vendor = "openai"
+model_id = "gpt-6-sol"
+agent = "codex"
+invocation_mode = "cli_session"
+effort = "low"
+enabled = true
+availability = "installed_only"
+supported_tasks = ["coder", "design_reviewer", "requirements_analyst", "requirements_reviewer", "retro_reviewer", "simple_text"]
+unsupported_tasks = []
+unverified_tasks = []
+capability_notes = "沿用已有角色配置，任务声明并非模型能力保证；本轮未调用真实模型。"
+evidence = ["docs/MODELS.md", "docs/DECISIONS.md"]
+checked_at = "2026-11-08"
+[models.codex.auth]
+type = "cli_login"
+
+[models.agy]
+name = "agy"
+vendor = "google"
+model_id = "gemini-4-argon-high"
+agent = "agy"
+invocation_mode = "cli_session"
+effort = "medium"
+enabled = true
+availability = "installed_only"
+supported_tasks = ["requirements_analyst", "simple_text"]
+unsupported_tasks = []
+unverified_tasks = []
+capability_notes = "沿用已有角色配置，任务声明并非模型能力保证；本轮未调用真实模型。"
+evidence = ["docs/MODELS.md", "docs/DECISIONS.md"]
+checked_at = "2026-11-08"
+[models.agy.auth]
+type = "cli_login"
+
+[defaults.requirements_analyst]
+agent = "claude"
+model = "claude-opus"
+
+[defaults.requirements_reviewer]
+agent = "codex"
+model = "codex"
+
+[defaults.analyst]
+agent = "claude"
+model = "claude-opus"
+
+[defaults.designer]
+agent = "claude"
+model = "claude-opus"
+
+[defaults.design_reviewer]
+agent = "codex"
+model = "codex"
+
+[defaults.coder]
+agent = "codex"
+model = "codex"
+
+[defaults.code_reviewer]
+agent = "claude"
+model = "claude-opus"
+
+[defaults.acceptor]
+agent = "claude"
+model = "claude-opus"
+
+[defaults.retrospector]
+agent = "claude"
+model = "claude-opus"
+
+[defaults.retro_reviewer]
+agent = "codex"
+model = "codex"

@@ -99,7 +99,8 @@ class AgentTest(unittest.TestCase):
 
     def test_settings_do_not_expose_extra_agent_credentials(self):
         settings = load_settings()
-        self.assertTrue(all(set(a) <= {'cli', 'vendor', 'model', 'effort'} for a in settings['agents'].values()))
+        self.assertTrue(all(set(a) <= {'cli', 'vendor', 'model', 'effort', 'executable', 'auth', 'supported_tasks'}
+                            for a in settings['agents'].values()))
 
     def test_isolated_codex_config_omits_mcp_hooks_and_private_files(self):
         import os

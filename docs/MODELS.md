@@ -1,16 +1,16 @@
 # 模型名规则（2026-11-05）
 
-读这份文件的时机：改 `config.yaml` 的 `agents`、写启动命令、写模型校验、换机器、换网关、审查者与作者的厂商判断（D008）。
+读这份文件的时机：改 `config/agents.toml` 或本机注册表、写启动命令、写模型校验、换机器、换网关、审查者与作者的厂商判断。
 
 审查强度与优先级按 D019：争取不同模型/跨厂商，允许单模型降级和简单复用免审；不再把跨厂商或双模型作为所有任务的硬门槛。完整模型 ID、真实模型证据和不能伪称双模型的规则继续有效。现有代码中的旧厂商硬校验尚未调整。
 
-机器级能力登记方案见 [D021 注册表设计](design/2026-11-08-agent-model-registry.md)：拟分开登记执行器、模型、任务能力与角色默认值，凭证只引用环境变量。现有 config.yaml 仍是运行配置；docs/config 的 TOML 为未接入样例，不能当成已启用的第二份真源。现有 llm_provider 内置备用表与“只从注册文件选择”的目标不一致，实施时需迁移。
+机器级能力登记见 [D021 注册表设计](design/2026-11-08-agent-model-registry.md)：现已分开登记执行器、模型、任务能力与角色默认值，凭证只引用环境变量。当前 config.yaml 以 agent_registry 引用 config/agents.toml，本机可用 workspace/agent-registry.toml 或 AUTODEV_AGENT_REGISTRY 指定文件整体替代；注册表解析失败不再回退代码内置模型。docs/config 的 TOML 是默认禁用的教学样例，不是运行真源。
 
 ## 1. 规则
 
-1. `config.yaml` 的 `model` 一律写完整 ID，禁止用别名（opus、sonnet、haiku 等）。
+1. 注册表的 `model_id`（旧配置为 `model`）一律写完整 ID，禁止用别名（opus、sonnet、haiku 等）。
 2. 模型只通过启动参数指定，不用 `magpie <agent> <model>`。后者改的是用户的全局默认，会影响日常使用。
-3. `config.yaml` 里的 ID 是本机相关的。换机器或换网关，要重新核对。
+3. 注册表里的 ID 与可用性是本机相关的。换机器或换网关，要重新核对。
 4. 启动 Agent 后以横幅显示的模型名为准，不以配置为准。配置与横幅不符，按失败处理。
 
 ## 2. 为什么
@@ -40,12 +40,13 @@
 
 | 内容 | 位置 |
 | --- | --- |
-| 每个 Agent 实际用的完整 ID 与强度 | `config.yaml`（唯一真源） |
+| 每个模型的完整 ID、强度、能力与调用方式 | 当前生效的 Agent 注册表（唯一真源，默认 config/agents.toml） |
+| 各角色默认模型与项目覆盖 | 注册表 defaults；config.yaml roles 可作项目引用覆盖 |
 | 规则、原因、各 CLI 的指定方式 | 本文 |
 | 一次性的踩坑过程 | `docs/lessons.md` L004、L005 |
 | 设计文档里的示例 | 只示意结构，不写具体 ID |
 
-不要在别处再抄一份具体 ID。要查就读 `config.yaml`。
+不要在别处再抄一份具体 ID。可用 `PYTHONPATH=src python3 -m cockpit.registry` 查看本机登记及默认值，或加 `--role designer` 解析该角色，均不调用模型。`--file PATH` 可检查另一个注册文件；Key 值不进入输出。
 
 ## 5. 程序要做的事（P1 起实现，现在没有代码）
 

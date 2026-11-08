@@ -100,3 +100,9 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - 默认统一网页 `PYTHONPATH=src python3 -m web.server` 与独立飞书 `requirements.feishu_daemon` 用 main 的 ReqSessionStore/SRS。
 - 第 6～8 节描述旧版本化入口；保留作兼容，不表示当前服务仍在线，也不自动启动第二条飞书连接。兼容 CLI 仍用 `python3 -m requirements`，后端实现移至 versioned_session.py，旧导入保留。
 - 整合用 `git merge-tree --write-tree origin/main HEAD` 可先只读检查冲突；原目录有并行修改时用独立 worktree，不 stash/reset 别人的工作。
+
+## 10. 本机 Agent/模型注册表
+
+- config.yaml 以 agent_registry 引用 config/agents.toml，角色默认值和模型能力统一在注册表登记。本机 workspace/agent-registry.toml 或 AUTODEV_AGENT_REGISTRY 指定文件整体替代它，不叠加隐藏备用模型。
+- 只读检查：`PYTHONPATH=src python3 -m cockpit.registry`；角色解析加 `--role designer`；检查其他文件用 `--file PATH`，均不调用模型、不打印 Key 值。
+- Ollama 仅提供无状态文本适配，不自动探测服务或下载模型，不具备流水线代码产物协议。自定义 executable 不支持 autoloop 内置适配器，直接调用路径可用。细节见注册表设计第 8 节。

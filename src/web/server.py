@@ -78,6 +78,11 @@ def make_handler(root_dir: Path):
                             "vendor": s.vendor,
                             "full_model_id": s.full_model_id,
                             "effort": s.effort,
+                            "supported_tasks": s.supported_tasks,
+                            "unsupported_tasks": s.unsupported_tasks,
+                            "unverified_tasks": s.unverified_tasks,
+                            "capability_notes": s.capability_notes,
+                            "invocation_mode": s.invocation_mode,
                         }
                         for s in registry.values()
                     ]

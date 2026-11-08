@@ -173,7 +173,7 @@ flowchart TD
 
 ### 1. 独立大模型与调用方式层（[`src/requirements/llm_provider.py`](../../../src/requirements/llm_provider.py)）
 为了将“需求澄清阶段用哪一个大模型、用什么方式调用”与飞书对话逻辑彻底解耦，本模块提取了独立的 `llm_provider.py`：
-- **唯一完整模型 ID 真源（遵循 [`docs/MODELS.md`](../../MODELS.md)）**：直接从项目根目录 [`config.yaml`](../../../config.yaml) 的 `agents` 段加载模型注册表，并在 `ModelSpec.validate()` 中强制拦截 `sonnet`、`opus` 等短别名：
+- **唯一完整模型 ID 真源（遵循 [`docs/MODELS.md`](../../MODELS.md)）**：config.yaml 现在以 agent_registry 引用 config/agents.toml，可用机器文件整体覆盖；llm_provider 仅加载当前登记，不再补入内置备用。ModelSpec.validate 拦截 sonnet、opus 等模型 ID 短别名。以下为迁移时保留的逻辑名称，实际 ID 以有效注册表为准：
   - `claude-sonnet` → `ai-code-with/claude-sonnet-5-5`（默认需求分析师引擎，兼顾响应速度与归纳质量）
   - `claude-opus` → `ai-code-with/claude-opus-5-5`
   - `codex`（或别名 `gpt`）→ `gpt-6-sol`
@@ -185,7 +185,7 @@ flowchart TD
 ### 2. 飞书端与主流水线 `S2 架构设计` 的桥接交接器（[`src/requirements/handoff.py`](../../../src/requirements/handoff.py)）
 由于飞书端产出的 9 章节《软件需求规格说明书》已经完成了比传统 `S1-analysis` 更深入的交互澄清与边界锁定，因此采用 **直通 S2 架构设计（跳过重复 S1）** 的交接方案：
 1. **前置程序化门禁**：`handoff_srs_to_pipeline()` 首先调用 `validate_requirement_spec()` 校验 `REQ-xxx.md` 是否满足 `RULE-01 ~ RULE-09`；未通过校验的文档严禁进入流水线；
-2. **D008 异构厂商预检**：读取 `config.yaml` 并调用 `check_vendors(agents, roles)`，确保下游作者与审查者厂商不同；
+2. **模型与角色预检**：经 config.yaml 引用共享注册表，核对设计角色能力。现有 check_vendors 仍执行旧跨厂商硬校验；D019 已允许分级/降级/免审，但执行策略尚未迁移，不能将旧限制当作新规则；
 3. **自动生成 S1 基线与激活需求**：
    - 分配正式运行号 `R{YYYYMMDD}-{NNN}`，将完整 SRS 写入 `workspace/requests/active/{rid}.md`；
    - 提取 SRS 核心元数据并在 `workspace/runs/{rid}/S1-analysis/round-1/` 下生成符合流水线契约的 `analysis.md`（`verdict: ACCEPT` + 完整 SRS 附文）与 `done.json`；

@@ -15,6 +15,8 @@ AutoDev 是本机运行的需求驱动开发流程。确定性程序控制阶段
 
 当前步骤和下一步见 [`next.md`](next.md)，方案见 [`docs/design/2026-11-05-autoloop-foundation.md`](docs/design/2026-11-05-autoloop-foundation.md)。
 
+Agent/模型统一登记在 [`config/agents.toml`](config/agents.toml)，包含厂商、完整 ID、调用方式、能力限制与角色默认值；本机覆盖及环境变量凭证见[注册表使用说明](docs/design/2026-11-08-agent-model-registry.md)。可用 `PYTHONPATH=src python3 -m cockpit.registry --role designer` 检查选择，不调用模型。
+
 ## 运行服务与测试
 
 ```sh

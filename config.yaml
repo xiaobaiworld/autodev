@@ -25,38 +25,8 @@ projects:
 #   model 必须写完整 ID，禁止用别名（opus、sonnet 等）。本机经 magpie 网关，别名会被映射成别的模型。
 #   这里的 ID 是本机相关的，换机器或换网关后要重新核对。
 #   只用启动参数指定模型，不用 `magpie <agent> <model>`（会改用户的全局默认）。
-agents:                   # 可插拔，新增 Agent 在此加一项
-  claude-sonnet:
-    cli: claude
-    vendor: anthropic
-    model: ai-code-with/claude-sonnet-5-5  # 启动参数 --model；已验证横幅显示 Sonnet 5.5
-    effort: medium
-  claude-opus:
-    cli: claude
-    vendor: anthropic
-    model: ai-code-with/claude-opus-5-5   # 启动参数 --model；可用 ID 见 docs/MODELS.md
-    effort: high
-  codex:
-    cli: codex
-    vendor: openai
-    model: gpt-6-sol                      # 启动参数 -m；effort 用 -c model_reasoning_effort=
-    effort: low
-  agy:                    # Antigravity CLI，Herdr 识别为 antigravity
-    cli: agy
-    vendor: google        # agy 也能跑 Claude 模型，vendor 以实际所选模型为准
-    model: gemini-4-argon-high            # 启动参数 --model；agy models 可查
-
-roles:                    # 审查角色与作者的模型厂商必须不同
-  requirements_analyst:  { agent: claude-opus }
-  requirements_reviewer: { agent: codex }
-  analyst:         { agent: claude-opus }
-  designer:        { agent: claude-opus }
-  design_reviewer: { agent: codex }
-  coder:           { agent: codex }
-  code_reviewer:   { agent: claude-opus }
-  acceptor:        { agent: claude-opus }   # 设计原定 agy；agy 的实际模型/用量没验证过、规则生成也还不支持它，先用 Claude，见 DECISIONS D015
-  retrospector:    { agent: claude-opus }
-  retro_reviewer:  { agent: codex }
+# 模型与角色默认值统一登记；此处仅保留项目覆盖引用。
+agent_registry: config/agents.toml
 
 retro:
   cross_request_every: 5  # 每累计 N 个需求做一次跨需求复盘

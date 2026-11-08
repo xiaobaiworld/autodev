@@ -8,6 +8,7 @@ import signal
 import subprocess
 import time
 from dataclasses import dataclass
+from cockpit.registry import invocation_env
 
 from requirements.llm_provider import (
     ModelSpec,
@@ -43,7 +44,7 @@ def build_argv(
     prompt: str,
     cwd: str,
     session_id: str | None,
-    mode: str = "cli_session",
+    mode: str | None = None,
     history: list[dict[str, str]] | None = None,
     registry: dict[str, ModelSpec] | None = None,
 ) -> list[str]:
@@ -143,11 +144,14 @@ def run_agent_turn(
     cwd: str,
     session_id: str | None,
     timeout: int = 1800,
-    mode: str = "cli_session",
+    mode: str | None = None,
     history: list[dict[str, str]] | None = None,
     registry: dict[str, ModelSpec] | None = None,
 ) -> RunnerResult:
     spec = resolve_model_spec(agent, registry=registry)
+    mode = mode or spec.invocation_mode
+    if (spec.supported_tasks or spec.unsupported_tasks or spec.unverified_tasks) and 'requirements_analyst' not in spec.supported_tasks:
+        raise ValueError(f'模型 {spec.name} 没有需求分析能力登记')
     effective_session_id = session_id if mode == "cli_session" else None
     argv = build_model_argv(
         spec=spec,
@@ -163,6 +167,7 @@ def run_agent_turn(
         cwd=cwd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        env=invocation_env({'auth': spec.auth or {}}),
         text=True,
         start_new_session=True,
     )

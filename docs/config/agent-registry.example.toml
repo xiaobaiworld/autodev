@@ -1,4 +1,4 @@
-# 设计样例，现有调用器尚不读取此文件。不是本机可用性清单。
+# 教学样例，可用 cockpit.registry --file 校验，不是本机运行清单。
 # 复制并核对后才能启用；真实文件建议 workspace/agent-registry.toml。
 schema_version = 1
 machine = "replace-with-machine-name"
