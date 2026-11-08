@@ -134,7 +134,7 @@ class TestRequirementsValidator(unittest.TestCase):
 
 
     def test_deployment_and_hybrid_templates_pass_validator(self):
-        for rtype in ("SOFTWARE", "DEPLOYMENT", "HYBRID"):
+        for rtype in ("SOFTWARE", "DEPLOYMENT", "HARDWARE", "HYBRID"):
             tpl = build_srs_template(rtype)
             res = validate_requirement_spec(tpl)
             self.assertTrue(res.is_valid, f"{rtype} 模板未通过校验: {res.errors}")
@@ -154,6 +154,18 @@ class TestRequirementsValidator(unittest.TestCase):
         res_broken = validate_requirement_spec(broken_deploy)
         self.assertFalse(res_broken.is_valid)
         self.assertTrue(any("RULE-07" in e and "DEPLOYMENT" in e for e in res_broken.errors))
+
+        # 验证缺少设备/重连/模拟验收标准的 HARDWARE 文档会被 RULE-07 拦截
+        hw_tpl = build_srs_template("HARDWARE")
+        broken_hw = re.sub(
+            r"## 8\. 可量化验收标准清单.*?(?=## 9\.)",
+            "## 8. 可量化验收标准清单 (Acceptance Criteria)\n- 场景 1：Given 用户打开页面 When 点击按钮 Then 显示欢迎语。\n\n",
+            hw_tpl,
+            flags=re.S,
+        )
+        res_broken_hw = validate_requirement_spec(broken_hw)
+        self.assertFalse(res_broken_hw.is_valid)
+        self.assertTrue(any("RULE-07" in e and "HARDWARE" in e for e in res_broken_hw.errors))
 
 
 if __name__ == "__main__":

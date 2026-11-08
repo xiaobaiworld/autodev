@@ -81,6 +81,8 @@ def generate_srs_template(root: str | Path, req_type: str = "SOFTWARE") -> dict[
     ts = datetime.now().strftime("%Y%m%d")
     if norm_type == "DEPLOYMENT":
         fname = f"REQ-DEPLOY-SERVICE_DAEMON-{ts}.md"
+    elif norm_type == "HARDWARE":
+        fname = f"REQ-HW-DEVICE_INTEGRATION-{ts}.md"
     elif norm_type == "HYBRID":
         fname = f"REQ-HYBRID-FEATURE_AND_DEPLOY-{ts}.md"
     else:

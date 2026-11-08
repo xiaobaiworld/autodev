@@ -38,6 +38,12 @@ def _build_s1_baseline_analysis(rid: str, srs_text: str, meta: dict[str, Any]) -
             f"- **关键脚本/配置交付物**：{deliv_list}\n"
             f"- **下游 S2/S4 强制要求**：S2 设计稿与开发计划必须明确部署脚本路径、五步生命周期（预检/安装/启动/幂等重跑/回滚）与安全边界；S4 必须生成对应部署脚本并通过语法与沙箱实跑测试。\n"
         )
+    elif req_type == "HARDWARE":
+        deliv_note = (
+            f"\n## 硬件与设备接入工程指令（{req_type}）\n\n"
+            f"- **需求交付形态**：`{req_type}`（需设计硬件抽象层 HAL、断线重连守护与软件模拟器 Mock）\n"
+            f"- **下游 S2/S4 强制要求**：S2 设计稿必须将物理设备通信协议（串口/USB/Modbus等）与业务逻辑解耦；S4 必须实现真实驱动适配与脱机可跑的硬件信号模拟器（Mock）测试。\n"
+        )
     return (
         f"---\n"
         f"id: {rid}\n"
