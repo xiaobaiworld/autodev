@@ -302,5 +302,35 @@ class TestWebUnifiedClient(unittest.TestCase):
                 os.environ.pop("AUTODEV_WEB_PORT", None)
 
 
+class TestListProjects(unittest.TestCase):
+    """网页项目选择器读取 config.yaml 的 projects 列表。"""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_reads_names_and_repos(self):
+        Path(self.tmp, "config.yaml").write_text(
+            "projects:\n"
+            "  - name: alpha\n"
+            "    repo: ~/code/alpha\n"
+            "  - name: beta\n"
+            "    repo: ~/code/beta\n"
+            "limits:\n  check_rounds: 3\n",
+            encoding="utf-8",
+        )
+        from web.api import list_projects
+        self.assertEqual(
+            list_projects(self.tmp),
+            [{"name": "alpha", "repo": "~/code/alpha"}, {"name": "beta", "repo": "~/code/beta"}],
+        )
+
+    def test_missing_config_returns_empty(self):
+        from web.api import list_projects
+        self.assertEqual(list_projects(self.tmp), [])
+
+
 if __name__ == "__main__":
     unittest.main()

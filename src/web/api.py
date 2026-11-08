@@ -97,6 +97,25 @@ def generate_srs_template(root: str | Path, req_type: str = "SOFTWARE") -> dict[
     }
 
 
+def list_projects(root: str | Path) -> list[dict[str, str]]:
+    """从 config.yaml 的 projects 列表读出已登记的目标项目（名称与仓库路径），供网页选择。"""
+    cfg_path = Path(root) / "config.yaml"
+    if not cfg_path.is_file():
+        return []
+    text = cfg_path.read_text(encoding="utf-8")
+    block = re.search(r"(?ms)^projects:\s*\n(.*?)(?=^[^ \t#\n]|\Z)", text)
+    if not block:
+        return []
+    out = []
+    for part in re.split(r"(?=^  - name:\s*)", block.group(1), flags=re.M):
+        name = re.search(r"^  - name:\s*([^\s#]+)", part, re.M)
+        if not name:
+            continue
+        repo = re.search(r"^    repo:\s*([^\s#]+)", part, re.M)
+        out.append({"name": name.group(1), "repo": repo.group(1) if repo else ""})
+    return out
+
+
 def list_pipeline_runs(root: str | Path) -> list[dict[str, Any]]:
     """读取 workspace/runs/ 下的所有流水线运行状态，待人工决定的置顶并共享 wait_reason（O4）。"""
     root_path = Path(root)
