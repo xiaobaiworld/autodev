@@ -1,5 +1,7 @@
 # 第一版程序协议（早期草案，已被 `SPEC-REQ-STANDARD-v1.0` 取代）
 
+> 适用范围更新（2026-11-08）：本页是 v0.9 旧实现的协议说明。审查要求如与 [D019](../../DECISIONS.md#d019-设计审查分级优先独立审核允许降级与简单复用免审) 冲突以新原则为准，但现有操作仍执行原厂商校验和审核记录约束；降级/免审的结果协议及兼容迁移尚未实现，不能伪造 PASS 替代。固定版本与确认权限保持原有可追溯性。
+
 > 2026-11-08：main 的现行 SRS 契约优先；旧分支已实现的版本化工作台作为兼容入口保留，不用本早期草案覆盖现行默认流程。实际兼容契约见 [使用指南](usage.md)、固定基线及测试；整合方案见 [整合设计](../../design/2026-11-08-requirements-merge.md)。
 
 > **状态说明（2026-11-07 更新，C1 收敛）**：本文件中的 6 项 `checklist.json` 与 `requirements.json` 草案协议已被正式的九大章节标准契约 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](../../specs/REQUIREMENT_SPEC_STANDARD.md)（`SPEC-REQ-STANDARD-v1.0`，配套检查器 [`src/requirements/validator.py`](../../../src/requirements/validator.py) 与 S2 交接器 [`src/requirements/handoff.py`](../../../src/requirements/handoff.py)）取代；第 4 节关于每次调用记录开始/结束时间、耗时与原始输入输出的要求已落地于 [`src/requirements/service.py`](../../../src/requirements/service.py)（`workspace/requirements/audit.jsonl`）。本文件仅作早期方案追溯保留。

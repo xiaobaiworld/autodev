@@ -28,12 +28,15 @@
 | `docs/modules/requirements/README.md` | 需求澄清独立模块入口：需求、完成条件、状态循环、接口与实现/测试计划 | 模块已落地（含飞书长连接、Web 端互通与直通 S2） |
 | `docs/modules/requirements/feishu-requirement-bot.md` | 需求澄清模块与飞书端沉淀说明书：Session 演进全记录、九大类别体系与标准需求文档范本 | 权威说明与需求沉淀规范 |
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
+| `docs/design/2026-11-08-stage-bots-requirements.md` | 需求、设计、开发、测试、优化阶段机器人的用户目标与建议验收 | 讨论稿，范围细节待确认 |
+| `docs/design/2026-11-08-stage-bots-design.md` | 五工作区、角色上下文、交接与协作展示；第 8 节为渠道独立的设计机器人工作说明 v0.1 | 三层划分已接受，具体契约待讨论，未实现 |
+| `docs/design/2026-11-08-agent-model-registry.md`、`docs/config/agent-registry.example.toml` | 本机执行器/模型能力、任务限制、角色默认值与环境变量凭证的契约和样例 | D021 设计提议，样例未接入运行 |
 | `docs/design/2026-11-02-autodev-design.md` | 九阶段流水线、角色、产物、人工参与、Web 界面、复盘、规则 | 当前设计基线；第 3.2、3.3、5 节的执行与调度部分已被地基方案部分取代，各节顶部有说明 |
 | `docs/OPTIMIZATIONS.md` | 流程优化记录：每次小优化改了什么、为什么、怎么回退、效果量到多少；只追加，回退和反复都如实记 | 只记优化这一件事；没量过写“未测” |
-| `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D014 | 决策事实源 |
+| `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D021 | 决策事实源；D019 分级审查优先，D020 阶段机器人，D021 能力注册表 |
 | `docs/DATA_SPEC.md` | 数据目录、实体与文件格式 | 设计规范；`state.json`、`done.json` 已在代码里使用 |
 | `docs/MODELS.md` | 模型名规则：只写完整 ID、magpie 映射原因、各 CLI 的指定方式 | 规则；改 `config.yaml` 的 `agents` 或写启动命令前必读 |
-| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L012 | 开始新功能前先读 |
+| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L016 | 开始新功能前先读 |
 | `docs/design/autodev-workflow-prototype.html` | 工作流界面原型 | 静态讨论稿，示例数据，不代表可运行系统 |
 
 ## 版本化需求工作台兼容入口

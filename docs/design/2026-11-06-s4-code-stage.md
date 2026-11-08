@@ -36,7 +36,7 @@
 
 **2.6 目标项目用演示需求 `todo`，不碰 personagent。** personagent 没有可运行代码，`checks` 也没定。`config.yaml` 加一个 `todo-demo` 项目，`checks` 先写 `python3 -m unittest discover -s tests`。
 
-**2.7 厂商约束。** 现在 `coder` 绑 `codex`，`code_reviewer` 绑 `claude-opus`（厂商不同，满足 D008）。S4 本身没有审查，S6 才有，所以 S4 这步不新增校验；`check_vendors` 之后要扩成“每对作者/审查者”都查。
+**2.7 厂商约束（历史实现说明）。** 当时 `coder` 绑 `codex`，`code_reviewer` 绑 `claude-opus`，满足当时 D008 的厂商约束；S4 本身不审查，S6 才审查。2026-11-08 起审查原则以 D019 为准，不能再把“每对都必须跨厂商”作为新的设计要求；现有校验尚未适配分级策略。
 
 ## 3. 实现顺序（每步先写测试）
 
