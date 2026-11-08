@@ -1,7 +1,8 @@
 import os
 import re
 import unittest
-from requirements.validator import validate_requirement_spec
+from requirements.flow import build_srs_template
+from requirements.validator import inspect_srs_document, validate_requirement_spec
 
 
 VALID_SPEC_SAMPLE = """# 软件需求规格说明书（草案）
@@ -130,6 +131,29 @@ class TestRequirementsValidator(unittest.TestCase):
                     os.path.exists(target_path),
                     f"文档 {doc_file} 中的相对链接失效: '{link}' -> {target_path}",
                 )
+
+
+    def test_deployment_and_hybrid_templates_pass_validator(self):
+        for rtype in ("SOFTWARE", "DEPLOYMENT", "HYBRID"):
+            tpl = build_srs_template(rtype)
+            res = validate_requirement_spec(tpl)
+            self.assertTrue(res.is_valid, f"{rtype} 模板未通过校验: {res.errors}")
+            inspected = inspect_srs_document(tpl)
+            self.assertEqual(inspected["req_type"], rtype)
+            if rtype == "DEPLOYMENT":
+                self.assertTrue(len(inspected["deliverables"]) >= 2)
+
+        # 验证缺少幂等/探针验收标准的 DEPLOYMENT 文档会被 RULE-07 拦截
+        deploy_tpl = build_srs_template("DEPLOYMENT")
+        broken_deploy = re.sub(
+            r"## 8\. 可量化验收标准清单.*?(?=## 9\.)",
+            "## 8. 可量化验收标准清单 (Acceptance Criteria)\n- 场景 1：Given 用户打开页面 When 点击按钮 Then 显示欢迎语。\n\n",
+            deploy_tpl,
+            flags=re.S,
+        )
+        res_broken = validate_requirement_spec(broken_deploy)
+        self.assertFalse(res_broken.is_valid)
+        self.assertTrue(any("RULE-07" in e and "DEPLOYMENT" in e for e in res_broken.errors))
 
 
 if __name__ == "__main__":

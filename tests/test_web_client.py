@@ -10,11 +10,13 @@ from cockpit.store import LockError, Run, acquire_lock
 from web.api import (
     AUTODEV_ROOT,
     evaluate_srs_rules_detail,
+    generate_srs_template,
     get_config_view,
     get_run_detail,
     list_pipeline_runs,
     list_srs_documents,
     redact_secrets,
+    set_web_req_type,
     submit_human_decision,
     update_roles_config,
 )
@@ -222,9 +224,54 @@ class TestWebUnifiedClient(unittest.TestCase):
                     r_data = json.loads(resp.read().decode("utf-8"))
                     self.assertTrue(r_data["ok"])
                     self.assertEqual(r_data["run"]["state"]["stage"], "S2")
+
+                # 5. GET /api/srs/template?type=DEPLOYMENT
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/srs/template?type=DEPLOYMENT") as resp:
+                    tpl_data = json.loads(resp.read().decode("utf-8"))
+                    self.assertTrue(tpl_data["ok"])
+                    self.assertEqual(tpl_data["req_type"], "DEPLOYMENT")
+                    self.assertTrue(tpl_data["validation"]["is_valid"])
+
+                # 6. POST /api/req/type (人工指定 DEPLOYMENT 与恢复 AUTO)
+                req_t = urllib.request.Request(
+                    f"http://127.0.0.1:{port}/api/req/type",
+                    data=json.dumps({"req_type": "DEPLOYMENT"}).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req_t) as resp:
+                    t_res = json.loads(resp.read().decode("utf-8"))
+                    self.assertTrue(t_res["ok"])
+                    self.assertEqual(t_res["req_type"], "DEPLOYMENT")
+                    self.assertEqual(t_res["req_type_source"], "manual")
             finally:
                 httpd.shutdown()
                 httpd.server_close()
+
+    def test_deployment_srs_document_and_handoff_to_s2(self):
+        deploy_srs_path = AUTODEV_ROOT / "docs" / "requirements" / "REQ-DEPLOY-WEB_DAEMON-20261108.md"
+        self.assertTrue(deploy_srs_path.is_file())
+        content = deploy_srs_path.read_text(encoding="utf-8")
+        detail = evaluate_srs_rules_detail(content)
+        self.assertTrue(detail["is_valid"], f"部署 SRS 校验失败: {detail['errors']}")
+        self.assertEqual(detail["req_type"], "DEPLOYMENT")
+        self.assertIn("deploy/install-web-client.sh", detail["deliverables"])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copy(AUTODEV_ROOT / "config.yaml", root / "config.yaml")
+            req_dir = root / "docs" / "requirements"
+            req_dir.mkdir(parents=True, exist_ok=True)
+            local_srs = req_dir / deploy_srs_path.name
+            shutil.copy(deploy_srs_path, local_srs)
+
+            info = handoff_srs_to_pipeline(local_srs, root=root, project="autodev", kind="pipeline/build")
+            self.assertEqual(info["req_type"], "DEPLOYMENT")
+            self.assertIn("deploy/install-web-client.sh", info["deliverables"])
+            s1_text = Path(info["s1_analysis_file"]).read_text(encoding="utf-8")
+            self.assertIn("req_type: DEPLOYMENT", s1_text)
+            self.assertIn("部署工程与脚本交付指令（DEPLOYMENT）", s1_text)
+            self.assertIn("deploy/install-web-client.sh", s1_text)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # 文档与关键文件索引
 
-更新日期：2026-11-07 ｜ 当前版本：`v0.3.2`
+更新日期：2026-11-08 ｜ 当前版本：`v0.3.3`
 
 本索引按用途列出当前有效的入口、设计与参考资料。状态描述的是 AutoDev 自身资料的权威性；外部参考不能覆盖项目决策。已被取代的文档在 `docs/archive/`，只供追溯。
 
@@ -22,8 +22,9 @@
 | 路径 | 职责 | 状态与权威性 |
 | --- | --- | --- |
 | `docs/design/2026-11-05-autoloop-foundation.md` | 以 agent-autoloop 为地基的方案：结构、F0 到 F6、界面共用数据、待决事项 | 当前主线 |
-| `docs/specs/REQUIREMENT_SPEC_STANDARD.md` | 软件需求规格说明书产出规范与校验标准 (SRS Standard v1.0)：九大章节契约、Linter 校验规则、机器可验断言与 S2 交接协议 | 需求产物向 S2 架构交接的标准契约 |
-| `docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md` | AutoDev 全系统统一网页客户端标准需求规格说明书（`SPEC-VALIDATED: PASS`）：连接源头需求澄清工作台与前面分析的 S1~S9 系统 Web 管理界面 | 已验证并落地的标准 SRS 需求文档 |
+| `docs/specs/REQUIREMENT_SPEC_STANDARD.md` | 软件与部署需求规格说明书产出规范与校验标准 (SRS Standard v1.1)：软件/部署/混合双轨分类、九大章节同构异核契约、Linter 校验规则与 S2 交接协议 | 需求产物向 S2 架构交接的标准契约 |
+| `docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md` | AutoDev 全系统统一网页客户端标准需求规格说明书（`SOFTWARE` 类，`SPEC-VALIDATED: PASS`）：连接源头需求澄清工作台与前面分析的 S1~S9 系统 Web 管理界面 | 已验证并落地的软件类标准 SRS 需求文档 |
+| `docs/requirements/REQ-DEPLOY-WEB_DAEMON-20261108.md` | AutoDev 统一网页客户端本机守护部署与健康自检工程（`DEPLOYMENT` 类，`SPEC-VALIDATED: PASS`）：含部署脚本清单、五步生命周期、部署拓扑草图与幂等/回滚验收标准 | 已验证的环境部署类黄金需求文档 |
 | `docs/modules/requirements/README.md` | 需求澄清独立模块入口：需求、完成条件、状态循环、接口与实现/测试计划 | 模块已落地（含飞书长连接、Web 端互通与直通 S2） |
 | `docs/modules/requirements/feishu-requirement-bot.md` | 需求澄清模块与飞书端沉淀说明书：Session 演进全记录、九大类别体系与标准需求文档范本 | 权威说明与需求沉淀规范 |
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |

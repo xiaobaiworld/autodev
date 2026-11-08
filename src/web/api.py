@@ -14,6 +14,7 @@ from cockpit.kinds import DEFAULT_KIND
 from cockpit.pipeline import SetupError, check_vendors, template_for, wait_reason
 from cockpit.store import Run, acquire_lock, atomic_write
 from driver.setup import USE as AUTOLOOP_SUPPORTED_CLIS
+from requirements.flow import build_srs_template, normalize_req_type
 from requirements.service import (
     append_audit_entry,
     execute_clarification_turn,
@@ -59,6 +60,8 @@ def list_srs_documents(root: str | Path) -> list[dict[str, Any]]:
                 "filename": p.name,
                 "path": str(p),
                 "title": detail["metadata"]["title"],
+                "req_type": detail["req_type"],
+                "deliverables": detail["deliverables"],
                 "scale": detail["scale"],
                 "is_valid": detail["is_valid"],
                 "sections_ready": detail["sections_ready_count"],
@@ -68,6 +71,28 @@ def list_srs_documents(root: str | Path) -> list[dict[str, Any]]:
         except Exception:
             continue
     return items
+
+
+def generate_srs_template(root: str | Path, req_type: str = "SOFTWARE") -> dict[str, Any]:
+    """根据指定的需求类型（SOFTWARE / DEPLOYMENT / HYBRID）生成标准 9 章节模板与实时校验结果。"""
+    norm_type = normalize_req_type(req_type)
+    if norm_type == "AUTO":
+        norm_type = "SOFTWARE"
+    ts = datetime.now().strftime("%Y%m%d")
+    if norm_type == "DEPLOYMENT":
+        fname = f"REQ-DEPLOY-SERVICE_DAEMON-{ts}.md"
+    elif norm_type == "HYBRID":
+        fname = f"REQ-HYBRID-FEATURE_AND_DEPLOY-{ts}.md"
+    else:
+        fname = f"REQ-SOFT-FEATURE-{ts}.md"
+    content = build_srs_template(req_type=norm_type, req_id=fname[:-3], project=str(Path(root).resolve()))
+    return {
+        "ok": True,
+        "filename": fname,
+        "req_type": norm_type,
+        "content": content,
+        "validation": inspect_srs_document(content),
+    }
 
 
 def list_pipeline_runs(root: str | Path) -> list[dict[str, Any]]:
@@ -291,15 +316,42 @@ def submit_human_decision(
     return {"ok": True, "message": msg, "run": get_run_detail(root_path, run_id)}
 
 
+def set_web_req_type(
+    root: str | Path,
+    req_type: str,
+    session_file: str | Path | None = None,
+    chat_id: str | None = None,
+) -> dict[str, Any]:
+    """在网页端切换当前会话的需求类型模式（AUTO / SOFTWARE / DEPLOYMENT / HYBRID）。"""
+    root_path = Path(root)
+    sfile = str(session_file or (root_path / ".req_session.json"))
+    store = ReqSessionStore(sfile, str(root_path), "claude-sonnet")
+    target_chat_id = chat_id or store.get_active_chat_id(WEB_CHAT_ID)
+    norm_type = normalize_req_type(req_type)
+    updated_sess = store.set_req_type(
+        target_chat_id,
+        norm_type,
+        source="auto" if norm_type == "AUTO" else "manual",
+    )
+    return {
+        "ok": True,
+        "req_type": updated_sess["req_type"],
+        "req_type_source": updated_sess["req_type_source"],
+        "req_type_reason": updated_sess["req_type_reason"],
+        "session": updated_sess,
+    }
+
+
 def run_web_req_turn(
     root: str | Path,
     user_text: str,
     agent_name: str | None = None,
     mode: str | None = None,
+    req_type: str | None = None,
     session_file: str | Path | None = None,
     chat_id: str | None = None,
 ) -> dict[str, Any]:
-    """在网页端执行一轮需求澄清对话（与飞书共享 ReqSessionStore 及 execute_clarification_turn，O1）。"""
+    """在网页端执行一轮需求澄清对话（与飞书共享 ReqSessionStore、双轨分类及 execute_clarification_turn，O1）。"""
     root_path = Path(root)
     sfile = str(session_file or (root_path / ".req_session.json"))
     store = ReqSessionStore(sfile, str(root_path), "claude-sonnet")
@@ -310,9 +362,19 @@ def run_web_req_turn(
         store.reset_session(target_chat_id)
         return {
             "ok": True,
-            "reply": "🌱 已开启全新的需求澄清会话！请直接输入你的想法，我会结合当前项目模块与近期变更帮你梳理。",
+            "reply": "🌱 已开启全新的需求澄清会话！请直接输入你的想法，我会结合当前项目代码模块与部署目录自动帮你寻找并分类（软件研发 / 环境部署）。",
             "choices": [],
             "session": store.get(target_chat_id),
+        }
+
+    if clean_text.startswith("/type "):
+        target_t = clean_text.split(maxsplit=1)[1].strip()
+        res = set_web_req_type(root_path, target_t, session_file=sfile, chat_id=target_chat_id)
+        return {
+            "ok": True,
+            "reply": f"🧭 需求类型已切换为：`{res['req_type']}`（{res['req_type_reason']}）",
+            "choices": [],
+            "session": res["session"],
         }
 
     outcome = execute_clarification_turn(
@@ -322,6 +384,7 @@ def run_web_req_turn(
         timeout=300,
         agent_override=agent_name,
         mode_override=mode,
+        req_type_override=req_type,
         channel="web",
     )
 
@@ -335,6 +398,9 @@ def run_web_req_turn(
         ],
         "duration_sec": outcome.duration_sec,
         "full_model_id": outcome.full_model_id,
+        "req_type": outcome.req_type,
+        "req_type_source": outcome.req_type_source,
+        "req_type_reason": outcome.req_type_reason,
         "archived_filename": outcome.archived_filename,
         "session": store.get(target_chat_id),
     }

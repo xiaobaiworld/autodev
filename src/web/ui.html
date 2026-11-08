@@ -493,9 +493,12 @@
             <div class="panel-head">
               <div>
                 <h2 class="panel-title">📂 需求规格库 (docs/requirements)</h2>
-                <div class="panel-sub">与飞书共享同一套 SRS 标准产物</div>
+                <div class="panel-sub">支持软件研发与环境部署双模板</div>
               </div>
-              <button class="btn primary" onclick="createNewSrsDraft()">+ 新草稿</button>
+              <div style="display:flex;gap:5px;">
+                <button class="btn primary" onclick="createNewSrsDraft('SOFTWARE')" title="套用偏软件功能开发 9 章节模板">+ 💻 软件模板</button>
+                <button class="btn" style="background:var(--amber-soft);color:var(--amber);border-color:#f2ddb6;" onclick="createNewSrsDraft('DEPLOYMENT')" title="套用偏环境部署与脚本工程 9 章节模板">+ 🚀 部署模板</button>
+              </div>
             </div>
             <div class="panel-body" id="srs-list-container" style="max-height:230px;overflow-y:auto;"></div>
           </section>
@@ -503,10 +506,13 @@
           <section class="panel">
             <div class="panel-head">
               <div>
-                <h2 class="panel-title">🕸️ 需求规模与关联网络矩阵</h2>
-                <div class="panel-sub">比飞书多出的全局拓扑透视</div>
+                <h2 class="panel-title">🕸️ 需求类型、规模与关联网络</h2>
+                <div class="panel-sub">透视软件/部署分类、交付脚本与拓扑</div>
               </div>
-              <span id="current-scale-badge" class="pill violet">Epic</span>
+              <div style="display:flex;gap:5px;align-items:center;">
+                <span id="current-type-badge" class="pill blue">💻 SOFTWARE</span>
+                <span id="current-scale-badge" class="pill violet">Epic</span>
+              </div>
             </div>
             <div class="panel-body" id="relations-container"></div>
           </section>
@@ -522,16 +528,24 @@
           </section>
         </div>
 
-        <!-- 中栏：引导式需求澄清对话（支持模型/调用方式独立切换、1/2 数字卡片点选） -->
+        <!-- 中栏：引导式需求澄清对话（支持模型/调用方式独立切换、Agent自动与人工双轨分类、1/2 数字卡片点选） -->
         <section class="panel">
           <div class="panel-head">
             <div>
-              <h2 class="panel-title">💬 引导式需求澄清分析师 (req-guided-v5)</h2>
-              <div class="panel-sub">与飞书端互通 · 支持具体业务场景选项点选与界面原型生成</div>
+              <h2 class="panel-title">💬 引导式需求澄清分析师 (req-guided-v6)</h2>
+              <div class="panel-sub">与飞书端互通 · Agent 自动寻找代码/部署资产并分类，也支持人工指定</div>
             </div>
             <button class="btn" onclick="sendQuickChat('/new')">🌱 新需求会话</button>
           </div>
           <div class="chat-toolbar">
+            <label style="font-size:11.5px;font-weight:700;color:var(--muted);">需求分类(双轨):</label>
+            <select id="req-type-select" onchange="changeSessionReqType(this.value)" title="默认由 Agent 自动寻找代码/部署目录分类，也可人工指定">
+              <option value="AUTO">🤖 Agent 自动寻找与分类 (Auto)</option>
+              <option value="SOFTWARE">💻 偏软件功能开发 (SOFTWARE)</option>
+              <option value="DEPLOYMENT">🚀 偏环境部署与脚本 (DEPLOYMENT)</option>
+              <option value="HYBRID">🔗 软硬一体：开发+部署 (HYBRID)</option>
+            </select>
+            <span id="session-type-status-pill" class="pill blue" title="当前会话分类结果与判定方式">🤖 自动分类</span>
             <label style="font-size:11.5px;font-weight:700;color:var(--muted);">底层大模型:</label>
             <select id="req-model-select" title="完整模型 ID 源自 config.yaml"></select>
             <label style="font-size:11.5px;font-weight:700;color:var(--muted);">调用方式:</label>
@@ -543,14 +557,14 @@
           <div class="chat-stream" id="chat-stream"></div>
           <div class="chat-input-area">
             <div class="chat-input-row">
-              <textarea id="chat-input" placeholder="直接描述你的需求想法，或点击上方选项卡片（支持随时切换模型）..."></textarea>
+              <textarea id="chat-input" placeholder="直接描述软件功能或环境部署想法，Agent 会自动结合代码模块与 deploy/ 目录帮你分类并梳理..."></textarea>
               <button class="btn primary" id="chat-send-btn" onclick="sendReqChat()">发送</button>
             </div>
             <div class="quick-actions">
               <button class="btn" onclick="sendQuickChat('1')">选方案 1</button>
               <button class="btn" onclick="sendQuickChat('2')">选方案 2</button>
-              <button class="btn" onclick="sendQuickChat('看原型')">🎨 看界面原型</button>
-              <button class="btn" onclick="sendQuickChat('定稿')">📋 定稿生成 9 章节 SRS</button>
+              <button class="btn" onclick="sendQuickChat('看原型')">🎨 看界面原型 / 部署拓扑</button>
+              <button class="btn" onclick="sendQuickChat('定稿')">📋 定稿生成 9 章节规格书</button>
             </div>
           </div>
         </section>
@@ -574,7 +588,7 @@
               📊 9章节拼图 & RULE-01~09 校验灯
             </button>
             <button class="subtab" data-sub="sub-wireframe" onclick="switchSrsSubTab('sub-wireframe')">
-              🖼️ 第6节外部界面原型草图
+              🖼️ 第6节 界面原型 / 部署拓扑草图
             </button>
             <button class="subtab" data-sub="sub-editor" onclick="switchSrsSubTab('sub-editor')">
               ✏️ Markdown 源码微调与保存
@@ -862,6 +876,13 @@
       }
     }
 
+    const REQ_TYPE_META = {
+      SOFTWARE: { label: "💻 SOFTWARE", pill: "blue", desc: "偏软件功能开发" },
+      DEPLOYMENT: { label: "🚀 DEPLOYMENT", pill: "amber", desc: "偏环境部署工程" },
+      HYBRID: { label: "🔗 HYBRID", pill: "violet", desc: "软硬一体(开发+部署)" },
+      AUTO: { label: "🤖 AUTO", pill: "blue", desc: "Agent自动分类" }
+    };
+
     function renderModelSelectors() {
       const sel = document.getElementById("req-model-select");
       const currAgent = STATE.session.agent || "claude-sonnet";
@@ -869,23 +890,63 @@
         `<option value="${m.name}" ${m.name === currAgent ? "selected" : ""}>${m.name} → ${m.full_model_id} (${m.vendor})</option>`
       ).join("");
       document.getElementById("req-mode-select").value = STATE.session.mode || "cli_session";
+
+      const reqType = STATE.session.req_type || "AUTO";
+      const reqSource = STATE.session.req_type_source || "auto";
+      const reqReason = STATE.session.req_type_reason || "";
+      const typeSelect = document.getElementById("req-type-select");
+      if (typeSelect) {
+        typeSelect.value = reqSource === "manual" ? reqType : "AUTO";
+      }
+      const statusPill = document.getElementById("session-type-status-pill");
+      if (statusPill) {
+        const prefix = reqSource === "manual" ? "👤 人工指定" : "🤖 Agent自动识别";
+        const shownType = reqType === "AUTO" ? "待识别" : reqType;
+        statusPill.className = `pill ${reqType === "DEPLOYMENT" ? "amber" : (reqType === "HYBRID" ? "violet" : "blue")}`;
+        statusPill.textContent = `${prefix}: ${shownType}`;
+        statusPill.title = reqReason || `${prefix}: ${shownType}`;
+      }
+    }
+
+    async function changeSessionReqType(val) {
+      try {
+        const res = await fetch("/api/req/type", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ req_type: val })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          STATE.session = data.session || STATE.session;
+          renderModelSelectors();
+          showToast(`🧭 需求类型模式已更新: ${data.req_type_reason || data.req_type}`);
+        }
+      } catch (e) {
+        showToast("更新需求类型失败: " + e.message, true);
+      }
     }
 
     function renderSrsList() {
       const box = document.getElementById("srs-list-container");
       if (!STATE.srsList.length) {
-        box.innerHTML = `<div style="color:var(--muted);font-size:12px;">暂无定稿文档，可在中间对话或点击【+ 新草稿】创建。</div>`;
+        box.innerHTML = `<div style="color:var(--muted);font-size:12px;">暂无定稿文档，可在中间对话或点击【+ 软件模板 / + 部署模板】创建。</div>`;
         return;
       }
-      box.innerHTML = STATE.srsList.map(item => `
-        <div class="srs-item ${item.filename === STATE.currentSrsFile ? 'selected' : ''}" onclick="loadSrsDocument('${item.filename}')">
-          <div class="srs-item-title">${item.title}</div>
-          <div class="srs-item-meta">
-            <span>${item.filename}</span>
-            <span class="pill ${item.is_valid ? 'green' : 'amber'}">${item.is_valid ? 'PASS 9/9' : item.sections_ready + '/9'}</span>
+      box.innerHTML = STATE.srsList.map(item => {
+        const tm = REQ_TYPE_META[item.req_type] || REQ_TYPE_META.SOFTWARE;
+        return `
+          <div class="srs-item ${item.filename === STATE.currentSrsFile ? 'selected' : ''}" onclick="loadSrsDocument('${item.filename}')">
+            <div class="srs-item-title">${item.title}</div>
+            <div class="srs-item-meta">
+              <span>${item.filename}</span>
+              <span style="display:flex;gap:4px;">
+                <span class="pill ${tm.pill}">${tm.label}</span>
+                <span class="pill ${item.is_valid ? 'green' : 'amber'}">${item.is_valid ? 'PASS 9/9' : item.sections_ready + '/9'}</span>
+              </span>
+            </div>
           </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
     async function loadSrsDocument(filename) {
@@ -904,8 +965,10 @@
     }
 
     function renderSrsValidationView(filename, v) {
-      document.getElementById("preview-doc-title").textContent = `📄 ${v.metadata.title || '软件需求规格说明书'}`;
-      document.getElementById("preview-doc-filename").textContent = `当前文件：docs/requirements/${filename}`;
+      const rtype = v.req_type || "SOFTWARE";
+      const tm = REQ_TYPE_META[rtype] || REQ_TYPE_META.SOFTWARE;
+      document.getElementById("preview-doc-title").textContent = `📄 [${tm.label}] ${v.metadata.title || '软件需求规格说明书'}`;
+      document.getElementById("preview-doc-filename").textContent = `当前文件：docs/requirements/${filename} · 交付分类：${tm.desc}`;
 
       const badge = document.getElementById("srs-valid-badge");
       const btn = document.getElementById("handoff-s2-btn");
@@ -919,15 +982,25 @@
         btn.disabled = true;
       }
 
+      const typeBadge = document.getElementById("current-type-badge");
+      if (typeBadge) {
+        typeBadge.className = `pill ${tm.pill}`;
+        typeBadge.textContent = tm.label;
+      }
       document.getElementById("current-scale-badge").textContent = v.scale || "未标定";
       const relBox = document.getElementById("relations-container");
+      let relHtml = "";
+      if (v.deliverables && v.deliverables.length) {
+        relHtml += `<div class="rel-card" style="background:var(--amber-soft);border-color:#f2ddb6;"><span class="rel-type" style="color:var(--amber);">脚本/配置交付物:</span><span>${v.deliverables.map(d => '<code>' + escapeHtml(d) + '</code>').join(', ')}</span></div>`;
+      }
       if (!v.relations || !v.relations.length) {
-        relBox.innerHTML = `<div style="color:var(--muted);font-size:12px;">未声明外部需求关联</div>`;
+        relHtml += `<div style="color:var(--muted);font-size:12px;">未声明外部需求关联</div>`;
       } else {
-        relBox.innerHTML = v.relations.map(r => `
-          <div class="rel-card"><span class="rel-type">${r.type}:</span><span>${r.target}</span></div>
+        relHtml += v.relations.map(r => `
+          <div class="rel-card"><span class="rel-type">${r.type}:</span><span>${escapeHtml(r.target)}</span></div>
         `).join("");
       }
+      relBox.innerHTML = relHtml;
 
       document.getElementById("rules-grid").innerHTML = (v.rules || []).map(r => `
         <div class="rule-item ${r.passed ? 'pass' : 'fail'}" title="${(r.errors || []).join('; ')}">
@@ -1003,11 +1076,12 @@
       if (!text) return;
       const agent = document.getElementById("req-model-select").value;
       const mode = document.getElementById("req-mode-select").value;
+      const reqType = document.getElementById("req-type-select").value;
       const btn = document.getElementById("chat-send-btn");
 
       const stream = document.getElementById("chat-stream");
       stream.innerHTML += `<div class="msg user">${escapeHtml(text)}</div>`;
-      stream.innerHTML += `<div class="msg assistant" id="pending-msg">⏳ 正在调用 ${agent} (${mode}) 分析项目上下文与需求拼图...</div>`;
+      stream.innerHTML += `<div class="msg assistant" id="pending-msg">⏳ 正在调用 ${agent} (${mode}) 分析项目代码/部署上下文与需求拼图...</div>`;
       stream.scrollTop = stream.scrollHeight;
       input.value = "";
       btn.disabled = true;
@@ -1016,7 +1090,7 @@
         const res = await fetch("/api/req/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text, agent, mode })
+          body: JSON.stringify({ message: text, agent, mode, req_type: reqType })
         });
         const data = await res.json();
         const pending = document.getElementById("pending-msg");
@@ -1048,9 +1122,21 @@
       }
     }
 
-    function createNewSrsDraft() {
+    async function createNewSrsDraft(reqType = "SOFTWARE") {
+      try {
+        const res = await fetch(`/api/srs/template?type=${encodeURIComponent(reqType)}`);
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById("editor-filename").value = data.filename;
+          document.getElementById("srs-markdown-editor").value = data.content;
+          renderSrsValidationView(data.filename, data.validation);
+          switchSrsSubTab("sub-editor");
+          showToast(`📄 已生成 ${reqType} 标准 9 章节模板（${data.filename}），可直接编辑或点击【保存并落盘】。`);
+          return;
+        }
+      } catch (e) {}
       const ts = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-      const fname = `REQ-CUSTOM-NEW-${ts}.md`;
+      const fname = reqType === "DEPLOYMENT" ? `REQ-DEPLOY-NEW-${ts}.md` : `REQ-SOFT-NEW-${ts}.md`;
       document.getElementById("editor-filename").value = fname;
       switchSrsSubTab("sub-editor");
       showToast("已在编辑器准备新文件名，修改后点击【保存并落盘】即可。");

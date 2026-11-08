@@ -82,23 +82,64 @@ def get_project_modules(cwd: str) -> list[str]:
     return modules[:10]
 
 
+def get_deployment_assets(cwd: str) -> list[str]:
+    """自动搜寻目标项目中的部署、运维、守护服务与环境配置资产，供 Agent 自动判断软件/部署分类与关联。"""
+    assets: list[str] = []
+    try:
+        # 1. 探测根目录下常见的部署相关文件或目录
+        deploy_dirs = ("deploy", "scripts", "ops", "infra", "k8s", "helm", "docker", "systemd")
+        root_markers = (
+            "Dockerfile",
+            "docker-compose.yml",
+            "docker-compose.yaml",
+            "Makefile",
+            "Procfile",
+            ".env.example",
+            "config.yaml",
+            "config.req.toml",
+        )
+        for d in deploy_dirs:
+            dpath = os.path.join(cwd, d)
+            if os.path.isdir(dpath):
+                sub_items = [
+                    f"{d}/{sub}"
+                    for sub in sorted(os.listdir(dpath))
+                    if not sub.startswith(".") and not sub.startswith("_")
+                ][:8]
+                if sub_items:
+                    assets.extend(sub_items)
+                else:
+                    assets.append(f"{d}/")
+        for m in root_markers:
+            if os.path.exists(os.path.join(cwd, m)):
+                assets.append(m)
+    except Exception:
+        pass
+    return assets[:12]
+
+
 def build_project_context_summary(cwd: str) -> str:
-    """组装提供给大模型的项目架构与近期演进脉络概要。"""
+    """组装提供给大模型的项目架构、部署资产与近期演进脉络概要。"""
     lines: list[str] = []
 
-    # 1. 项目现有模块概览
+    # 1. 项目现有代码模块概览
     modules = get_project_modules(cwd)
     if modules:
-        lines.append(f"• 项目现有主要模块/业务域：{', '.join(modules)}")
+        lines.append(f"• 项目现有软件模块/业务域 (src/)：{', '.join(modules)}")
 
-    # 2. 近期提交历史
+    # 2. 项目现有环境部署与脚本资产
+    deploy_assets = get_deployment_assets(cwd)
+    if deploy_assets:
+        lines.append(f"• 项目现有环境部署与配置资产：{', '.join(deploy_assets)}")
+
+    # 3. 近期提交历史
     commits = get_recent_git_commits(cwd, limit=4)
     if commits:
         lines.append("• 最近代码与功能变更记录 (Git)：")
         for c in commits:
             lines.append(f"  - {c}")
 
-    # 3. 近期落盘的需求文档
+    # 4. 近期落盘的需求文档
     req_docs = get_recent_requirement_docs(cwd, limit=3)
     if req_docs:
         lines.append("• 近期已定稿的需求规格列表 (docs/requirements/)：")

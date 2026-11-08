@@ -178,6 +178,37 @@ def main() -> None:
                 send_pool.submit(responder.send_text, chat_id, f"⚠️ 切换调用方式失败：{e}")
             return
 
+        if clean_text == "/type" or clean_text.startswith("/type "):
+            sess = store.get(chat_id)
+            parts = clean_text.split(maxsplit=1)
+            if len(parts) == 1:
+                src_label = "👤 人工指定" if sess.get("req_type_source") == "manual" else "🤖 Agent 自动寻找与分类"
+                send_pool.submit(
+                    responder.send_text,
+                    chat_id,
+                    f"🧭 **当前需求类型分类状态**\n\n"
+                    f"• 当前类型：`{sess.get('req_type', 'AUTO')}`\n"
+                    f"• 分类方式：{src_label}（{sess.get('req_type_reason', '')}）\n\n"
+                    f"**支持双轨分类（Agent 自动识别 + 人工指定）**：\n"
+                    f"• `/type auto`：交由 Agent 结合项目代码与 `deploy/` 目录自动判断（默认）；\n"
+                    f"• `/type software`：锁定为 **💻 偏软件功能开发**（聚焦业务用例与 UI 线框图）；\n"
+                    f"• `/type deployment`：锁定为 **🚀 偏环境部署工程**（聚焦部署脚本清单、拓扑草图与幂等验收）；\n"
+                    f"• `/type hybrid`：锁定为 **🔗 软硬一体（开发+部署）**。",
+                )
+                return
+
+            target_type = parts[1].strip()
+            try:
+                updated_sess = store.set_req_type(chat_id, target_type, source="manual")
+                send_pool.submit(
+                    responder.send_text,
+                    chat_id,
+                    f"✅ **需求类型已更新**：`{updated_sess['req_type']}`（{updated_sess['req_type_reason']}）",
+                )
+            except Exception as e:
+                send_pool.submit(responder.send_text, chat_id, f"⚠️ 切换需求类型失败：{e}")
+            return
+
         if (
             clean_text in ("/handoff", "启动设计", "移交设计", "进入下一阶段")
             or clean_text.startswith("/handoff ")
@@ -230,9 +261,11 @@ def main() -> None:
                 model_desc = f"`{sess['agent']}`"
             has_session = "已建立 (" + sess["session_id"][:8] + "...)" if sess["session_id"] else "未建立 (发送任意需求即可开始)"
             last_req = os.path.basename(sess["last_archived_req"]) if sess.get("last_archived_req") else "暂无"
+            src_label = "👤 人工指定" if sess.get("req_type_source") == "manual" else "🤖 Agent自动分类"
             status_msg = (
                 f"🤖 **AutoDev 需求分析师状态**\n"
                 f"• 当前目标项目：`{sess['cwd']}`\n"
+                f"• 需求类型分类：`{sess.get('req_type', 'AUTO')}` ({src_label})\n"
                 f"• 分析推理模型：{model_desc}\n"
                 f"• 调用方式：`{sess.get('mode', 'cli_session')}`（已记录 {len(sess.get('history') or [])} 轮问答）\n"
                 f"• 交互会话上下文：{has_session}\n"
@@ -246,16 +279,17 @@ def main() -> None:
             help_msg = (
                 "🎯 **欢迎使用 AutoDev 需求分析师！**\n\n"
                 "你不需要记忆任何复杂命令，直接在对话框中告诉我你想做什么需求即可。\n"
-                "我会基于当前目标项目代码和架构，深入帮你理清目标、梳理非目标与验收标准。\n\n"
+                "我会基于当前目标项目代码和部署目录，自动帮你寻找并判断属于 **软件开发 (`SOFTWARE`)** 还是 **环境部署 (`DEPLOYMENT`)**，理清目标、非目标与验收标准。\n\n"
                 "📌 **常用辅助指令**：\n"
                 "• 发送 `/new` 或 `新需求`：开启一个全新的需求会话；\n"
+                "• 发送 `/type` 或 `/type auto|software|deployment|hybrid`：查看或切换需求类型（默认由 Agent 自动寻找分类，也可人工指定）；\n"
                 "• 发送 `/project <路径>`：切换到其他项目目录；\n"
                 "• 发送 `/model` 或 `/model <名称>`：查看或切换底层大模型（支持 Claude / Codex / Gemini 完整模型 ID）；\n"
                 "• 发送 `/mode`：查看或切换调用方式（`cli_session` / `cli_stateless`）；\n"
-                "• 发送 `看原型` 或 `做个原型`：生成外部界面的低保真线框图示例；\n"
-                "• 聊充分后回复 `定稿`：输出符合 9 章节标准的《软件需求规格说明（SRS）》；\n"
+                "• 发送 `看原型` 或 `看拓扑`：生成外部界面的低保真线框图或环境部署拓扑草图；\n"
+                "• 聊充分后回复 `定稿`：按需求类型输出符合 9 章节标准的《软件/部署需求规格说明（SRS）》；\n"
                 "• 定稿后回复 `启动设计` 或 `/handoff`：跳过重复分析，直通移交下一阶段（`S2 架构设计`）；\n"
-                "• 发送 `/status`：查看当前绑定的项目、完整模型 ID 与会话状态。"
+                "• 发送 `/status`：查看当前绑定的项目、需求分类、完整模型 ID 与会话状态。"
             )
             send_pool.submit(responder.send_text, chat_id, help_msg)
             return

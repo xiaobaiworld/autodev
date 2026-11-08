@@ -1,9 +1,9 @@
 # 需求澄清模块 (Requirements Clarification Module)
 
-> **当前版本**：`v0.3.2` (2026-11-07)  
-> **当前状态**：**飞书端与全系统 Web 客户端双端落地运行，已直通 S2 并完成 O1~O4/C1~C3 收敛优化**  
+> **当前版本**：`v0.3.3` (2026-11-08)  
+> **当前状态**：**飞书端与全系统 Web 客户端双端支持「软件研发(`SOFTWARE`)/环境部署(`DEPLOYMENT`)/混合(`HYBRID`)」双轨分类（Agent 自动寻找分类 + 人工指定）与差异化 9 章节模板**  
 > **服务状态**：macOS LaunchAgent 常驻守护 (`com.autodev.req-bot`) + 本机 Web 客户端 (`python3 -m web.server`)  
-> **测试状态**：245 项单元测试全量通过 (`python -m unittest discover -s tests`)
+> **测试状态**：249 项单元测试全量通过 (`python -m unittest discover -s tests`)
 
 ---
 

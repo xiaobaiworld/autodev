@@ -23,30 +23,44 @@ AUTODEV_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _build_s1_baseline_analysis(rid: str, srs_text: str, meta: dict[str, Any]) -> str:
-    """生成 S1-analysis/round-1/analysis.md 基线产物，使 S2/S3 既能读到结构化分析结论又能对照完整 SRS。"""
+    """生成 S1-analysis/round-1/analysis.md 基线产物，使 S2/S3/S4 既能读到结构化分析结论又能感知软件/部署类型差异与完整 SRS。"""
     ac_yaml = "\n".join(f'  - "{item.replace(chr(34), chr(39))}"' for item in meta["acceptance_criteria"])
     safe_summary = meta["summary"].replace('"', "'")
     safe_scope = meta["scope"].replace('"', "'")
+    req_type = meta.get("req_type", "SOFTWARE")
+    deliverables = meta.get("deliverables") or []
+    deliv_note = ""
+    if req_type in ("DEPLOYMENT", "HYBRID"):
+        deliv_list = "、".join(f"`{d}`" for d in deliverables) if deliverables else "见 SRS 第 4 节部署脚本与配置清单"
+        deliv_note = (
+            f"\n## 部署工程与脚本交付指令（{req_type}）\n\n"
+            f"- **需求交付形态**：`{req_type}`（需生成可执行部署脚本与环境验证探针）\n"
+            f"- **关键脚本/配置交付物**：{deliv_list}\n"
+            f"- **下游 S2/S4 强制要求**：S2 设计稿与开发计划必须明确部署脚本路径、五步生命周期（预检/安装/启动/幂等重跑/回滚）与安全边界；S4 必须生成对应部署脚本并通过语法与沙箱实跑测试。\n"
+        )
     return (
         f"---\n"
         f"id: {rid}\n"
         f"stage: S1\n"
         f"round: 1\n"
         f"role: analyst\n"
+        f"req_type: {req_type}\n"
         f"verdict: ACCEPT\n"
         f'summary: "{safe_summary}"\n'
         f'scope: "{safe_scope}"\n'
         f"acceptance_criteria:\n"
         f"{ac_yaml}\n"
         f"---\n\n"
-        f"# 需求分析结论（由飞书/Web 需求分析师 SRS v1.0 定稿直通生成）\n\n"
+        f"# 需求分析结论（由飞书/Web 需求分析师 SRS v1.1 定稿直通生成）\n\n"
         f"- **需求标题**：{meta['title']}\n"
+        f"- **需求类型**：`{req_type}`\n"
         f"- **一句话摘要**：{meta['summary']}\n"
-        f"- **核心范围**：{meta['scope']}\n\n"
+        f"- **核心范围**：{meta['scope']}\n"
+        f"{deliv_note}\n"
         f"## 验收标准清单\n\n"
         + "\n".join(f"- {item}" for item in meta["acceptance_criteria"])
         + "\n\n---\n\n"
-        + "## 附：完整软件需求规格说明（SRS 原文）\n\n"
+        + "## 附：完整软件/部署需求规格说明（SRS 原文）\n\n"
         + srs_text.strip()
         + "\n"
     )
@@ -89,6 +103,8 @@ def handoff_srs_to_pipeline(
         active_dir = root_dir / "workspace" / "requests" / "active"
         active_dir.mkdir(parents=True, exist_ok=True)
         rid = allocate_run_id(root_dir, today=today)
+        meta = extract_srs_metadata(clean_srs)
+        req_type = meta.get("req_type", "SOFTWARE")
 
         req_file = active_dir / f"{rid}.md"
         atomic_write(
@@ -97,13 +113,13 @@ def handoff_srs_to_pipeline(
             f"schema_version: 1\n"
             f"id: {rid}\n"
             f"project: {project}\n"
+            f"req_type: {req_type}\n"
             f"source_srs: {srs_file.name}\n"
             f"submitted_at: {now_iso()}\n"
             f"---\n\n"
             f"{clean_srs}\n",
         )
 
-        meta = extract_srs_metadata(clean_srs)
         run_dir = root_dir / "workspace" / "runs" / rid
         s1_dir = run_dir / step_dir("S1", 1, kind)
         analysis_path = s1_dir / "analysis.md"
@@ -169,6 +185,8 @@ def handoff_srs_to_pipeline(
         "s1_analysis_file": str(analysis_path),
         "source_srs": str(srs_file),
         "title": meta["title"],
+        "req_type": req_type,
+        "deliverables": meta.get("deliverables", []),
         "project": project,
         "kind": kind,
         "stage": "S2",

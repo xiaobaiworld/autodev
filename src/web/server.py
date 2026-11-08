@@ -18,6 +18,7 @@ from web.api import (
     AUTODEV_ROOT,
     WEB_CHAT_ID,
     evaluate_srs_rules_detail,
+    generate_srs_template,
     get_config_view,
     get_run_detail,
     list_pipeline_runs,
@@ -25,6 +26,7 @@ from web.api import (
     load_audit_log,
     redact_secrets,
     run_web_req_turn,
+    set_web_req_type,
     submit_human_decision,
     update_roles_config,
 )
@@ -111,6 +113,11 @@ def make_handler(root_dir: Path):
                     })
                     return
 
+                if path == "/api/srs/template":
+                    req_type = (qs.get("type") or ["SOFTWARE"])[0]
+                    self._send_json(generate_srs_template(root_dir, req_type=req_type))
+                    return
+
                 if path == "/api/run":
                     rid = (qs.get("id") or [""])[0]
                     if not rid or "/" in rid or "\\" in rid:
@@ -183,14 +190,27 @@ def make_handler(root_dir: Path):
                     })
                     return
 
+                if path == "/api/req/type":
+                    req_type = str(body.get("req_type") or "AUTO").strip()
+                    res = set_web_req_type(root_dir, req_type=req_type)
+                    self._send_json(res)
+                    return
+
                 if path == "/api/req/chat":
                     user_text = str(body.get("message") or "").strip()
                     agent_name = str(body.get("agent") or "").strip() or None
                     mode = str(body.get("mode") or "").strip() or None
+                    req_type = str(body.get("req_type") or "").strip() or None
                     if not user_text:
                         self._send_json({"ok": False, "error": "消息不能为空"}, status=400)
                         return
-                    res = run_web_req_turn(root_dir, user_text, agent_name=agent_name, mode=mode)
+                    res = run_web_req_turn(
+                        root_dir,
+                        user_text,
+                        agent_name=agent_name,
+                        mode=mode,
+                        req_type=req_type,
+                    )
                     self._send_json(res)
                     return
 

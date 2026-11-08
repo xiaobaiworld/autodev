@@ -1,10 +1,12 @@
-# 定位: session.py 按 chat_id 持久化会话状态（项目路径、模型名、调用方式、会话 ID、问答历史与最近定稿路径）。
+# 定位: session.py 按 chat_id 持久化会话状态（项目路径、模型名、调用方式、需求类型双轨状态[Agent自动/人工指定]、会话 ID、问答历史与最近定稿路径）。
 from __future__ import annotations
 
 import json
 import logging
 import os
 from typing import Any
+
+from requirements.flow import normalize_req_type
 
 log = logging.getLogger("autodev.req")
 
@@ -61,6 +63,9 @@ class ReqSessionStore:
         raw_agent = entry.get("agent") or self.default_agent
         entry["agent"] = "claude-sonnet" if raw_agent == "cc" else raw_agent
         entry.setdefault("mode", self.default_mode)
+        entry.setdefault("req_type", "AUTO")
+        entry.setdefault("req_type_source", "auto")
+        entry.setdefault("req_type_reason", "等待首轮输入后由 Agent 自动寻找并分类")
         entry.setdefault("session_id", "")
         entry.setdefault("history", [])
         entry.setdefault("last_archived_req", "")
@@ -78,6 +83,9 @@ class ReqSessionStore:
         curr = self.get(chat_id)
         curr["session_id"] = ""
         curr["history"] = []
+        curr["req_type"] = "AUTO"
+        curr["req_type_source"] = "auto"
+        curr["req_type_reason"] = "等待首轮输入后由 Agent 自动寻找并分类"
         self._data[chat_id] = curr
         self._save()
 
@@ -109,6 +117,30 @@ class ReqSessionStore:
         curr["mode"] = mode
         self._data[chat_id] = curr
         self._save()
+
+    def set_req_type(
+        self,
+        chat_id: str,
+        req_type: str,
+        source: str = "manual",
+        reason: str = "",
+    ) -> dict[str, Any]:
+        """设置会话的需求类型（支持人工显式指定 manual，或 Agent 自动识别 auto；传入 AUTO 则恢复自动识别模式）。"""
+        norm = normalize_req_type(req_type)
+        curr = self.get(chat_id)
+        if norm == "AUTO":
+            curr["req_type"] = "AUTO"
+            curr["req_type_source"] = "auto"
+            curr["req_type_reason"] = reason or "已切换回 Agent 自动寻找与分类模式"
+        else:
+            curr["req_type"] = norm
+            curr["req_type_source"] = "manual" if source == "manual" else "auto"
+            curr["req_type_reason"] = reason or (
+                f"👤 人工指定为 {norm}" if source == "manual" else f"🤖 Agent 自动识别为 {norm}"
+            )
+        self._data[chat_id] = curr
+        self._save()
+        return dict(curr)
 
     def append_history(
         self,
