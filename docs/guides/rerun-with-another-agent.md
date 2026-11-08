@@ -7,7 +7,7 @@
 | 层 | 是什么 | 在哪里换 | 换了会影响什么 |
 | --- | --- | --- | --- |
 | A 驾驶员 | 开发和维护这套流水线的 Agent（本次是 Claude Code + Sonnet 5.5）：读代码、写代码、跑测试、提交 | 你打开哪个工具、选哪个模型 | 代码写得怎样、文档怎样、会不会犯错。**报告 `docs/reports/2026-11-07-session-report-sonnet-5-5.md` 记的就是这一层** |
-| B 流水线里的 Agent | S1 到 S8 里被派活的 Claude、Codex（以及原定的 agy） | `config.yaml` 的 `agents` 和 `roles` | 分析、设计、审查、编码、验收的质量 |
+| B 流水线里的 Agent | S1 到 S8 里被派活的 Claude、Codex（以及原定的 agy） | 当前 Agent 注册表及 config.yaml 角色引用覆盖 | 分析、设计、审查、编码、验收的质量 |
 | C 同一个 CLI 下的模型 | 比如 Claude Code 可以跑 Opus 或 Sonnet；Codex 可以跑不同的 GPT | `config.yaml` 里 `model` 一项 | 同一个 CLI 的行为是否因模型而变 |
 
 要回答"到底是 Agent 的区别还是大模型的区别"，**一次只变一层，别的都不动**（第 5 节）。
@@ -57,14 +57,14 @@ PYTHONPATH=src python3 -m driver.reply <需求号> continue --note "批准" --ho
 
 ### 4.1 换流水线里某个角色用的 Agent 或模型（B 层、C 层）
 
-只改 `config.yaml`：
+先用 `PYTHONPATH=src python3 -m cockpit.registry` 确认当前生效登记，再改相应条目：
 
-- `agents:` 下每一项是一个"Agent + 模型 + 强度"的组合（`cli`、`vendor`、`model`、`effort`）。
-- `roles:` 把角色绑到其中一项。角色有 `analyst`、`designer`、`design_reviewer`、`coder`、`code_reviewer`、`acceptor`。
+- 默认 config/agents.toml 的 agents 登记执行器，models 登记厂商、完整 model_id、调用方式、强度和能力限制；本机覆盖规则见 docs/MODELS.md。
+- defaults 将角色绑定到登记模型；config.yaml 的 roles 可保存项目覆盖引用。角色有 analyst、designer、design_reviewer、coder、code_reviewer、acceptor；所选模型需具有对应能力。
 
 **旧实现限制（尚未适配 D019）**：程序仍校验以下作者/审查者的 `vendor` 不同：（`designer`, `design_reviewer`）、（`coder`, `code_reviewer`）、（`coder`, `acceptor`）；同厂商会报 `违反 D008`。当前规则已由 [D019](../DECISIONS.md#d019-设计审查分级优先独立审核允许降级与简单复用免审) 允许同厂商、单模型降级和简单复用免审，无须再次为原则请求例外批准。代码迁移前本指南的现有运行路径仍受该限制，不能手工伪造审核通过来绕开。
 
-**现在能用的 CLI 只有 `claude` 和 `codex`**。`src/driver/setup.py` 的 `USE` 表里只有这两个，绑 `agy` 会直接报"暂不支持"。要支持新的命令行工具：
+**当前流水线内置适配器只支持 `claude` 和 `codex`**。需求文本调用另支持 agy/Ollama，但不代表能承担流水线文件产物协议。`src/driver/setup.py` 的 USE 表只包含前两者，绑 agy 会报“暂不支持”。要支持新的流水线执行器：
 
 1. 在 `USE` 里加一项，并确认 autoloop 有对应的插件（`use` 的取值）；没有的话要走它的 `command` 插件，需要自己写命令模板。
 2. 把实际模型、用量从日志里取出来的解析加到 `src/driver/record.py` 的 `parse_log`（现在只认 Claude 的 `-p` 输出和 Codex 的 `exec --json`）。**不加这个，每步记录里没有实际模型和 token，比较就无从谈起。**
@@ -90,11 +90,11 @@ PYTHONPATH=src python3 -m driver.reply <需求号> continue --note "批准" --ho
 
 ## 5. 怎么比较，才分得清是 Agent 还是模型
 
-**核心原则：一次只变一个量，其它都固定。** 固定的东西：需求原文、`config.yaml`（除了你要比较的那一项）、模板（`templates/pipeline/*.json` 的哈希）、代码版本（提交号）、`--effort`。
+**核心原则：一次只变一个量，其它都固定。** 固定需求原文、config.yaml、当前 Agent 注册表（除了要比较的项）、模板哈希、代码版本和 --effort，记录本机覆盖配置来源。
 
 | 想回答 | 做法 | 其它都不变 |
 | --- | --- | --- |
-| 同一个 CLI 下，换模型有没有区别 | C 层：只改 `config.yaml` 里 `model` | CLI、需求、模板 |
+| 同一个 CLI 下，换模型有没有区别 | C 层：只改有效注册表的模型条目或默认引用 | CLI、需求、模板 |
 | 同一个模型，换 CLI 有没有区别 | 要求两个 CLI 真的在跑同一个模型。**这一条我没有验证过**：`docs/MODELS.md` 只说两个 CLI 的模型 ID 来源不同（Claude 看 `~/.claude/settings.json`，Codex 看 `~/.codex/magpie-desktop-models.json`），Codex 的同类模型还有 `ai-code-with/` 与 `codex/` 两组前缀。先各自启动一次，看日志里的实际模型名（`record-a1.json` 的 `actual_model`）是不是同一个，确认了才能下这个结论 | 模型、需求、模板 |
 | 驾驶员换了，维护出来的代码和文档有没有区别 | A 层：换工具和模型，给同样的指令，比较第 6 节的指标 | 同一份起点提交、同一份指令 |
 
