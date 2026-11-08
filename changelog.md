@@ -1,5 +1,10 @@
 # changelog
 
+## 2026-11-08：整合需求工作台分支
+
+- 以 main v0.3.3 的统一网页、独立飞书、九章节 SRS 与 S2 交接为准，保留版本化兼容 API 的双模型审核、哈希确认、固定版导出、CLI/可选网页与消息去重配对。拆开两套同名会话后端，保留旧导入和磁盘格式；两套会话不自动同步或转换。
+- 297 项 unittest、隔离中台假 Agent 集成、S1～S9 假 Agent 全流程与 JS 语法检查通过。未调收费模型、未发送真实飞书消息、未部署或重启服务。整合范围和文档核对见 docs/design/2026-11-08-requirements-merge.md。
+
 ## 2026-11-07：全项目代码重叠合并与冲突隐患收敛优化（`O1~O4` + `C1~C3`，`v0.3.2`）
 - **O1（统一飞书与 Web 需求澄清编排与耗时审计，`src/requirements/service.py`）**：抽离 `execute_clarification_turn` 与 `load_audit_log`/`append_audit_entry`（统一写入 `workspace/requirements/audit.jsonl`）；`ReqSessionStore` 新增 `get_active_chat_id()` 并在加载时自动将历史遗留 `"cc"` 归一为 `"claude-sonnet"`，使飞书端与 Web 客户端共享同一活跃会话；
 - **O2（统一 SRS 章节解析与规则透视，`src/requirements/validator.py`）**：将章节正文切分、元数据提取（`extract_srs_metadata`）与 9 章节 + `RULE-01~09` 逐项红绿灯透视（`inspect_srs_document`）全部收敛至 `validator.py`，消除 `handoff.py` 与 `web/api.py` 的重复正则；

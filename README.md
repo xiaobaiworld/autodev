@@ -39,3 +39,7 @@ python3 -I tests/smoke_autoloop.py                            # 联机冒烟，�
 - [`AGENT_HANDOFF.md`](AGENT_HANDOFF.md)：换机器时用
 
 已被取代的文档在 `docs/archive/`，只供追溯。
+
+## 版本化需求工作台兼容入口
+
+默认需求入口继续使用统一网页 `python3 -m web.server` 和独立飞书守护。另保留 `PYTHONPATH=src python3 -m requirements --demo serve --port 8765` 与同模块 CLI，用于双模型审核、版本哈希确认与固定版导出。该入口使用独立版本化会话，不与默认聊天会话自动同步，其 JSON 草稿不是九章节 SRS 定稿。详见 [兼容工作台指南](docs/modules/requirements/usage.md) 和 [整合边界](docs/design/2026-11-08-requirements-merge.md)。

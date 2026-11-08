@@ -1,5 +1,7 @@
 # 需求澄清模块：需求与验收（早期草案，已被 v0.3.2 标准规范吸收与取代）
 
+> 2026-11-08：main 的现行 SRS 契约优先；旧分支已实现的版本化工作台作为兼容入口保留，不用本早期草案覆盖现行默认流程。实际兼容契约见 [使用指南](usage.md)、固定基线及测试；整合方案见 [整合设计](../../design/2026-11-08-requirements-merge.md)。
+
 > **状态说明（2026-11-07 更新，C1 收敛）**：本文件为会话早期的设计讨论底稿。其中的核心需求（多轮引导澄清、标准结构检查、人工确认定稿、第 7 节“保留外部输入与大模型原始输出及每轮调用耗时审计”）已全部吸收并正式落地；而早期第 5 节中“不包括 Web 界面”的临时边界已被后续正式需求 [`docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md`](../../requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md) 扩展取代。  
 > **当前现行权威文档请直接查阅**：
 > 1. 产出物标准契约：[`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](../../specs/REQUIREMENT_SPEC_STANDARD.md)（9 章节 SRS Standard v1.0 与 `RULE-01~09`）

@@ -1,5 +1,7 @@
 # 需求澄清模块：设计与实现计划（早期草案，已被现行架构取代）
 
+> 2026-11-08：main 的现行 SRS 契约优先；旧分支已实现的版本化工作台作为兼容入口保留，不用本早期草案覆盖现行默认流程。实际兼容契约见 [使用指南](usage.md)、固定基线及测试；整合方案见 [整合设计](../../design/2026-11-08-requirements-merge.md)。
+
 > **状态说明（2026-11-07 更新，C1 收敛）**：本文件为早期 CLI 小状态循环草案，其中的 `versions/0001/requirements.json` 与“不建 HTTP 服务、不开发聊天网页”等假设已被现行已落地架构取代。现行架构由 [`src/requirements/`](../../../src/requirements)（飞书长连接守护 + `service.py` 统一对话与耗时审计 + `validator.py` 9 章节校验 + `handoff.py` 直通 S2）与 [`src/web/`](../../../src/web)（全系统统一本机网页客户端）构成。  
 > **现行权威设计与说明请查阅**：[`feishu-requirement-bot.md`](feishu-requirement-bot.md) 与 [`README.md`](README.md)。
 

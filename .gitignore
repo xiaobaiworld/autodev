@@ -15,3 +15,6 @@ workspace/requirements/
 logs/
 config.req.toml
 .req_session.json
+
+# Platform message deduplication and private channel bindings
+workspace/channels/
