@@ -885,7 +885,7 @@
       }).then(r => r.json());
       let result = await submit(false);
       if (result.status === "needs_init") {
-        if (!confirm("该目录不是 Git 仓库，是否执行 git init 并登记？")) return;
+        if (!confirm(result.missing ? "该目录不存在，是否在本地新建并执行 git init 后登记？" : "该目录不是 Git 仓库，是否执行 git init 并登记？")) return;
         result = await submit(true);
       }
       if (!result.ok) { alert(result.error || "项目登记失败"); return; }

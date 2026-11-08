@@ -136,7 +136,7 @@ def main() -> None:
                     result = register_project(Path(__file__).resolve().parents[2], name, resolved)
                     if result["status"] == "needs_init":
                         pending_project_init[chat_id] = {"name": name, "path": resolved}
-                        send_pool.submit(responder.send_text, chat_id, "该目录不是 Git 仓库，是否执行 git init？请回复 `/project init yes`。")
+                        send_pool.submit(responder.send_text, chat_id, ("该目录不存在，是否在本地新建并执行 git init？请回复 `/project init yes`。" if result.get("missing") else "该目录不是 Git 仓库，是否执行 git init？请回复 `/project init yes`。"))
                         return
                     updated = store.set_project(chat_id, name, cwd=resolved)
                     send_pool.submit(responder.send_text, chat_id, f"✅ 项目已登记并切换：`{updated['project']}`\n目录：`{updated['cwd']}`")

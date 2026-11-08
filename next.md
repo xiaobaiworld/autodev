@@ -6,6 +6,7 @@
 - Web 使用 `POST /api/projects` 和顶栏新增按钮；飞书使用 `/project add <名称> <路径>`，非 Git 目录仅在同会话回复 `/project init yes` 后初始化。
 - 测试均使用临时目录；禁止真实飞书发送、服务重启和真实模型调用。完成后运行 `PYTHONPATH=src python3 -m unittest discover -s tests`，记录准确计数并本地提交到 `feat/project-registry`。
 - 验证：`src/cockpit/projects.py` AST 检查通过；新增 6 项登记测试通过；全量 unittest 324 项通过；`git diff --check` 通过。
+- 追加（用户 2026-11-09 确认）：路径不存在时不报错，先询问，同意后在本地新建目录并 git init，不涉及远程；仍先于创建检查名称与重复路径。327 项 unittest 通过。
 - 未验证：飞书真机交互、网页人工验收。未发送飞书消息、重启服务或调用真实模型。
 - 项目登记已提交于 `5f1ecc1`。设计机器人分支、网页选择器、注册表及需求工作台提交已在候选主线历史中；Luna 复跑提交已合并其历史，保留报告并使用已验证的当前主线实现。
 - 已试合并的混合树出现 53 个错误、1 个失败；撤销后保留主线实现与 Luna 报告/提交历史。全量测试 324 项通过。

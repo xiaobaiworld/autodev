@@ -110,7 +110,7 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 ## 11. 项目登记（网页与飞书共用，2026-11-08）
 
 - 唯一写入入口：`cockpit.projects.register_project(root, name, path, *, init_git=False, expected_hash=None)`，写 `config.yaml` 的 `projects` 段（`name`、`repo`），返回 `registered`（附 `version_hash`）或 `needs_init`，失败抛 `RegistryError`。网页和飞书都只调用它，不另写规则。
-- 规则：名称仅字母/数字/`-`/`_`、以字母或数字开头、最长 64 字符且不重名；路径展开 `~` 后取绝对路径，必须是已存在目录且不能与已登记项目相同；路径不是 Git 仓库时返回 `needs_init` 且不改配置，用户明确同意后才 `git init`；写入用 `atomic_write`，支持 `expected_hash` 乐观锁，写后回读不到新条目则恢复原文件。
-- 网页：`POST /api/projects`，请求体 `{name, path, init_git, expected_hash}`；顶栏“新增项目”按钮收到 `needs_init` 时弹确认框，确认后带 `init_git: true` 重提。
-- 飞书：`/project add <名称> <路径>`（路径须在 `allow_dirs` 白名单内）；非 Git 目录时回复提示，同一会话回复 `/project init yes` 才初始化并登记，随后切换到该项目。待确认状态只在守护进程内存里，重启即失效，需重新发送 `add`。
-- 验证范围：`tests/test_project_registry.py` 6 项临时目录测试；网页 `/api/projects` 另在临时根目录上用真实 HTTP 服务实测过成功、需初始化、重名、非法名、过期哈希五种情形。飞书 `on_message` 路由与白名单分支未真机验证。
+- 规则：名称仅字母/数字/`-`/`_`、以字母或数字开头、最长 64 字符且不重名；路径展开 `~` 后取绝对路径，不能与已登记项目相同，已存在的必须是目录；目录不存在或不是 Git 仓库时返回 `needs_init`（目录不存在时带 `missing: true`）且不改配置、不建目录，用户明确同意后才在本地新建目录并 `git init`，全程不涉及远程；写入用 `atomic_write`，支持 `expected_hash` 乐观锁，写后回读不到新条目则恢复原文件。
+- 网页：`POST /api/projects`，请求体 `{name, path, init_git, expected_hash}`；顶栏“新增项目”按钮收到 `needs_init` 时弹确认框（区分“目录不存在”与“不是 Git 仓库”两种说法），确认后带 `init_git: true` 重提。
+- 飞书：`/project add <名称> <路径>`（路径须在 `allow_dirs` 白名单内）；目录不存在或非 Git 目录时回复提示，同一会话回复 `/project init yes` 才新建并初始化并登记；新建目录只限白名单内（网页端目前没有白名单，沿用现状），随后切换到该项目。待确认状态只在守护进程内存里，重启即失效，需重新发送 `add`。
+- 验证范围：`tests/test_project_registry.py` 9 项临时目录测试（含目录不存在先询问、同意后本地新建、不存在目录仍先查重名与重复路径、路径是文件被拒绝）；网页 `/api/projects` 另在临时根目录上用真实 HTTP 服务实测过成功、需初始化、重名、非法名、过期哈希五种情形。飞书 `on_message` 路由与白名单分支未真机验证。

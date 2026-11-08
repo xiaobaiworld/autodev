@@ -1,3 +1,4 @@
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -43,14 +44,43 @@ class ProjectRegistryTests(unittest.TestCase):
         with self.assertRaises(projects.RegistryError):
             self.register("other", self.repo)
 
-    def test_rejects_missing_path(self):
+    def test_missing_directory_asks_first_and_creates_nothing(self):
+        original = self.config.read_text(encoding="utf-8")
+        target = self.root / "new" / "app"
+        result = self.register("fresh", target)
+        self.assertEqual(result, {"status": "needs_init", "missing": True})
+        self.assertFalse(target.exists())
+        self.assertFalse(target.parent.exists())
+        self.assertEqual(self.config.read_text(encoding="utf-8"), original)
+
+    def test_missing_directory_is_created_locally_after_consent(self):
+        target = self.root / "new" / "app"
+        result = self.register("fresh", target, init_git=True)
+        self.assertEqual(result["status"], "registered")
+        self.assertTrue((target / ".git").is_dir())
+        self.assertEqual(list_projects(self.root), [{"name": "fresh", "repo": str(target.resolve())}])
+        remotes = subprocess.run(["git", "-C", str(target), "remote"], capture_output=True, text=True)
+        self.assertEqual(remotes.stdout.strip(), "")
+
+    def test_missing_directory_still_checks_name_and_duplicate_path_first(self):
+        self.register(init_git=True)
         with self.assertRaises(projects.RegistryError):
-            self.register("missing", self.root / "missing")
+            self.register("demo", self.root / "elsewhere", init_git=True)
+        self.assertFalse((self.root / "elsewhere").exists())
+        with self.assertRaises(projects.RegistryError):
+            self.register("_bad", self.root / "elsewhere", init_git=True)
+        self.assertFalse((self.root / "elsewhere").exists())
+
+    def test_rejects_path_that_is_a_file(self):
+        afile = self.root / "afile"
+        afile.write_text("x", encoding="utf-8")
+        with self.assertRaises(projects.RegistryError):
+            self.register("filey", afile, init_git=True)
 
     def test_non_git_directory_waits_then_initializes(self):
         original = self.config.read_text(encoding="utf-8")
         result = self.register()
-        self.assertEqual(result, {"status": "needs_init"})
+        self.assertEqual(result, {"status": "needs_init", "missing": False})
         self.assertEqual(self.config.read_text(encoding="utf-8"), original)
         result = self.register(init_git=True)
         self.assertEqual(result["status"], "registered")

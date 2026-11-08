@@ -44,8 +44,9 @@ def register_project(root, name, path, *, init_git=False, expected_hash=None):
     if not target.is_absolute():
         target = root / target
     target = target.resolve()
-    if not target.exists() or not target.is_dir():
-        raise RegistryError(f"项目路径不存在或不是目录: {target}")
+    missing = not target.exists()
+    if not missing and not target.is_dir():
+        raise RegistryError(f"项目路径不是目录: {target}")
 
     raw = config.read_text(encoding="utf-8")
     current_hash = _version_hash(raw)
@@ -57,18 +58,25 @@ def register_project(root, name, path, *, init_git=False, expected_hash=None):
     if any(Path(repo).expanduser().resolve() == target for _, repo in existing):
         raise RegistryError(f"项目路径已登记: {target}")
 
-    try:
-        git_root = subprocess.run(
-            ["git", "-C", str(target), "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except OSError as exc:
-        raise RegistryError(f"无法检查 Git 仓库: {exc}") from exc
-    is_git = git_root.returncode == 0 and Path(git_root.stdout.strip()).resolve() == target
+    is_git = False
+    if not missing:
+        try:
+            git_root = subprocess.run(
+                ["git", "-C", str(target), "rev-parse", "--show-toplevel"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except OSError as exc:
+            raise RegistryError(f"无法检查 Git 仓库: {exc}") from exc
+        is_git = git_root.returncode == 0 and Path(git_root.stdout.strip()).resolve() == target
     if not is_git and not init_git:
-        return {"status": "needs_init"}
+        return {"status": "needs_init", "missing": missing}
+    if missing:
+        try:
+            target.mkdir(parents=True)
+        except OSError as exc:
+            raise RegistryError(f"无法新建目录 {target}: {exc}") from exc
     if not is_git:
         try:
             proc = subprocess.run(["git", "-C", str(target), "init"], capture_output=True, text=True, check=False)
