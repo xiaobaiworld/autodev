@@ -1,0 +1,72 @@
+# 设计样例，现有调用器尚不读取此文件。不是本机可用性清单。
+# 复制并核对后才能启用；真实文件建议 workspace/agent-registry.toml。
+schema_version = 1
+machine = "replace-with-machine-name"
+
+[agents.claude]
+name = "Claude CLI"
+adapter = "claude"
+executable = "claude"
+invocation_modes = ["cli_session", "cli_stateless"]
+enabled = false
+availability = "unknown"
+
+[agents.codex]
+name = "Codex CLI"
+adapter = "codex"
+executable = "codex"
+invocation_modes = ["cli_session", "cli_stateless"]
+enabled = false
+availability = "unknown"
+
+[models.design_example]
+name = "Claude Opus 5.5（配置示例）"
+vendor = "anthropic"
+model_id = "ai-code-with/claude-opus-5-5"
+agent = "claude"
+invocation_mode = "cli_stateless"
+effort = "high"
+enabled = false
+availability = "unknown"
+supported_tasks = []
+unsupported_tasks = []
+unverified_tasks = ["architecture_design", "development_planning", "ui_design"]
+capability_notes = "先迁移既有证据并核对，再填写支持的任务；样例不作能力保证。"
+evidence = []
+checked_at = ""
+
+[models.design_example.auth]
+type = "cli_login"
+
+[models.review_example]
+name = "GPT-6-Sol（配置示例）"
+vendor = "openai"
+model_id = "gpt-6-sol"
+agent = "codex"
+invocation_mode = "cli_stateless"
+effort = "low"
+enabled = false
+availability = "unknown"
+supported_tasks = []
+unsupported_tasks = []
+unverified_tasks = ["design_review"]
+capability_notes = "先核对现有审查证据；不同 Agent 名称不自动证明实际模型不同。"
+evidence = []
+checked_at = ""
+
+[models.review_example.auth]
+type = "cli_login"
+
+# 示例只列设计的两个角色；迁移时其余角色从 config.yaml 保留现有默认值。
+[defaults.designer]
+agent = "claude"
+model = "design_example"
+
+[defaults.design_reviewer]
+agent = "codex"
+model = "review_example"
+
+# 如使用需要凭证的 API，auth 只写 type="environment" 与
+# api_key_env="LOCAL_MODEL_API_KEY"，不填写实际值；无鉴权可写 type="none"。
+# 本地 30B 场景需用真实厂商/模型 ID、服务配置与验证证据另建条目，
+# 验证前不启用；可把复杂设计/代码审查列为 unsupported_tasks。
