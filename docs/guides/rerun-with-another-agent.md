@@ -62,7 +62,7 @@ PYTHONPATH=src python3 -m driver.reply <需求号> continue --note "批准" --ho
 - `agents:` 下每一项是一个"Agent + 模型 + 强度"的组合（`cli`、`vendor`、`model`、`effort`）。
 - `roles:` 把角色绑到其中一项。角色有 `analyst`、`designer`、`design_reviewer`、`coder`、`code_reviewer`、`acceptor`。
 
-**约束（程序启动时会校验，不满足就拒绝运行）**：每一对作者和审查者的 `vendor` 必须不同：（`designer`, `design_reviewer`）、（`coder`, `code_reviewer`）、（`coder`, `acceptor`）。想换成同厂商就会报 `违反 D008`。这是有意的，想绕过先去 `docs/DECISIONS.md` 写原因。
+**旧实现限制（尚未适配 D019）**：程序仍校验以下作者/审查者的 `vendor` 不同：（`designer`, `design_reviewer`）、（`coder`, `code_reviewer`）、（`coder`, `acceptor`）；同厂商会报 `违反 D008`。当前规则已由 [D019](../DECISIONS.md#d019-设计审查分级优先独立审核允许降级与简单复用免审) 允许同厂商、单模型降级和简单复用免审，无须再次为原则请求例外批准。代码迁移前本指南的现有运行路径仍受该限制，不能手工伪造审核通过来绕开。
 
 **现在能用的 CLI 只有 `claude` 和 `codex`**。`src/driver/setup.py` 的 `USE` 表里只有这两个，绑 `agy` 会直接报"暂不支持"。要支持新的命令行工具：
 

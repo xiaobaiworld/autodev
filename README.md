@@ -4,7 +4,9 @@ AutoDev 是本机运行的需求驱动开发流程。确定性程序控制阶段
 
 ## 当前状态
 
-以 [agent-autoloop](https://github.com/KKKKhazix/agent-autoloop) 为地基（`docs/DECISIONS.md` D014）：它负责派活、排队、重试、租约、事实日志，Agent 以无界面进程运行；我们的流水线驱动放在它外面，管阶段、审查轮次上限、作者与审查者厂商不同、产物校验。Herdr 桌面应用只做显示和管理窗口。
+以 [agent-autoloop](https://github.com/KKKKhazix/agent-autoloop) 为地基（`docs/DECISIONS.md` D014）：它负责派活、排队、重试、租约、事实日志，Agent 以无界面进程运行；我们的流水线驱动放在它外面，管阶段、审查策略、轮次上限和产物校验。Herdr 桌面应用只做显示和管理窗口。
+
+审查最新原则见 [D019](docs/DECISIONS.md#d019-设计审查分级优先独立审核允许降级与简单复用免审)：大部分任务优先独立模型、争取跨厂商，允许单模型降级和简单复用免审；与旧强制跨厂商/双模型规则冲突时以此为准。该原则先用于当前设计机器人方案，现有运行代码仍有旧硬校验，尚未实现分级放行。
 
 - 已跑通：真实 Agent 完成 S1 需求分析、S2 设计、S3 设计审查（`docs/spikes/2026-11-05-f2-pipeline-report.md`）。
 - 进行中：命令行看板（`src/dashboard/`），布局放在 Herdr 的 `pro2` 空间。
