@@ -1,6 +1,6 @@
 # next.md
 
-更新：2026-11-08 ｜ 当前版本：`v0.3.3` ｜ 阶段：流水线 S1 到 S9、飞书与全系统统一 Web 客户端已全部连通；需求模块升级支持「软件研发 (`SOFTWARE`) / 环境部署 (`DEPLOYMENT`) / 混合型 (`HYBRID`)」双轨分类（Agent 自动寻找分类 + 人工指定）与同构异核 9 章节模板；接下来一遍遍雕细节
+更新：2026-11-08 ｜ 当前版本：`v0.3.3` ｜ 阶段：流水线 S1 到 S9、飞书与全系统统一 Web 客户端已全部连通；需求模块升级支持「软件研发 (`SOFTWARE`) / 环境部署 (`DEPLOYMENT`) / 硬件接入 (`HARDWARE`) / 跨类复合 (`HYBRID`)」自动分辨与双轨分类、按分类模板吸收内容及同构异核 9 章节模板；接下来一遍遍雕细节
 
 ## 恢复上下文时先读
 
@@ -39,7 +39,7 @@
 - **崩溃与卡住**（假 Agent、真实中台，`tests/f5_crash.py`）：`hang` 超时重试、`crash` 每次崩溃 4 秒转人工（以前 45 分钟，O006）、`ctrl-kill`、`hub-kill` 都通过。
 - **需求澄清独立模块与飞书机器人（已落地运行并直通 S2）**：`src/requirements/` 完全自包含内聚，macOS LaunchAgent 常驻长连接守护（`com.autodev.req-bot`）；发布规范 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md)，确立“从模糊到清晰”的渐进式演进生命周期、九大标准章节与网状关系矩阵；配套确定性规则检查器（`src/requirements/validator.py`）在定稿时自动断言验真；抽离独立大模型调用层（`src/requirements/llm_provider.py`，统一 `config.yaml` 完整模型 ID，支持 `cli_session` / `cli_stateless` 与 `/model` 在线切换）与阶段交接器（`src/requirements/handoff.py`，定稿后回复 `启动设计` 或 `/handoff` 自动生成 S1 基线并直通 `S2 架构设计`）。
 - **全系统统一网页客户端与全项目代码收敛优化（`src/web/`、`src/requirements/service.py`，`v0.3.2`）**：严格按飞书 9 章节标准沉淀并通过校验的需求文档 [`docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md`](docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md)；实现 `src/web/`（`server.py`、`api.py`、`ui.html`，仅监听 `127.0.0.1`），把「需求澄清三栏工作台」与「S1~S9 系统工作流客户端」连成一体；完成 O1~O4 与 C1~C3 共 7 项跨模块去重与冲突消解。
-- 测试：245 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。联机用假 Agent、不花额度：`python3 tests/f2_pipeline.py --build`（跑完整 S1 到 S9，含真实 git 标签）、`--fake-rework`，`tests/f5_crash.py hang|crash|ctrl-kill|hub-kill`。
+- 测试：249 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。联机用假 Agent、不花额度：`python3 tests/f2_pipeline.py --build`（跑完整 S1 到 S9，含真实 git 标签）、`--fake-rework`，`tests/f5_crash.py hang|crash|ctrl-kill|hub-kill`。
 
 ### 真实运行的证据（演示需求：命令行待办 `todo`）
 

@@ -218,7 +218,7 @@ def execute_clarification_turn(
     # 双轨分类：若当前处于 auto 模式，优先采纳 Agent 在回复中结合代码与部署目录给出的分类结论
     if sess_req_source != "manual":
         agent_detected = extract_agent_classified_type(reply_text)
-        if agent_detected in ("SOFTWARE", "DEPLOYMENT", "HYBRID"):
+        if agent_detected in ("SOFTWARE", "DEPLOYMENT", "HARDWARE", "HYBRID"):
             store.set_req_type(
                 chat_id,
                 agent_detected,
@@ -247,7 +247,7 @@ def execute_clarification_turn(
         try:
             v_res = validate_requirement_spec(reply_text)
             doc_type = extract_req_type(reply_text) if reply_text else final_req_type
-            if doc_type in ("SOFTWARE", "DEPLOYMENT", "HYBRID") and final_req_source != "manual":
+            if doc_type in ("SOFTWARE", "DEPLOYMENT", "HARDWARE", "HYBRID") and final_req_source != "manual":
                 final_req_type = doc_type
                 store.set_req_type(
                     chat_id,
@@ -260,6 +260,8 @@ def execute_clarification_turn(
             ts = time.strftime("%Y%m%d-%H%M%S")
             if final_req_type == "DEPLOYMENT":
                 archived_filename = f"REQ-DEPLOY-{ts}.md"
+            elif final_req_type == "HARDWARE":
+                archived_filename = f"REQ-HW-{ts}.md"
             elif final_req_type == "HYBRID":
                 archived_filename = f"REQ-HYBRID-{ts}.md"
             else:

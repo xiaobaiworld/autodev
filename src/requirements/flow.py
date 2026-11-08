@@ -7,13 +7,14 @@ from typing import Any
 
 REQ_PROMPT_VERSION = "req-guided-v6 (compat req-guided-v5)"
 
-REQ_TYPES = ("SOFTWARE", "DEPLOYMENT", "HYBRID")
+REQ_TYPES = ("SOFTWARE", "DEPLOYMENT", "HARDWARE", "HYBRID")
 
 REQ_TYPE_LABELS: dict[str, str] = {
-    "AUTO": "🤖 Agent 自动寻找与分类 (Auto)",
+    "AUTO": "🤖 Agent 自动分辨与匹配模板 (Auto)",
     "SOFTWARE": "💻 偏软件功能开发 (SOFTWARE)",
     "DEPLOYMENT": "🚀 偏环境部署与脚本工程 (DEPLOYMENT)",
-    "HYBRID": "🔗 软硬一体：功能开发+环境部署 (HYBRID)",
+    "HARDWARE": "🔧 偏硬件与设备接入工程 (HARDWARE)",
+    "HYBRID": "🔗 跨类复合需求：软/硬/部署联动 (HYBRID)",
 }
 
 _DEPLOY_KEYWORDS = (
@@ -62,7 +63,6 @@ _SOFTWARE_KEYWORDS = (
     "支付",
     "收款",
     "购物车",
-    "扫码",
     "导出",
     "报表",
     "弹窗",
@@ -75,6 +75,39 @@ _SOFTWARE_KEYWORDS = (
     "后端接口",
 )
 
+_HARDWARE_KEYWORDS = (
+    "硬件",
+    "外设",
+    "设备接入",
+    "传感器",
+    "摄像头",
+    "扫码枪",
+    "读卡器",
+    "rfid",
+    "nfc",
+    "串口",
+    "rs232",
+    "rs485",
+    "modbus",
+    "gpio",
+    "树莓派",
+    "单片机",
+    "嵌入式",
+    "固件",
+    "蓝牙设备",
+    "usb设备",
+    "usb hid",
+    "plc",
+    "闸机",
+    "自助终端",
+    "打印终端",
+    "边缘计算盒",
+    "机械臂",
+    "供电",
+    "接线",
+    "波特率",
+)
+
 _HYBRID_PHRASES = (
     "开发并部署",
     "代码和部署",
@@ -83,11 +116,14 @@ _HYBRID_PHRASES = (
     "顺便写个部署",
     "并生成部署脚本",
     "既要开发又要部署",
+    "软硬件一体",
+    "软硬一体",
+    "硬件加软件",
 )
 
 
 def normalize_req_type(raw_type: str | None) -> str:
-    """将用户输入或配置中的类型名归一化为 AUTO / SOFTWARE / DEPLOYMENT / HYBRID。"""
+    """将用户输入或配置中的类型名归一化为 AUTO / SOFTWARE / DEPLOYMENT / HARDWARE / HYBRID。"""
     if not raw_type:
         return "AUTO"
     cleaned = raw_type.strip().upper()
@@ -108,15 +144,24 @@ def normalize_req_type(raw_type: str | None) -> str:
         "部署": "DEPLOYMENT",
         "环境部署": "DEPLOYMENT",
         "部署脚本": "DEPLOYMENT",
+        "HARDWARE": "HARDWARE",
+        "HW": "HARDWARE",
+        "DEVICE": "HARDWARE",
+        "IOT": "HARDWARE",
+        "硬件": "HARDWARE",
+        "偏硬件": "HARDWARE",
+        "硬件工程": "HARDWARE",
+        "设备接入": "HARDWARE",
         "HYBRID": "HYBRID",
         "MIXED": "HYBRID",
         "混合": "HYBRID",
         "开发加部署": "HYBRID",
         "研发含部署": "HYBRID",
+        "软硬一体": "HYBRID",
     }
     if cleaned in alias_map:
         return alias_map[cleaned]
-    raise ValueError(f"不支持的需求类型: {raw_type!r}（可选: auto, software, deployment, hybrid）")
+    raise ValueError(f"不支持的需求类型: {raw_type!r}（可选: auto, software, deployment, hardware, hybrid）")
 
 
 def detect_manual_type_override(user_text: str) -> str | None:
@@ -126,6 +171,8 @@ def detect_manual_type_override(user_text: str) -> str | None:
         return "AUTO"
     if re.search(r"(这是|属于|改为|切为|按|定为)(偏)?(环境)?部署(工程|脚本)?需求", t):
         return "DEPLOYMENT"
+    if re.search(r"(这是|属于|改为|切为|按|定为)(偏)?硬件(设备|接入|工程)?需求", t):
+        return "HARDWARE"
     if re.search(r"(这是|属于|改为|切为|按|定为)(偏)?(软件|功能)(开发|研发)?需求", t):
         return "SOFTWARE"
     if re.search(r"(这是|属于|改为|切为|按|定为)(混合|软硬一体|开发含部署|开发加部署)需求", t):
@@ -138,8 +185,8 @@ def classify_requirement_type(
     history: list[dict[str, str]] | None = None,
     project_context: str = "",
 ) -> tuple[str, str]:
-    """程序启发式 + 上下文联合预判：根据用户输入与历史对话自动寻找信号并推断需求类型。
-    返回 (req_type, reason)，其中 req_type 为 SOFTWARE / DEPLOYMENT / HYBRID。
+    """当用户在需求机器人里输入大量或零散内容时，自动分辨这是偏软件(SOFTWARE)、偏部署(DEPLOYMENT)、偏硬件(HARDWARE)还是复合(HYBRID)。
+    返回 (req_type, reason)。
     """
     combined_parts = [user_text or ""]
     for item in history or []:
@@ -148,46 +195,54 @@ def classify_requirement_type(
     full_text = "\n".join(combined_parts).lower()
 
     matched_deploy = [kw for kw in _DEPLOY_KEYWORDS if kw in full_text]
+    matched_hw = [kw for kw in _HARDWARE_KEYWORDS if kw in full_text]
     matched_soft = [kw for kw in _SOFTWARE_KEYWORDS if kw in full_text]
     matched_hybrid = [ph for ph in _HYBRID_PHRASES if ph in full_text]
 
-    if matched_hybrid or (len(matched_deploy) >= 2 and len(matched_soft) >= 2):
-        sample = ", ".join((matched_hybrid + matched_deploy[:2] + matched_soft[:2])[:4])
-        return ("HYBRID", f"同时检测到软件功能与环境部署诉求（{sample}）")
+    active_domains = sum(1 for arr in (matched_deploy, matched_hw, matched_soft) if len(arr) >= 2)
+    if matched_hybrid or active_domains >= 2:
+        sample = ", ".join((matched_hybrid + matched_hw[:2] + matched_deploy[:2] + matched_soft[:2])[:4])
+        return ("HYBRID", f"同时检测到跨领域复合诉求（{sample}）")
+
+    if matched_hw and len(matched_hw) >= len(matched_soft) and len(matched_hw) >= len(matched_deploy):
+        sample = ", ".join(matched_hw[:3])
+        return ("HARDWARE", f"自动识别到硬件与设备接入信号（{sample}）")
 
     if matched_deploy and len(matched_deploy) >= len(matched_soft):
         sample = ", ".join(matched_deploy[:3])
-        return ("DEPLOYMENT", f"检测到环境部署与脚本工程信号（{sample}）")
+        return ("DEPLOYMENT", f"自动识别到环境部署与脚本工程信号（{sample}）")
 
     if matched_soft:
         sample = ", ".join(matched_soft[:3])
-        return ("SOFTWARE", f"检测到软件业务功能信号（{sample}）")
+        return ("SOFTWARE", f"自动识别到软件业务功能信号（{sample}）")
 
-    return ("SOFTWARE", "默认归类为软件功能研发（待 Agent 结合仓库代码与部署目录进一步确认）")
+    return ("SOFTWARE", "默认归类为软件功能研发（由 Agent 结合输入内容与项目资产动态确认）")
 
 
 def extract_agent_classified_type(reply_text: str) -> str | None:
-    """从大模型回复或定稿 SRS 中提取 Agent 自动判定并写出的需求类型（SOFTWARE / DEPLOYMENT / HYBRID）。"""
+    """从大模型回复或定稿 SRS 中提取 Agent 自动判定并写出的需求类型（SOFTWARE / DEPLOYMENT / HARDWARE / HYBRID）。"""
     if not reply_text:
         return None
-    # 1. 优先匹配显式标签，如 "🧭 需求类型：DEPLOYMENT" 或 "- **需求类型**：DEPLOYMENT"
     m = re.search(
         r"(?:需求类型|交付类型|类型分类)\s*\*{0,2}\s*[：:]\s*`*([A-Za-z\u4e00-\u9fa5+_/\-\s（）()]+)",
         reply_text,
     )
     if m:
         snippet = m.group(1).upper()
-        if "HYBRID" in snippet or "混合" in snippet or ("软件" in snippet and "部署" in snippet):
+        if "HYBRID" in snippet or "混合" in snippet or "复合" in snippet:
             return "HYBRID"
+        if "HARDWARE" in snippet or "偏硬件" in snippet or "硬件工程" in snippet or "设备接入" in snippet:
+            return "HARDWARE"
         if "DEPLOYMENT" in snippet or "DEPLOY" in snippet or "环境部署" in snippet or "部署脚本" in snippet:
             return "DEPLOYMENT"
         if "SOFTWARE" in snippet or "软件" in snippet or "功能研发" in snippet:
             return "SOFTWARE"
 
-    # 2. 兜底匹配行内明确的枚举标记
+    if re.search(r"🧭\s*[^：\n]*[：:]\s*[^\n]*(HARDWARE|偏硬件|硬件与设备)", reply_text, re.I):
+        return "HARDWARE"
     if re.search(r"🧭\s*[^：\n]*[：:]\s*[^\n]*(DEPLOYMENT|偏环境部署|部署工程)", reply_text, re.I):
         return "DEPLOYMENT"
-    if re.search(r"🧭\s*[^：\n]*[：:]\s*[^\n]*(HYBRID|开发含部署|混合型)", reply_text, re.I):
+    if re.search(r"🧭\s*[^：\n]*[：:]\s*[^\n]*(HYBRID|开发含部署|混合型|跨类复合)", reply_text, re.I):
         return "HYBRID"
     if re.search(r"🧭\s*[^：\n]*[：:]\s*[^\n]*(SOFTWARE|偏软件开发|软件功能)", reply_text, re.I):
         return "SOFTWARE"
@@ -195,60 +250,45 @@ def extract_agent_classified_type(reply_text: str) -> str | None:
 
 
 _SYSTEM_ROLE_PROMPT = f"""[{REQ_PROMPT_VERSION}]
-你是一名极其克制、善于通过具象场景例子与原型/拓扑图引导用户的资深需求与部署架构分析师。你的任务是通过多轮极简、启发式的对话，协助项目负责人把朴素的想法梳理为一份标准的 9 章节《软件/部署需求规格说明书》。
+你是一名极其克制、善于通过具象场景例子与原型/拓扑图引导用户的资深需求、部署与硬件集成分析师。你的任务是：当用户在需求机器人里提出一大段想法或多点内容时，**自动分辨出这是偏软件开发 (`SOFTWARE`)、偏环境部署 (`DEPLOYMENT`)、偏硬件设备 (`HARDWARE`) 还是跨类复合 (`HYBRID`)**，自动将用户已提到的信息吸收归位到对应分类模板中，仅针对剩余缺口极简追问，最终收敛为标准的 9 章节《需求规格说明书》。
 
-【需求类型双轨识别职责（Agent 自动寻找分类 + 人工可指定）】：
-系统中的需求分为三大类型，你必须在每轮对话中结合【当前目标项目背景】里的代码模块（`src/`）和部署资产（`deploy/`、脚本、守护配置）自动帮用户寻找定位并分类（若人工已指定则遵从人工指定）：
-1. 💻 **SOFTWARE（偏软件功能开发）**：侧重业务功能、接口与界面交互，下游产出业务代码与测试；
-2. 🚀 **DEPLOYMENT（偏环境部署与脚本工程）**：侧重环境初始化、一键安装/启动/停止/卸载脚本（如 `deploy/*.sh`）、守护进程配置（LaunchAgent/systemd/Docker/Nginx）、健康检查探针、幂等重跑与回滚机制，下游产出可执行部署脚本包；
-3. 🔗 **HYBRID（软硬一体：软件开发+环境部署）**：既要开发新软件功能，又要求配套生成部署脚本或守护服务配置。
+【核心能力：自动分辨类别 + 批量吸收 + 按分类模板完成】：
+1. 💻 **SOFTWARE（偏软件功能开发）**：侧重业务用例、界面交互与数据流转，套用【软件开发模板】（UI 线框图 + 业务 BDD 验收）；
+2. 🚀 **DEPLOYMENT（偏环境部署与脚本工程）**：侧重环境初始化、一键部署脚本（`deploy/*.sh`）、进程守护（LaunchAgent/systemd/Docker）、探针与回滚，套用【环境部署模板】（脚本清单 + 部署拓扑草图 + 幂等重跑验收）；
+3. 🔧 **HARDWARE（偏硬件与设备接入工程）**：侧重物理外设/传感器/扫码枪/RFID/串口/网关设备选型、物理连接与通信协议（USB/RS232/RS485/Modbus/MQTT）、供电与断连自愈，套用【硬件接入模板】（设备与协议清单 + 硬件接线/通信拓扑草图 + 设备联调与断连恢复验收）；
+4. 🔗 **HYBRID（跨类复合需求）**：同时横跨软件、部署、硬件中的两个及以上领域，套用【复合联动模板】。
+
+【当用户一次性输入大量内容时的处理铁律】：
+- 自动从用户长文本中提取已经说清楚的要素（目标、流程/脚本/设备、边界、验收点），直接归入对应分类模板，**绝不机械地从头重复追问用户已经写明的内容**！
+- 在回复中先用一句话告诉用户：“已自动识别为【xxx 类需求】并吸收你提供的 N 项要素”，然后只针对该分类模板里**唯一最关键的缺失分歧点**抛出 1、2 选项（如果用户一段话已把 4 块拼图全部说清，直接提示回复【定稿】生成完整文档）。
 
 【核心红线（按需求类型精准区分）】：
-1. 对 `SOFTWARE` 需求：严禁深入底层数据库建表 SQL 或具体业务代码实现细节；对 `DEPLOYMENT` / `HYBRID` 需求：**允许并必须厘清目标操作系统、运行守护方式、端口、目录路径、环境变量与拟生成的部署脚本名称**，但仍严禁在需求阶段直接编写大段完整实现源码或 SQL。
+1. 对 `SOFTWARE` 需求：严禁深入底层数据库建表 SQL 或代码实现；对 `DEPLOYMENT` 需求：允许并必须明确目标 OS、守护方式、端口、路径与拟生成的脚本清单；对 `HARDWARE` 需求：允许并必须明确硬件设备型号/接口形態、通信协议、采样率与物理环境约束；但所有类型在需求阶段均严禁直接编写业务函数源码或 SQL。
 2. 严禁单次长篇大论！单次回复总字数必须严格控制在 300 字以内（包含线框图/拓扑图时总行数不超过 26 行），适配移动端飞书与 Web 阅读。
 3. 严禁一次抛出多个开放性问题！每次只推进一个点，最多只问 1 个问题。
-4. 必须换算成具体的操作场景（软件看使用者操作，部署看管理员执行脚本、探针检查与故障回滚场景）。
 
 【需求规模与关联网络判断职责（重要）】：
-当用户提出需求或探讨方向时，必须结合项目背景自动寻找并做出清晰判断：
-0. 🧭【需求类型分类】：明确标定是 `SOFTWARE (偏软件开发)`、`DEPLOYMENT (偏环境部署)` 还是 `HYBRID (开发含部署)`；
+0. 🧭【需求类型分类】：自动分辨并标明 `SOFTWARE`、`DEPLOYMENT`、`HARDWARE` 或 `HYBRID`；
 1. 🏷️【需求规模类别】：判断是【史诗级大需求(Epic)】、【标准功能(Feature)】、【子功能小需求(Sub-feature)】还是【改动增强(Enhancement)】；
-2. 📂【功能层级归属/模块归属】：软件需求指出挂载在 `src/` 哪个主业务模块下；部署需求指出挂载在 `deploy/` 或哪套运行环境体系下；
-3. 🔗【需求关联网络】：基于近期 Git 变更、现有部署脚本和需求列表，自动寻找与其他需求的关系：Parent(所属父需求)、Depends-on(前置依赖，如部署需求依赖哪个软件模块需求)、Relates-to(业务协同)、Blocks(后置解锁) 或 None(独立)。
-
-【需求拼图清单（按识别出的需求类型自动切换）】：
-- 若为 `SOFTWARE`：
-  • 拼图 1：核心目标与使用者场景
-  • 拼图 2：核心业务流程与外部界面感知（UI 线框图）
-  • 拼图 3：明确非目标 / 边界（本期坚决不做什么）
-  • 拼图 4：可量化业务验收标准（Given-When-Then）
-- 若为 `DEPLOYMENT`（或 `HYBRID` 的部署部分）：
-  • 拼图 1：目标运行环境基线与痛点（什么 OS/架构、用 LaunchAgent/systemd/Docker 哪种守护、解决什么部署痛点）
-  • 拼图 2：拟生成的部署脚本清单与生命周期（需生成哪些 `.sh`/配置文件，如何完成「预检 → 安装 → 启动 → 升级幂等重跑 → 回滚/卸载」）
-  • 拼图 3：安全权限边界与明确非目标（哪些目录可写、密钥如何外置、本期不覆盖哪些操作系统或集群）
-  • 拼图 4：部署探针、幂等重跑（连续跑 2~3 次结果一致）与异常回滚验收标准
-
-【原型 / 部署拓扑草图呈现规范（```text）】：
-- 对 `SOFTWARE`：使用 ```text 绘制页面 UI 线框图（展示标题、输入框、按钮、列表）；
-- 对 `DEPLOYMENT`：使用 ```text 绘制 **部署架构拓扑与命令交互草图**（展示「宿主机 ↔ 守护服务 ↔ 监听端口 ↔ 日志/配置路径」拓扑框图，以及执行如 `bash deploy/install.sh` 的终端命令与预期输出）；
-- 宽度控制在 35~44 个字符宽以内，保证手机端与 Web 端一屏清晰展示。
+2. 📂【功能层级归属/模块归属】：指出挂载在哪个业务模块（`src/...`）、部署目录（`deploy/...`）或硬件驱动/网关层；
+3. 🔗【需求关联网络】：自动寻找与项目内已有模块、部署脚本或历史需求的关系：Parent、Depends-on、Relates-to、Blocks 或 None。
 
 【每轮输出结构规范（必须包含以下模块）】：
-1. 📌 [进度感知]：一句话标明当前阶段，如：`📌 [进度: 已定位为环境部署需求，正在明确部署脚本清单与守护方式]`
+1. 📌 [进度感知]：一句话标明当前分类模板与进度，如：`📌 [进度: 已自动匹配「环境部署模板」，正在确认脚本幂等与回滚方式]`
 2. 🎯 [事实确认与拓扑判断]：
-   • 核心诉求：一句话精准复述刚才达成的一致；
-   • 🧭 需求类型：明确写出 `SOFTWARE (偏软件开发)`、`DEPLOYMENT (偏环境部署)` 或 `HYBRID (开发含部署)`；
+   • 核心诉求：一句话精准复述已从用户输入中吸收的要素；
+   • 🧭 需求类型：明确写出 `SOFTWARE (偏软件开发)`、`DEPLOYMENT (偏环境部署)`、`HARDWARE (偏硬件工程)` 或 `HYBRID (跨类复合)`；
    • 🏷️ 规模类别：指出是大需求(Epic)、标准功能(Feature)、还是子功能(Sub-feature)；
-   • 📂 模块归属：指出归属的代码模块（`src/...`）或部署目录（`deploy/...`）；
+   • 📂 模块归属：指出归属的代码模块、部署目录或硬件接入层；
    • 🔗 需求关联：明确与项目内已有模块/脚本/需求的关系（Parent/Depends-on/Relates-to/None）；
-3. 🗳️ [单点推进（带具象场景举例）]：针对当前最缺的一块拼图，提出 1 个最关键的决策点，并收敛为 2 个带具体例子的选项：
-   1. 方案一标题：简要说明。（例如：具体的操作或脚本执行场景示例）
-   2. 方案二标题：简要说明。（例如：具体的操作或脚本执行场景示例）
-   💡 附带提议：“需要看界面原型或部署拓扑草图吗？随时告诉我【看原型】/【看拓扑】或直接回复 1、2 继续。”
+3. 🗳️ [单点推进（带具象场景举例）]：针对当前分类模板最缺的一块拼图，提出 1 个最关键的决策点，并收敛为 2 个带具体例子的选项：
+   1. 方案一标题：简要说明。（例如：具体的业务/部署/硬件接入场景示例）
+   2. 方案二标题：简要说明。（例如：具体的业务/部署/硬件接入场景示例）
+   💡 附带提议：“需要看界面原型 / 部署拓扑 / 硬件接线草图吗？随时告诉我【看原型】/【看拓扑】或直接回复 1、2 继续。”
 
 【定稿收口规则】：
-当 4 块拼图全部集齐且用户无异议时，主动提示：
-`🎉 需求核心要素已完整对齐！如无其他补充，请回复【定稿】，我将为你输出标准 9 章节需求规格说明书。`
+当对应分类模板的 4 块拼图全部集齐且用户无异议时，主动提示：
+`🎉 需求核心要素已完整对齐！如无其他补充，请回复【定稿】，我将按当前分类模板为你输出标准 9 章节需求规格说明书。`
 """
 
 _FINALIZE_KEYWORDS = ("定稿", "总结需求", "生成需求", "确认需求", "输出需求", "需求定稿")
@@ -310,8 +350,79 @@ def is_finalize_request(text: str) -> bool:
     return any(kw in cleaned for kw in _FINALIZE_KEYWORDS)
 
 
+def _build_category_puzzle_template(effective_type: str) -> str:
+    """当自动分辨出需求属于 SOFTWARE / DEPLOYMENT / HARDWARE / HYBRID 后，动态加载对应类别的四块拼图澄清模板。"""
+    if effective_type == "DEPLOYMENT":
+        return (
+            "【当前生效分类模板：🚀 环境部署与脚本工程模板 (DEPLOYMENT)】\n"
+            "• 拼图 1（目标环境与痛点）：什么 OS/架构、用哪种守护方式（LaunchAgent / systemd / Docker）、解决什么手工部署痛点；\n"
+            "• 拼图 2（部署脚本清单与生命周期）：拟生成哪些脚本/配置文件（如 `deploy/*.sh`、`*.plist`），如何完成「预检 → 安装 → 启动 → 幂等重跑 → 回滚卸载」；\n"
+            "• 拼图 3（安全权限与非目标边界）：普通用户还是 root、密钥如何外置、本期不覆盖哪些环境；\n"
+            "• 拼图 4（部署探针与幂等验收）：首次探针响应、连续执行 2~3 次幂等无报错、异常阻断退出码；\n"
+            "• 草图规范（```text）：绘制「管理员命令 ➔ 宿主机守护 ➔ 端口 ➔ 日志路径」拓扑框图。"
+        )
+    if effective_type == "HARDWARE":
+        return (
+            "【当前生效分类模板：🔧 偏硬件与设备接入工程模板 (HARDWARE)】\n"
+            "• 拼图 1（硬件应用场景与设备选型）：使用什么硬件/外设（如扫码枪、RFID、传感器、摄像头、串口终端）、解决什么现场物理采集或控制问题；\n"
+            "• 拼图 2（物理连接、通信协议与采集控制流）：接口形态（USB HID / RS232 / RS485 / GPIO / 蓝牙 / 局域网）与协议（Modbus / MQTT / RTSP / 串口帧），以及「设备握手 → 信号采集/指令下发 → 断线缓存/重连」流程；\n"
+            "• 拼图 3（物理环境约束与非目标边界）：供电、温湿度/距离限制、固件边界、本期不改造哪些硬件底层；\n"
+            "• 拼图 4（硬件联调与断连自愈验收标准）：正常采集/控制延迟指标、拔插/断电重连自愈验证、模拟器(Mock)脱机验证方案；\n"
+            "• 草图规范（```text）：绘制「物理外设/传感器 ──(协议/接口)──► 边缘网关/宿主机驱动 ──► 业务服务」硬件接线与通信拓扑草图。"
+        )
+    if effective_type == "HYBRID":
+        return (
+            "【当前生效分类模板：🔗 跨类复合需求模板 (HYBRID：软/硬/部署联动)】\n"
+            "• 拼图 1：核心业务场景与跨层目标（软件交互 + 硬件设备/环境部署如何配合）；\n"
+            "• 拼图 2：端到端闭环流程与交付清单（软件模块 + 硬件通信接口 + 配套部署脚本 `deploy/*.sh`）；\n"
+            "• 拼图 3：各层明确非目标与安全边界；\n"
+            "• 拼图 4：功能正向验收 + 设备联调/部署脚本幂等重跑验收。"
+        )
+    return (
+        "【当前生效分类模板：💻 标准软件功能开发模板 (SOFTWARE)】\n"
+        "• 拼图 1（核心目标与使用者场景）：谁在什么场景下用，解决什么痛点；\n"
+        "• 拼图 2（核心业务流程与界面感知）：使用者第一步点哪里、看到什么、系统如何处理；\n"
+        "• 拼图 3（明确非目标与边界）：本期坚决不做什么；\n"
+        "• 拼图 4（可量化业务验收标准）：正向与异常边界 Given-When-Then；\n"
+        "• 草图规范（```text）：绘制外部界面 UI 低保真线框图（标题栏、输入框、按钮、列表区）。"
+    )
+
+
 def _build_finalize_section_guide(effective_type: str) -> str:
-    """根据 SOFTWARE / DEPLOYMENT / HYBRID 类型生成差异化的 9 章节定稿指引（外层 9 章节同构，内层异核）。"""
+    """根据 SOFTWARE / DEPLOYMENT / HARDWARE / HYBRID 类型生成差异化的 9 章节定稿指引（外层 9 章节同构，内层异核）。"""
+    if effective_type == "HARDWARE":
+        return """## 1. 需求标识与元数据
+（包含：需求编号[建议 REQ-HW-xxx]、需求名称、需求类型[`HARDWARE (偏硬件与设备接入工程)`]、提出人、分析师、归属项目、定稿时间）
+
+## 2. 需求规模分类与需求关联网络
+（必须显式包含：🧭 **需求类型**[HARDWARE]、🏷️ **需求规模类别**[Epic/Feature/Sub-feature/Enhancement]、📂 **功能层级归属/模块归属**[指出硬件驱动/设备接入层及关联模块]、🔗 **需求关联网络**[Parent/Depends-on/Relates-to/Blocks/Supersedes/None]）
+
+## 3. 核心背景与业务目标 (Why & What)
+（必须显式包含：**业务背景**[现场物理作业或设备交互痛点]、**业务目标**[硬件采集准确率、响应延迟或无人值守稳定性指标]）
+
+## 4. 业务用例与核心流程 (Scope)
+（针对偏硬件需求，本节必须明确列出：
+  a. **目标硬件/外设清单与通信接口参数**（设备名称/型号、USB HID / RS232 / RS485 / Modbus / MQTT / 摄像头 RTSP 等）；
+  b. **硬件交互与控制核心流程**：1. 设备初始化与握手探测 → 2. 信号采集/指令下发 → 3. 异常断连本地缓存与自动重连 → 4. 状态上报与告警）
+
+## 5. 明确非目标与边界 (Non-goals)
+（必须包含带 ❌ 标记的具体排除项，如本期不自行设计 PCB 电路板、不刷写第三方闭源固件等）
+
+## 6. 外部界面原型草图 (UI Wireframe)
+（针对偏硬件需求，在 `## 6. 外部界面原型草图 (UI Wireframe)` 标题下使用 ```text 代码块绘制 **【硬件物理连接与通信拓扑草图】**，至少 6 行，清晰展示：外部硬件设备/传感器 ↔ 物理接口/串口/网络协议 ↔ 宿主驱动/守护服务 ↔ 状态监控输出）
+
+## 7. 业务约束与前置依赖
+（包含：**硬件与物理环境约束**[供电规格、接口类型、波特率/采样率、现场网络条件]、**身份与权限约束**[串口/USB 设备读写权限组]、**安全保护约束**[硬件超时保护与防误触机制]）
+
+## 8. 可量化验收标准清单 (Acceptance Criteria)
+（必须包含至少 3 个可验证的硬件场景 Given-When-Then：
+  - **场景 1（设备正常连接与数据采集/控制响应）**：设备接入后正常识别，触发物理动作后在规定毫秒/秒级延迟内完成采集或控制；
+  - **场景 2（设备热插拔/断线自动重连验证）**：通信中断或拔出重插后，系统自动恢复连接且不崩溃、不丢关键状态；
+  - **场景 3（无真实硬件时的模拟器 Mock 验收）**：提供硬件信号模拟输入脚本，可在纯软件沙箱下完成自动化回归测试）
+
+## 9. 下游架构设计关注点
+（提炼 1~3 个给下游 S2 设计与 S4 编码的关键考量：如硬件抽象层 HAL 与模拟器解耦设计、串口/设备阻塞超时隔离、断线重连状态机；严禁直接写业务源码或建表 SQL）"""
+
     if effective_type == "DEPLOYMENT":
         return """## 1. 需求标识与元数据
 （包含：需求编号[建议 REQ-DEPLOY-xxx]、需求名称、需求类型[`DEPLOYMENT (偏环境部署与脚本工程)`]、提出人、分析师、归属项目、定稿时间）
@@ -421,30 +532,31 @@ def build_req_prompt(
     effective_type = req_type if (req_type in REQ_TYPES and req_type_source == "manual") else (
         req_type if req_type in REQ_TYPES else inferred_type
     )
+    puzzle_tpl = _build_category_puzzle_template(effective_type)
     if req_type_source == "manual" and req_type in REQ_TYPES:
         type_directive = (
             f"\n【当前需求类型状态：👤 人工显式锁定为 `{req_type}` ({REQ_TYPE_LABELS.get(req_type, req_type)})】\n"
-            f"请严格按 `{req_type}` 类型的拼图清单与模板推进，并在回复中标明 `🧭 需求类型：{req_type}（人工指定）`。\n"
+            f"请严格按下方已加载的 `{req_type}` 分类模板完成梳理，并在回复中标明 `🧭 需求类型：{req_type}（人工指定）`。\n"
+            f"{puzzle_tpl}\n"
         )
     else:
         type_directive = (
-            f"\n【当前需求类型状态：🤖 Agent 自动寻找与分类模式】\n"
-            f"• 程序初步信号预判：`{inferred_type}`（依据：{inferred_reason or '基于当前对话文本'}）\n"
-            f"• 请你结合上方【当前目标项目背景】里的代码模块（`src/`）与部署资产（`deploy/` 等）做最终判断，并在回复中显式写出 `🧭 需求类型：SOFTWARE | DEPLOYMENT | HYBRID`。\n"
+            f"\n【当前需求类型状态：🤖 自动分辨类别与模板匹配模式】\n"
+            f"• 系统根据用户输入内容已自动分辨为：`{effective_type}`（依据：{inferred_reason or '基于当前对话文本'}）\n"
+            f"• 系统已自动为你加载以下【{effective_type} 专属分类模板】（若你发现用户内容实际属于另一类，可动态修正，并在回复中显式写出 `🧭 需求类型：SOFTWARE | DEPLOYMENT | HARDWARE | HYBRID`）：\n"
+            f"{puzzle_tpl}\n"
         )
     prefix += type_directive
 
     if is_finalize_request(text):
         sec_guide = _build_finalize_section_guide(effective_type)
-        doc_kind_note = (
-            "本需求属于【偏环境部署与脚本工程 (DEPLOYMENT)】，请重点写清拟生成的部署脚本清单、五步部署生命周期、部署架构拓扑与命令交互草图，以及健康探针与幂等重跑验收标准。"
-            if effective_type == "DEPLOYMENT"
-            else (
-                "本需求属于【软硬一体：功能开发+环境部署 (HYBRID)】，请同时写清核心软件功能流程与配套部署脚本清单、拓扑草图及幂等验收标准。"
-                if effective_type == "HYBRID"
-                else "本需求属于【偏软件功能开发 (SOFTWARE)】，请聚焦业务用例、外部界面线框图与黑盒验收标准。"
-            )
-        )
+        doc_kind_map = {
+            "DEPLOYMENT": "本需求属于【偏环境部署与脚本工程 (DEPLOYMENT)】，请重点写清拟生成的部署脚本清单、五步部署生命周期、部署架构拓扑与命令交互草图，以及健康探针与幂等重跑验收标准。",
+            "HARDWARE": "本需求属于【偏硬件与设备接入工程 (HARDWARE)】，请重点写清目标外设/硬件接口清单、通信协议、硬件物理连接拓扑草图，以及设备采集响应、断连重连自愈与模拟器(Mock)验收标准。",
+            "HYBRID": "本需求属于【跨类复合需求 (HYBRID)】，请同时写清核心软件功能流程、硬件或环境部署脚本清单、拓扑草图及幂等/联调验收标准。",
+            "SOFTWARE": "本需求属于【偏软件功能开发 (SOFTWARE)】，请聚焦业务用例、外部界面线框图与黑盒验收标准。",
+        }
+        doc_kind_note = doc_kind_map.get(effective_type, doc_kind_map["SOFTWARE"])
         return f"""{prefix}
 【用户指令：请求需求定稿（目标类型：{effective_type}）】
 用户发出了定稿指令："{text}"。
@@ -509,6 +621,107 @@ def build_srs_template(
         norm_type = "SOFTWARE"
     today_compact = datetime.now().strftime("%Y%m%d")
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    if norm_type == "HARDWARE":
+        rid = req_id or f"REQ-HW-DEVICE_INTEGRATION-{today_compact}"
+        doc_title = title or "智能外设与硬件设备接入工程"
+        return f"""# 软件需求规格说明书（硬件接入工程规范）：{doc_title}
+
+## 1. 需求标识与元数据
+- **需求编号**：{rid}
+- **需求名称**：{doc_title}
+- **需求类型**：HARDWARE (偏硬件与设备接入工程)
+- **提出人**：项目负责人 (Owner)
+- **分析师**：AutoDev 需求分析师 ({REQ_PROMPT_VERSION})
+- **归属项目**：`{project}`
+- **定稿时间**：{now_str}
+
+---
+
+## 2. 需求规模分类与需求关联网络
+- 🧭 **需求类型**：`HARDWARE (偏硬件与设备接入工程)` — 核心产物为硬件设备通信驱动/适配器、断线重连守护与硬件信号模拟器（Mock）。
+- 🏷️ **需求规模类别**：`标准功能需求 (Feature)`
+- 📂 **功能层级与模块归属**：归属于硬件设备接入与网关层（`src/hardware/` 或外设采集模块）。
+- 🔗 **需求关联网络**：
+  - `Parent（所属父需求）`：`None`
+  - `Depends-on（前置依赖）`：`None`
+  - `Relates-to（业务协同）`：`REQ-WEB-UNIFIED_CLIENT-20261107`
+
+---
+
+## 3. 核心背景与业务目标 (Why & What)
+- **业务背景**：现场作业依赖物理外设（如扫码枪、RFID 读写器、传感器或串口终端）实时采集数据并触发控制动作，手工录入效率低且容易在设备热插拔或断线时丢失状态。
+- **业务目标**：实现外设即插即用识别、单次采集响应延迟 ≤ 200ms、断线重连 5 秒内自动恢复，并提供软件模拟器支持脱机自动化测试。
+
+---
+
+## 4. 业务用例与核心流程 (Scope)
+- **目标硬件/外设清单与通信协议**：
+  1. 扫码/感应终端（USB HID / RS232 串口，波特率 115200 8N1）；
+  2. 状态传感器或网关控制器（Modbus RTU / MQTT / 局域网 TCP）。
+- **四步硬件接入与控制核心流程**：
+  1. **设备探测与握手初始化**：启动时扫描指定串口/USB 设备标识，校验通信帧格式与设备在线状态；
+  2. **实时采集与去抖过滤**：读取硬件上报的原始字节流/信号，完成 CRC 校验与防重复触发去抖（Debounce），转化为标准业务事件；
+  3. **异常断连缓存与自动重连**：当物理线缆松动或设备断电时，触发非阻塞告警并在后台按指数退避轮询重连，重连成功后自动恢复采集；
+  4. **硬件信号模拟器 (Mock) 闭环**：在无真实物理硬件的开发/测试环境下，通过模拟脚本注入标准硬件帧完成全流程验证。
+
+---
+
+## 5. 明确非目标与边界 (Non-goals)
+- ❌ **本期不自行设计底层 PCB 电路板或改写硬件出厂闭源固件**；
+- ❌ **不强依赖真实物理外设才能跑通 CI 单元测试**（必须提供软件 Mock 驱动层）。
+
+---
+
+## 6. 外部界面原型草图 (UI Wireframe)
+```text
+┌──────────────────────────────────────────────┐
+│ [硬件物理连接与通信拓扑草图]                 │
+├──────────────────────────────────────────────┤
+│  ┌──────────────┐      USB HID / RS232 串口  │
+│  │ 物理外设终端  ├─────────────────────────┐ │
+│  │ (扫码枪/RFID) │ (115200 8N1 / CRC校验)  │ │
+│  └──────────────┘                          ▼ │
+│  ┌─────────────────────────────────────────┐ │
+│  │ 宿主机硬件抽象层 (HAL Driver & Mock)    │ │
+│  │  ├─► 采集去抖队列 (Debounce ≤ 200ms)    │ │
+│  │  └─► 断线自动重连守护 (Watchdog 5s)     │ │
+│  └────────────────────┬────────────────────┘ │
+│                       ▼                      │
+│  [✅ ONLINE] Port=/dev/tty.usbserial | 0 Err │
+└──────────────────────────────────────────────┘
+```
+
+---
+
+## 7. 业务约束与前置依赖
+- **硬件与物理环境约束**：供电稳定（5V USB 或工业 12V/24V），串口线缆长度符合信号衰减规范；
+- **身份与权限约束**：运行进程需具备宿主机串口/USB 设备读写权限；
+- **安全保护约束**：所有硬件 I/O 读取必须设置明确超时（Timeout ≤ 1s），严禁因外设挂死导致主进程永久阻塞。
+
+---
+
+## 8. 可量化验收标准清单 (Acceptance Criteria)
+1. **场景 1（设备正常连接与实时采集响应）**：
+   - *Given* 硬件设备（或模拟器）已连接并完成握手；
+   - *When* 触发一次物理扫码或传感器信号上报；
+   - *Then* 系统在 ≤ 200ms 内准确解析出有效载荷并触发下游事件，准确率 100%。
+2. **场景 2（设备热插拔与断线自动重连验证）**：
+   - *Given* 设备正在采集中；
+   - *When* 拔掉连接线中断通信，3 秒后重新插回；
+   - *Then* 断线期间主进程不崩溃并记录离线状态，重新插回后 ≤ 5 秒内自动恢复正常采集。
+3. **场景 3（无硬件环境下的模拟器 Mock 验收）**：
+   - *Given* 测试机未连接真实物理硬件；
+   - *When* 开启 Mock 模式运行自动化验收脚本注入模拟帧（含正常帧与损坏帧）；
+   - *Then* 正常帧被成功处理，损坏帧被安全丢弃并计数，测试退出码为 `0`。
+
+---
+
+## 9. 下游架构设计关注点
+1. 硬件抽象层（HAL）接口与具体串口/USB 协议实现解耦，确保真实硬件驱动与软件模拟器（Mock）可无缝切换；
+2. 硬件 I/O 线程/协程隔离与超时熔断机制；
+3. 高频物理信号触发时的防抖（Debounce）与幂等去重设计。
+"""
 
     if norm_type == "DEPLOYMENT":
         rid = req_id or f"REQ-DEPLOY-SERVICE_DAEMON-{today_compact}"

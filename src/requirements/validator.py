@@ -96,11 +96,13 @@ def extract_section_body(markdown_text: str, section_num: int) -> str:
 
 
 def extract_req_type(markdown_text: str) -> str:
-    """从 SRS 文档中提取或自动推断需求类型（SOFTWARE / DEPLOYMENT / HYBRID）。"""
+    """从 SRS 文档中提取或自动推断需求类型（SOFTWARE / DEPLOYMENT / HARDWARE / HYBRID）。"""
     clean_text = strip_validation_comment(markdown_text)
     explicit = extract_agent_classified_type(clean_text)
-    if explicit in ("SOFTWARE", "DEPLOYMENT", "HYBRID"):
+    if explicit in ("SOFTWARE", "DEPLOYMENT", "HARDWARE", "HYBRID"):
         return explicit
+    if re.search(r"REQ-HW-", clean_text, re.I):
+        return "HARDWARE"
     if re.search(r"REQ-DEPLOY-", clean_text, re.I):
         return "DEPLOYMENT"
     if re.search(r"REQ-HYBRID-", clean_text, re.I):
@@ -248,6 +250,12 @@ def validate_requirement_spec(content: str) -> ValidationResult:
             if not any(sig in sec8_body for sig in deploy_ac_signals):
                 errors.append(
                     "[RULE-07] 偏环境部署需求 (DEPLOYMENT) 的第 8 节验收标准必须包含部署验证要素（如健康探针、幂等重跑、退出码或回滚验证）"
+                )
+        elif req_type == "HARDWARE":
+            hw_ac_signals = ("设备", "重连", "断线", "热插拔", "模拟", "Mock", "采集", "串口", "延迟", "传感器")
+            if not any(sig in sec8_body for sig in hw_ac_signals):
+                errors.append(
+                    "[RULE-07] 偏硬件工程需求 (HARDWARE) 的第 8 节验收标准必须包含硬件验证要素（如设备采集响应、断线重连自愈或模拟器 Mock 验证）"
                 )
     elif any(v in text for v in SECTION_SPECS[7][2]):
         errors.append("[RULE-07] 无法定位第 8 节验收标准内容")

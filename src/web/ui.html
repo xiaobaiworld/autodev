@@ -495,9 +495,10 @@
                 <h2 class="panel-title">📂 需求规格库 (docs/requirements)</h2>
                 <div class="panel-sub">支持软件研发与环境部署双模板</div>
               </div>
-              <div style="display:flex;gap:5px;">
-                <button class="btn primary" onclick="createNewSrsDraft('SOFTWARE')" title="套用偏软件功能开发 9 章节模板">+ 💻 软件模板</button>
-                <button class="btn" style="background:var(--amber-soft);color:var(--amber);border-color:#f2ddb6;" onclick="createNewSrsDraft('DEPLOYMENT')" title="套用偏环境部署与脚本工程 9 章节模板">+ 🚀 部署模板</button>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                <button class="btn primary" onclick="createNewSrsDraft('SOFTWARE')" title="套用偏软件功能开发 9 章节模板">+ 💻 软件</button>
+                <button class="btn" style="background:var(--amber-soft);color:var(--amber);border-color:#f2ddb6;" onclick="createNewSrsDraft('DEPLOYMENT')" title="套用偏环境部署与脚本工程 9 章节模板">+ 🚀 部署</button>
+                <button class="btn" style="background:var(--green-soft);color:var(--green);border-color:#cceadc;" onclick="createNewSrsDraft('HARDWARE')" title="套用偏硬件与设备接入工程 9 章节模板">+ 🔧 硬件</button>
               </div>
             </div>
             <div class="panel-body" id="srs-list-container" style="max-height:230px;overflow-y:auto;"></div>
@@ -539,11 +540,12 @@
           </div>
           <div class="chat-toolbar">
             <label style="font-size:11.5px;font-weight:700;color:var(--muted);">需求分类(双轨):</label>
-            <select id="req-type-select" onchange="changeSessionReqType(this.value)" title="默认由 Agent 自动寻找代码/部署目录分类，也可人工指定">
-              <option value="AUTO">🤖 Agent 自动寻找与分类 (Auto)</option>
+            <select id="req-type-select" onchange="changeSessionReqType(this.value)" title="默认由 Agent 自动分辨软件/部署/硬件并匹配模板，也可人工指定">
+              <option value="AUTO">🤖 Agent 自动分辨与匹配模板 (Auto)</option>
               <option value="SOFTWARE">💻 偏软件功能开发 (SOFTWARE)</option>
               <option value="DEPLOYMENT">🚀 偏环境部署与脚本 (DEPLOYMENT)</option>
-              <option value="HYBRID">🔗 软硬一体：开发+部署 (HYBRID)</option>
+              <option value="HARDWARE">🔧 偏硬件与设备接入 (HARDWARE)</option>
+              <option value="HYBRID">🔗 跨类复合：软/硬/部署 (HYBRID)</option>
             </select>
             <span id="session-type-status-pill" class="pill blue" title="当前会话分类结果与判定方式">🤖 自动分类</span>
             <label style="font-size:11.5px;font-weight:700;color:var(--muted);">底层大模型:</label>
@@ -879,7 +881,8 @@
     const REQ_TYPE_META = {
       SOFTWARE: { label: "💻 SOFTWARE", pill: "blue", desc: "偏软件功能开发" },
       DEPLOYMENT: { label: "🚀 DEPLOYMENT", pill: "amber", desc: "偏环境部署工程" },
-      HYBRID: { label: "🔗 HYBRID", pill: "violet", desc: "软硬一体(开发+部署)" },
+      HARDWARE: { label: "🔧 HARDWARE", pill: "green", desc: "偏硬件与设备接入工程" },
+      HYBRID: { label: "🔗 HYBRID", pill: "violet", desc: "跨类复合(软/硬/部署)" },
       AUTO: { label: "🤖 AUTO", pill: "blue", desc: "Agent自动分类" }
     };
 

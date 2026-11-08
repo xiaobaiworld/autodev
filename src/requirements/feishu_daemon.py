@@ -193,7 +193,8 @@ def main() -> None:
                     f"• `/type auto`：交由 Agent 结合项目代码与 `deploy/` 目录自动判断（默认）；\n"
                     f"• `/type software`：锁定为 **💻 偏软件功能开发**（聚焦业务用例与 UI 线框图）；\n"
                     f"• `/type deployment`：锁定为 **🚀 偏环境部署工程**（聚焦部署脚本清单、拓扑草图与幂等验收）；\n"
-                    f"• `/type hybrid`：锁定为 **🔗 软硬一体（开发+部署）**。",
+                    f"• `/type hardware`：锁定为 **🔧 偏硬件与设备接入工程**（聚焦外设协议、物理接线拓扑与断连自愈）；\n"
+                    f"• `/type hybrid`：锁定为 **🔗 跨类复合（软件/部署/硬件协同）**。",
                 )
                 return
 
@@ -279,10 +280,10 @@ def main() -> None:
             help_msg = (
                 "🎯 **欢迎使用 AutoDev 需求分析师！**\n\n"
                 "你不需要记忆任何复杂命令，直接在对话框中告诉我你想做什么需求即可。\n"
-                "我会基于当前目标项目代码和部署目录，自动帮你寻找并判断属于 **软件开发 (`SOFTWARE`)** 还是 **环境部署 (`DEPLOYMENT`)**，理清目标、非目标与验收标准。\n\n"
+                "我会基于你输入的内容以及当前项目代码，自动帮你分辨属于 **偏软件开发 (`SOFTWARE`)**、**偏环境部署 (`DEPLOYMENT`)**、**偏硬件接入 (`HARDWARE`)** 还是 **跨类复合 (`HYBRID`)**，并自动套用对应的分类模板完成需求梳理。\n\n"
                 "📌 **常用辅助指令**：\n"
                 "• 发送 `/new` 或 `新需求`：开启一个全新的需求会话；\n"
-                "• 发送 `/type` 或 `/type auto|software|deployment|hybrid`：查看或切换需求类型（默认由 Agent 自动寻找分类，也可人工指定）；\n"
+                "• 发送 `/type` 或 `/type auto|software|deployment|hardware|hybrid`：查看或切换需求类型（默认由 Agent 自动寻找分类，也可人工指定）；\n"
                 "• 发送 `/project <路径>`：切换到其他项目目录；\n"
                 "• 发送 `/model` 或 `/model <名称>`：查看或切换底层大模型（支持 Claude / Codex / Gemini 完整模型 ID）；\n"
                 "• 发送 `/mode`：查看或切换调用方式（`cli_session` / `cli_stateless`）；\n"
