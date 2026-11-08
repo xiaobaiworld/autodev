@@ -305,6 +305,8 @@ def _new_step(state, attempt, ctrl):
         agent, model = f"tool:{spec['tool']}", None
     else:
         agent = ctrl.roles[role]
+        from cockpit.agents import validate_role
+        validate_role(ctrl.agents, role, agent)
         model = ctrl.agents[agent].get("model")
     return {"state": "pending", "role": role, "agent": agent, "model": model,
             "dir": step_dir(stage, state["round"], state.get("kind") or DEFAULT_KIND), "started_at": None,

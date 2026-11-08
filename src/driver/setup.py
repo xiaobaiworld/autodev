@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 
 from cockpit.pipeline import stage_roles
+from cockpit.agents import validate_role
 from cockpit.store import atomic_write
 
 PROMPT = ("这一轮的任务目录是事件的对象（subject），相对于当前目录。先读取该目录下的 input.md，严格按其中的要求完成："
@@ -22,6 +23,7 @@ def build_rules(base, agents, roles, cwd, effort=None, fake_command=None, timeou
     out["agents"], out["rules"] = {}, []
     for stage, role in STAGES:
         name = roles[role]
+        validate_role(agents, role, name)
         if name in out["agents"]:
             continue
         a = agents[name]
@@ -30,6 +32,8 @@ def build_rules(base, agents, roles, cwd, effort=None, fake_command=None, timeou
             continue
         if a["cli"] not in USE:
             raise ValueError(f"{name} 用的 {a['cli']} 暂不支持（只有 {sorted(USE)}）")
+        if a.get('executable', a['cli']) != a['cli']:
+            raise ValueError(f'{name} 自定义 executable 暂不支持 autoloop 内置适配器')
         out["agents"][name] = {"name": name, "worker": worker, "use": USE[a["cli"]], "model": a["model"],
                                "effort": effort or a.get("effort", "low"), "access": "edit",
                                "timeout": timeout_minutes}

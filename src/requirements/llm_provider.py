@@ -31,6 +31,13 @@ class ModelSpec:
     vendor: str
     model: str
     effort: str = "medium"
+    executable: str = ""
+    supported_tasks: tuple[str, ...] = ()
+    unsupported_tasks: tuple[str, ...] = ()
+    unverified_tasks: tuple[str, ...] = ()
+    capability_notes: str = ""
+    auth: dict | None = None
+    invocation_mode: str = 'cli_session'
 
     @property
     def full_model_id(self) -> str:
@@ -41,7 +48,7 @@ class ModelSpec:
             raise ValueError(
                 f"模型配置 {self.name!r} 使用了被禁止的短别名 {self.model!r}，必须使用完整模型 ID（见 docs/MODELS.md）"
             )
-        if self.cli not in ("claude", "codex", "agy"):
+        if self.cli not in ("claude", "codex", "agy", "ollama"):
             raise ValueError(f"模型配置 {self.name!r} 的 cli 未知: {self.cli!r}")
 
 
@@ -58,57 +65,22 @@ class LLMInvokeResult:
     error: str = ""
 
 
-BUILTIN_FALLBACK_SPECS: dict[str, ModelSpec] = {
-    "claude-sonnet": ModelSpec(
-        name="claude-sonnet",
-        cli="claude",
-        vendor="anthropic",
-        model="ai-code-with/claude-sonnet-5-5",
-        effort="medium",
-    ),
-    "claude-opus": ModelSpec(
-        name="claude-opus",
-        cli="claude",
-        vendor="anthropic",
-        model="ai-code-with/claude-opus-5-5",
-        effort="high",
-    ),
-    "codex": ModelSpec(
-        name="codex",
-        cli="codex",
-        vendor="openai",
-        model="gpt-6-sol",
-        effort="low",
-    ),
-    "agy": ModelSpec(
-        name="agy",
-        cli="agy",
-        vendor="google",
-        model="gemini-4-argon-high",
-        effort="high",
-    ),
-}
-
-
 def load_model_registry(config_yaml_path: str | Path | None = None) -> dict[str, ModelSpec]:
-    """从项目的 config.yaml 读取模型注册表，确保完整模型 ID 唯一真源。"""
-    registry = dict(BUILTIN_FALLBACK_SPECS)
+    """Read configured models only; invalid catalogs never enable hidden fallbacks."""
     target = Path(config_yaml_path) if config_yaml_path else DEFAULT_CONFIG_YAML
-    if target.is_file():
-        try:
-            raw_agents = parse_agents(target.read_text(encoding="utf-8"))
-            for name, cfg in raw_agents.items():
-                spec = ModelSpec(
-                    name=name,
-                    cli=cfg.get("cli", ""),
-                    vendor=cfg.get("vendor", ""),
-                    model=cfg.get("model", ""),
-                    effort=cfg.get("effort", "medium"),
-                )
-                spec.validate()
-                registry[name] = spec
-        except Exception as e:
-            log.warning("解析 config.yaml 模型注册表失败 (%s)，使用内置完整 ID 注册表", e)
+    raw_agents = parse_agents(target.read_text(encoding="utf-8"))
+    registry = {}
+    for name, cfg in raw_agents.items():
+        spec = ModelSpec(name=name, cli=cfg.get("cli", ""), vendor=cfg.get("vendor", ""),
+                         model=cfg.get("model", ""), effort=cfg.get("effort", "medium"),
+                         executable=cfg.get("executable", cfg.get("cli", "")),
+                         supported_tasks=tuple(cfg.get("supported_tasks", [])),
+                         unsupported_tasks=tuple(cfg.get("unsupported_tasks", [])),
+                         unverified_tasks=tuple(cfg.get("unverified_tasks", [])),
+                         capability_notes=cfg.get("capability_notes", ""), auth=cfg.get("auth"),
+                         invocation_mode=cfg.get('invocation_mode', 'cli_session'))
+        spec.validate()
+        registry[name] = spec
     return registry
 
 
@@ -117,8 +89,9 @@ def resolve_model_spec(
     registry: dict[str, ModelSpec] | None = None,
 ) -> ModelSpec:
     """将配置的代号（如 'cc'、'claude-sonnet'、'codex'）解析为经过校验的 ModelSpec。"""
-    reg = registry or load_model_registry()
-    normalized = LEGACY_AGENT_MAP.get(agent_or_model_name.strip(), agent_or_model_name.strip())
+    reg = registry if registry is not None else load_model_registry()
+    requested = agent_or_model_name.strip()
+    normalized = requested if requested in reg else LEGACY_AGENT_MAP.get(requested, requested)
     if normalized in reg:
         spec = reg[normalized]
         spec.validate()
@@ -150,10 +123,11 @@ def build_model_argv(
     prompt: str,
     cwd: str,
     session_id: str | None = None,
-    mode: str = "cli_session",
+    mode: str | None = None,
     history: list[dict[str, str]] | None = None,
 ) -> list[str]:
     """根据独立的 ModelSpec 和调用模式（cli_session / cli_stateless）生成只读沙箱命令参数。"""
+    mode = mode or spec.invocation_mode
     if mode not in INVOCATION_MODES:
         raise ValueError(f"不支持的调用模式 {mode!r}，可选: {INVOCATION_MODES}")
     spec.validate()
@@ -171,13 +145,13 @@ def build_model_argv(
         ]
         if use_session and session_id:
             argv.extend(["--resume", session_id])
-        return argv
+        return [spec.executable or spec.cli, *argv[1:]]
 
     if spec.cli == "codex":
         effort_arg = f"model_reasoning_effort={spec.effort}"
         if use_session and session_id:
             return [
-                "codex", "exec", "resume",
+                spec.executable or "codex", "exec", "resume",
                 "-m", spec.model,
                 "-c", effort_arg,
                 "-c", 'sandbox_mode="read-only"',
@@ -185,7 +159,7 @@ def build_model_argv(
                 session_id, effective_prompt,
             ]
         return [
-            "codex", "exec",
+            spec.executable or "codex", "exec",
             "-C", cwd,
             "-s", "read-only",
             "-m", spec.model,
@@ -196,10 +170,15 @@ def build_model_argv(
 
     if spec.cli == "agy":
         return [
-            "agy",
+            spec.executable or "agy",
             "--model", spec.model,
             "-p", effective_prompt,
             "--mode", "plan",
         ]
+
+    if spec.cli == "ollama":
+        if mode != 'cli_stateless':
+            raise ValueError('ollama 仅支持无状态文本调用')
+        return [spec.executable or 'ollama', 'run', spec.model, effective_prompt]
 
     raise ValueError(f"未知 CLI 类型: {spec.cli}")

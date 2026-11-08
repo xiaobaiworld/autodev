@@ -125,12 +125,16 @@ def main() -> None:
             registry = load_model_registry()
             parts = clean_text.split(maxsplit=1)
             if len(parts) == 1:
-                lines = ["🧠 **需求阶段可用大模型列表**（源自 `config.yaml` 完整模型 ID）："]
+                lines = ["🧠 **已登记大模型**（源自本机 Agent/模型注册表）："]
                 for name, spec in registry.items():
                     mark = "✅ 当前" if name == sess["agent"] else "◻️"
                     lines.append(
                         f"{mark} `{name}` → `{spec.full_model_id}` (厂商: `{spec.vendor}`, CLI: `{spec.cli}`)"
                     )
+                    if spec.supported_tasks:
+                        lines.append('适用任务：' + '、'.join(spec.supported_tasks))
+                    if spec.unsupported_tasks:
+                        lines.append('不适用：' + '、'.join(spec.unsupported_tasks))
                 lines.append("\n💡 发送 `/model <名称>`（如 `/model codex` 或 `/model claude-opus`）即可随时切换模型，历史问答上下文会自动保留。")
                 send_pool.submit(responder.send_text, chat_id, "\n".join(lines))
                 return

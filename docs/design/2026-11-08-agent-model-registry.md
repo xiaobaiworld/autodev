@@ -1,12 +1,12 @@
 # 本机 Agent 与模型能力注册表
 
-日期：2026-11-08。状态：用户已确认按当前设定固定并开始实施；本页作为第一版配置契约，具体实施收口记录后续追加。D021 记录依据；[样例](../config/agent-registry.example.toml) 已通过标准 TOML 解析，当前尚未接入调用链。
+日期：2026-11-08。状态：已实现注册表读取与能力校验、默认值迁移及既有调用入口接入，验证见第 8 节。D021 记录依据；[教学样例](../config/agent-registry.example.toml) 默认禁用，运行配置为 config/agents.toml。
 
 ## 1. 目的与既有资产
 
 登记本机有哪些执行器、它们能够调用哪些模型，以及模型适合/不适合哪些任务。选择先满足任务能力，再兼顾默认值、成本和 D019 的审查独立性；不单凭参数量决定能力。
 
-现有 config.yaml 已有 agents/roles/limits，agents 项把执行器、厂商与模型组合在一起；cockpit.agents 用固定格式正则解析。requirements.llm_provider 有 ModelSpec、调用参数构造和模型注册表，但加载时先加入 BUILTIN_FALLBACK_SPECS，配置读取失败也会退回内置列表；它不能保证“只选择本机登记模型”，也没有任务能力说明。复用其适配器和既有角色默认值，不再建设另一套执行引擎。
+实施前的 config.yaml 已有 agents/roles/limits，agents 项把执行器、厂商与模型组合在一起；cockpit.agents 用固定格式正则解析。原 requirements.llm_provider 加载时先加入 BUILTIN_FALLBACK_SPECS，配置读取失败也会退回内置列表，不能保证“只选择本机登记模型”。第一版已迁移这些配置并移除内置备用，复用其 ModelSpec/调用适配器和既有角色默认值，不另建执行引擎。
 
 本轮只读检查在 PATH 找到 claude、codex、agy、ollama 的可执行文件；这不证明登录有效、模型已安装、服务在线或某种任务能力合格。本轮未调用模型、未读取密钥，30B 本地模型仍是用户提出的可能场景。
 
@@ -63,8 +63,34 @@ D019 允许降低审核独立性或简单复用免审，不等于允许把复杂
 
 本轮样例仅做 TOML 语法、引用和不含凭证值检查。尚未实现选择器、真实机器注册文件、API 适配器或能力探测；不改变运行配置，不重启服务。
 
+上段为设计阶段的验证边界；实际实现进度以第 8 节为准。
+
 ## 7. 当前实施计划
 
 用户已授权先固定本方案并合入 main，再开始实现。按三个小步推进：注册表读取/校验与旧配置迁移；统一各调用入口的模型与默认值解析；假 Agent、默认继承、能力拒绝与凭证边界测试及文档收口。每步同步 next/changelog 并提交；注册表完成后以 PR 合入 main，再进入设计机器人的应用层与渠道接线。不会因实施配置而改 autoloop 内核或启动真实模型。
 
 现有完整模型 ID 和角色默认值必须保留，旧会话快照继续兼容；对模型能力采用已有证据和明确标注的未验证项，不凭参数量自动推断。配置或凭证不合格时返回可操作错误，不静默启用隐藏备用模型。
+
+第一步实施细化：随仓库提供 config/agents.toml 作为可迁移的既有配置目录，本机 workspace/agent-registry.toml 或 AUTODEV_AGENT_REGISTRY 指定文件整体替代它（不叠加隐藏条目）。config.yaml 保留项目/轮次设置，通过 agent_registry 引用注册表；角色默认值迁入注册表，Web 的角色修改可写为 config.yaml 项目覆盖引用。旧式 agents/roles 配置保留解析兼容，但不补入任何内置模型。注册表相对路径按 AutoDev 安装根解析，与旧文本解析器的输入方式兼容。
+
+先复用现有 Claude/Codex/agy 参数构造，增加仅文本的 ollama CLI 接口以承载未来本地小模型；不实现通用公网 HTTP API，也不猜测或下载本地模型。凭证在进程启动边界验证，接口返回元数据而不返回值。流水线角色仍需其执行器具有现有文件/产物协议能力，不能将仅文本模型直接当作编码执行器。
+
+## 8. 第一版实现与使用
+
+- 运行登记在 config/agents.toml，现有模型 ID/角色默认值已迁移；config.yaml 保留项目/轮次及注册表引用。workspace/agent-registry.toml 已忽略提交，或用 AUTODEV_AGENT_REGISTRY 显式指定整份机器配置；不混入内置模型。
+- cockpit.registry 验证引用、可用状态、能力集合与凭证字段，提供 select 的明确指定/任务已有选择/角色默认值顺序。当前尚未实现自动寻找备用或能力评分；D019 分级执行仍是设计机器人下一步，不在注册表读取中偷偷降级。
+- cockpit.agents 统一解析默认角色，Controller/handoff/规则生成及 Web 保存检查所选能力；旧 agents/roles 文本仍可读。Web 角色修改只保存登记 ID 引用，保持乐观锁。
+- requirements.llm_provider 不再补入 BUILTIN_FALLBACK_SPECS，显式空注册表也不会回退；Web/飞书、两套需求入口继续复用其选择结果与现有执行器。旧持久化会话保留原配置快照，不自动改写。
+- 单模型元数据返回支持/禁止/未验证任务和说明。Ollama 适配仅支持无状态文本，已用假进程验证输入/输出；不登记或下载假想本地模型，不承诺工具或代码文件执行能力。
+- CLI/API 需要的凭证在调用边界从环境验证，快照只存变量名；现有 CLI 登录态继续使用。autoloop 内置适配器仍依赖标准 CLI 名称，自定义 executable 仅适用直接/文本调用，不伪称支持完整流水线。
+- 验证：309 项 unittest（新增 12 项注册表/能力/默认值/凭证/本地假进程/旧配置兼容检查）通过；版本化需求隔离中台假 Agent 集成、完整 S1～S9 假 Agent 联机回归通过。未调用真实模型、未发送消息、未重启部署服务。
+
+查看与校验（不调用模型）：
+
+```sh
+PYTHONPATH=src python3 -m cockpit.registry
+PYTHONPATH=src python3 -m cockpit.registry --role designer
+PYTHONPATH=src python3 -m cockpit.registry --file docs/config/agent-registry.example.toml
+```
+
+能力记录沿用既有角色配置与历史证据，标 installed_only，未本轮重新验证登录或真实模型能力。supported_tasks 是操作者配置约束而非性能保证。API HTTP 适配、自动探测/性能评测及运行服务重载不在第一版实施范围。

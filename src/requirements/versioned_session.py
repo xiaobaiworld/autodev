@@ -199,13 +199,16 @@ class SessionStore:
             raise SessionError('invalid-config', '自动审核轮数必须是 1 到 20 的整数')
         try:
             a, b = [settings['agents'][settings[k]] for k in ['analyst', 'reviewer']]
+            for role, agent in [('requirements_analyst', a), ('requirements_reviewer', b)]:
+                if 'supported_tasks' in agent and role not in agent['supported_tasks']:
+                    raise KeyError('capability')
             if not a.get('vendor') or not b.get('vendor') or a['vendor'] == b['vendor']:
                 raise KeyError('vendor')
             for agent in [a, b]:
                 if agent['cli'] not in {'claude', 'codex'} or not agent.get('model') or agent['model'] in {'opus', 'sonnet', 'haiku'}:
                     raise KeyError('model')
         except KeyError:
-            raise SessionError('invalid-config', '梳理与审核须选择配置中不同厂商的完整模型') from None
+            raise SessionError('invalid-config', '梳理与审核须选择已登记、符合角色能力且不同厂商的完整模型') from None
         sid = 'Q' + uuid.uuid4().hex[:12]
         self._path(sid).mkdir(mode=0o700)
         with self._lock(sid):

@@ -12,19 +12,22 @@ import shutil
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from cockpit.store import atomic_write
+from cockpit.registry import invocation_env
 
 
 def command(agent):
     model = agent['model']
     if agent['cli'] == 'claude':
-        return ['claude', '-p', '--output-format', 'json', '--model', model,
+        return [agent.get('executable', 'claude'), '-p', '--output-format', 'json', '--model', model,
                 '--effort', agent.get('effort', 'low'), '--tools', '', '--safe-mode',
                 '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}',
                 '--disable-slash-commands', '--no-session-persistence',
                 '--settings', '{"disableAllHooks":true}']
+    if agent['cli'] == 'ollama':
+        return [agent.get('executable', 'ollama'), 'run', model]
     if agent['cli'] != 'codex':
         raise ValueError('unsupported-cli')
-    argv = ['codex', 'exec', '--json', '--ephemeral', '--skip-git-repo-check', '--ignore-rules',
+    argv = [agent.get('executable', 'codex'), 'exec', '--json', '--ephemeral', '--skip-git-repo-check', '--ignore-rules',
             '--sandbox', 'read-only', '-m', model, '-c', 'approval_policy="never"',
             '-c', 'model_reasoning_effort=' + json.dumps(agent.get('effort', 'low')),
             '-c', 'project_doc_max_bytes=0', '-c', 'developer_instructions=""',
@@ -62,6 +65,10 @@ def isolated_codex_home(folder):
 
 
 def final_text(cli, stdout):
+    if cli == 'ollama':
+        if not stdout.strip():
+            raise ValueError('missing-final-response')
+        return stdout.strip()
     if cli == 'claude':
         result = json.loads(stdout)
         if result.get('is_error'):
@@ -83,11 +90,14 @@ def final_text(cli, stdout):
 
 
 def run_model(data, timeout):
+    task = {'analyst': 'requirements_analyst', 'reviewer': 'requirements_reviewer'}.get(data.get('role'))
+    if task and 'supported_tasks' in data['agent'] and task not in data['agent']['supported_tasks']:
+        raise ValueError('unsupported-task')
     prompt = data['prompt'] + '\n\n输入资料 JSON：\n' + json.dumps(data, ensure_ascii=False)
     if len(prompt.encode()) > 128000:
         raise ValueError('context-too-large')
     with tempfile.TemporaryDirectory(prefix='requirements-model-') as cwd:
-        env = dict(os.environ)
+        env = invocation_env(data['agent'])
         if data['agent']['cli'] == 'codex':
             env['CODEX_HOME'] = isolated_codex_home(Path(cwd))
         proc = subprocess.Popen(command(data['agent']), stdin=subprocess.PIPE, stdout=subprocess.PIPE,

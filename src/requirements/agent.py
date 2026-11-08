@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def load_settings(config=None):
     text = Path(config or ROOT / 'config.yaml').read_text(encoding='utf-8')
     agents, roles, limits = parse_agents(text), parse_roles(text), parse_limits(text)
-    agents = {name: {k: v for k, v in a.items() if k in {'cli', 'vendor', 'model', 'effort'}}
+    agents = {name: {k: v for k, v in a.items() if k in {'cli', 'vendor', 'model', 'effort', 'executable', 'auth', 'supported_tasks'}}
               for name, a in agents.items()}
     return dict(agents=agents, analyst=roles.get('requirements_analyst', roles['analyst']),
                 reviewer=roles.get('requirements_reviewer', roles['design_reviewer']),
