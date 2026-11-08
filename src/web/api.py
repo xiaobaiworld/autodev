@@ -179,7 +179,7 @@ def get_run_detail(root: str | Path, run_id: str) -> dict[str, Any]:
         if stg_dir.is_dir():
             for rdir in sorted(stg_dir.glob("round-*")):
                 artifacts = {}
-                for fname in ("analysis.md", "design.md", "dev-plan.md", "review.md", "response.md",
+                for fname in ("analysis.md", "design.md", "dev-plan.md", "prototype.md", "review.md", "response.md",
                               "check.log", "usage.log", "acceptance.md", "done.json", "record-a1.json"):
                     fpath = rdir / fname
                     if fpath.is_file():

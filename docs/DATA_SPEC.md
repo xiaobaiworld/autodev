@@ -250,6 +250,8 @@ worktree: null
 - 设计稿：S2-design/round-2/design.md
 - 上轮审查与回应：S3-design-review/round-1/review.md，S2-design/round-2/response.md
 
+设计阶段（S2/S3）另列上游 `analysis.md` 与程序生成的项目上下文快照。快照由目标项目 `README.md` 和 AutoDev `config.yaml` 中该项目明确登记的 `context` 文件组成；S2 生成，S3 读取同一份快照。清单记录来源、已复制和缺失文件，路径必须留在配置仓库内；不扫描未登记目录。设计者发现缺少完成判断所需资料时应 BLOCK 并说明，不把缺失当成不存在。
+
 ## 内联上下文
 （按设计文档第 4 节的清单组装，超长部分只给路径）
 

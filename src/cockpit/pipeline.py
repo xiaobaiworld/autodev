@@ -3,6 +3,7 @@
 """
 import json
 import re
+import shutil
 from pathlib import Path
 
 from cockpit.kinds import DEFAULT_KIND, KINDS
@@ -228,12 +229,19 @@ def write_input(root, run_dir, state):
     rid, rnd = state["id"], state["round"]
     at = lambda stg, r: run_dir / step_dir(stg, r, kind)
     latest = lambda stg: _latest_round(run_dir, stg, kind) or 1
+    project_context = run_dir / "context" / "project-context" / f"round-{rnd}"
+    if st == "S2":
+        _snapshot_project_context(root, state, project_context)
+    elif st == "S3":
+        project_context = run_dir / "context" / "project-context" / f"round-{latest('S2')}"
     # 模板里 inputs 写这一步要读哪些文件（名字 -> (说明, 路径函数)），只算这一步用到的，模板没有的阶段不会被碰到；没有的名字报错，不静默漏掉
     paths = {
         "request": ("需求", lambda: root / "workspace" / "requests" / "active" / f"{rid}.md"),
         "analysis": ("分析", lambda: at("S1", 1) / "analysis.md"),
+        "project_context": ("项目说明与已配置上下文快照（S2/S3 共用）", lambda: project_context),
         "design": ("设计稿", lambda: at("S2", latest("S2")) / "design.md"),
         "plan": ("开发计划", lambda: at("S2", latest("S2")) / "dev-plan.md"),
+        "prototype": ("界面原型或不适用说明", lambda: at("S2", latest("S2")) / "prototype.md"),
         "review_prev": ("上轮审查意见（逐条回应，写 response.md）", lambda: at("S3", rnd - 1) / "review.md"),
         "workdir": ("代码目录（只改这里的文件，不要执行 git 命令）", lambda: workdir_of(root, state)),
         "check_prev": ("上轮检查结果（由程序运行测试得到，先读它，在已有代码上修复，不要推倒重来）",
@@ -258,6 +266,11 @@ def write_input(root, run_dir, state):
             raise ValueError(f"模板阶段 {st} 的 inputs 里有未知名字 {name!r}")
         label, make = paths[name]
         p = make()
+        if name == "project_context":
+            files.append(f"- {label}：{p / 'manifest.md'}")
+            files.extend(f"  - 快照文件：{item}" for item in sorted(p.rglob("*"))
+                         if item.is_file() and item.name != "manifest.md")
+            continue
         if name in ("check_prev", "review_code_prev") and not p.is_file():
             continue  # 不是从那一步退回来的（第 1 轮，或人工处理后继续），就没有这份文件
         if name == "check_prev" and _verdict_of(p.parent) != "FAIL":
@@ -279,3 +292,56 @@ def write_input(root, run_dir, state):
     )
     atomic_write(out / "input.md", body)
     return out / "input.md"
+
+
+def _snapshot_project_context(root, state, out):
+    """Snapshot project README and configured context so S2 and S3 share identical evidence."""
+    root = Path(root)
+    if (out / "manifest.md").is_file():
+        return  # Retry the same S2 round from its original evidence snapshot.
+    out.mkdir(parents=True, exist_ok=True)
+    config = root / "config.yaml"
+    text = config.read_text(encoding="utf-8") if config.is_file() else ""
+    projects = re.search(r"(?ms)^projects:\s*\n(.*?)(?=^[^ \t#\n]|\Z)", text)
+    entries = re.split(r"(?=^  - name:\s*)", projects.group(1), flags=re.M) if projects else []
+    project = str(state.get("project", ""))
+    entry = next((part for part in entries if re.search(
+        rf"^  - name:\s*{re.escape(project)}\s*$", part, re.M)), "")
+    repo_match = re.search(r"^    repo:\s*([^\s#]+)", entry, re.M)
+    repo = Path(repo_match.group(1)).expanduser() if repo_match else None
+    configured = re.findall(r"^      -\s*([^\s#]+)", entry, re.M) if re.search(
+        r"^    context:\s*$", entry, re.M) else []
+    candidates = list(dict.fromkeys(["README.md", *configured]))
+    copied, missing = [], []
+    if repo is not None:
+        repo = repo.resolve()
+        for rel in candidates:
+            relative = Path(rel)
+            if relative.is_absolute() or ".." in relative.parts:
+                missing.append(f"{rel}（配置路径必须是仓库内相对路径）")
+                continue
+            source = (repo / relative).resolve()
+            try:
+                source.relative_to(repo)
+            except ValueError:
+                missing.append(f"{rel}（路径越出仓库）")
+                continue
+            if not source.is_file():
+                missing.append(f"{rel}（不存在）")
+                continue
+            target = out / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+            copied.append(str(relative))
+    else:
+        missing.append("项目未在 config.yaml 的 projects 中登记，或未配置 repo 路径")
+    manifest = (
+        f"# 项目上下文快照\n\n项目：`{project}`\n来源配置：`{config}`\n\n"
+        "本轮设计者与审查者共同使用以下只读快照。未登记的项目资料不会自动读取。\n\n"
+        "## 已复制文件\n\n"
+        + ("\n".join(f"- `{item}`" for item in copied) or "- 无")
+        + "\n\n## 缺失或无效文件\n\n"
+        + ("\n".join(f"- {item}" for item in missing) or "- 无")
+        + "\n"
+    )
+    atomic_write(out / "manifest.md", manifest)

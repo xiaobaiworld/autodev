@@ -67,6 +67,11 @@ class BuildTransitionTest(unittest.TestCase):
         self.assertEqual(b["stages"]["S1"], d["stages"]["S1"])           # 没覆盖的阶段原样继承
         self.assertEqual(b["stages"]["S3"]["role"], d["stages"]["S3"]["role"])  # 覆盖 on 不丢 role
         self.assertEqual(b["stages"]["S4"]["role"], "coder")
+        self.assertIn("prototype", b["stages"]["S4"]["inputs"])
+        self.assertIn("prototype", b["stages"]["S6"]["inputs"])
+        self.assertIn("prototype", b["stages"]["S8"]["inputs"])
+        self.assertIn("prototype", b["stages"]["S3"]["inputs"])
+        self.assertIn("prototype.md", b["stages"]["S2"]["outputs"])
         self.assertEqual(b["scope"], d["scope"])
 
     def test_counters_follow_template(self):
@@ -125,6 +130,56 @@ class RequiredSectionTest(unittest.TestCase):
                     with mock.patch.object(pipeline, "TEMPLATES", Path(d)):
                         with self.assertRaisesRegex(ValueError, "required_sections"):
                             load_template("pipeline/design")
+
+
+class ProjectContextInputTest(unittest.TestCase):
+    def test_s2_snapshots_configured_project_files_and_s3_uses_same_snapshot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / "project"
+            (repo / "docs").mkdir(parents=True)
+            (repo / "README.md").write_text("Project overview", encoding="utf-8")
+            (repo / "docs" / "DECISIONS.md").write_text("Decision evidence", encoding="utf-8")
+            (repo / "private.md").write_text("must not be copied", encoding="utf-8")
+            (root / "config.yaml").write_text(
+                f"projects:\n  - name: toy\n    repo: {repo}\n    context:\n      - docs/DECISIONS.md\n",
+                encoding="utf-8")
+            run = root / "workspace" / "runs" / "R1"
+            snap = run / "context" / "project-context" / "round-1"
+            s2 = {"id": "R1", "project": "toy", "kind": "pipeline/build", "stage": "S2", "round": 1,
+                  "step": {"role": "designer", "dir": pipeline.step_dir("S2", 1, "pipeline/build")}}
+            s2_input = write_input(root, run, s2).read_text(encoding="utf-8")
+            self.assertIn("project-context/round-1/manifest.md", s2_input)
+            self.assertEqual((snap / "README.md").read_text(encoding="utf-8"), "Project overview")
+            self.assertEqual((snap / "docs" / "DECISIONS.md").read_text(encoding="utf-8"), "Decision evidence")
+            self.assertFalse((snap / "private.md").exists())
+            source = repo / "docs" / "DECISIONS.md"
+            source.write_text("changed after S2", encoding="utf-8")
+            write_input(root, run, s2)
+            self.assertEqual((snap / "docs" / "DECISIONS.md").read_text(encoding="utf-8"), "Decision evidence")
+            s3 = {**s2, "stage": "S3", "step": {"role": "design_reviewer",
+                  "dir": pipeline.step_dir("S3", 1, "pipeline/build")}}
+            s3_input = write_input(root, run, s3).read_text(encoding="utf-8")
+            self.assertIn(str(snap / "manifest.md"), s3_input)
+            self.assertEqual((snap / "docs" / "DECISIONS.md").read_text(encoding="utf-8"), "Decision evidence")
+
+    def test_project_context_does_not_copy_paths_outside_repository(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / "project"
+            repo.mkdir()
+            outside = root / "secret.md"
+            outside.write_text("secret", encoding="utf-8")
+            (root / "config.yaml").write_text(
+                f"projects:\n  - name: toy\n    repo: {repo}\n    context:\n      - ../secret.md\n",
+                encoding="utf-8")
+            run = root / "workspace" / "runs" / "R1"
+            state = {"id": "R1", "project": "toy", "kind": "pipeline/build", "stage": "S2", "round": 1,
+                     "step": {"role": "designer", "dir": pipeline.step_dir("S2", 1, "pipeline/build")}}
+            write_input(root, run, state)
+            snap = run / "context" / "project-context" / "round-1"
+            self.assertIn("路径必须是仓库内相对路径", (snap / "manifest.md").read_text(encoding="utf-8"))
+            self.assertFalse((snap / "secret.md").exists())
 
 
 class BrokenTemplateTest(unittest.TestCase):

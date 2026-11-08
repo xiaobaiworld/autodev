@@ -180,13 +180,14 @@ class TestRequirementsLlmAndHandoff(unittest.TestCase):
                     assert "S1-analysis/round-1/analysis.md" in inp
                     (sd / "design.md").write_text("---\nverdict: DONE\nsummary: ok\n---\n# 设计\n", encoding="utf-8")
                     (sd / "dev-plan.md").write_text("---\nverdict: DONE\nsummary: ok\ntasks: [t1]\n---\n# 计划\n", encoding="utf-8")
+                    (sd / "prototype.md").write_text("# 原型\n不适用：无 GUI\n", encoding="utf-8")
                     (sd / "done.json").write_text(
                         json.dumps({
                             "id": state["id"],
                             "stage": "S2",
                             "round": 1,
                             "role": "designer",
-                            "outputs": ["design.md", "dev-plan.md"],
+                            "outputs": ["design.md", "dev-plan.md", "prototype.md"],
                             "verdict": "DONE",
                             "summary": "完成 S2 架构设计",
                             "finished_at": "2026-11-07T18:00:00+08:00",

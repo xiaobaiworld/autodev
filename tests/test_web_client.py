@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from cockpit.controller import allocate_run_id
-from cockpit.pipeline import SetupError, wait_reason
+from cockpit.pipeline import SetupError, step_dir, wait_reason
 from cockpit.store import LockError, Run, acquire_lock
 from web.api import (
     AUTODEV_ROOT,
@@ -69,6 +69,12 @@ class TestWebUnifiedClient(unittest.TestCase):
             self.assertEqual(s1_info["ui_status"], "complete")
             self.assertEqual(s2_info["ui_status"], "running")
             self.assertIn("analysis.md", s1_info["rounds"][0]["artifacts"])
+            s2_output = root / "workspace" / "runs" / rid / step_dir("S2", 1, "pipeline/build")
+            s2_output.mkdir(parents=True, exist_ok=True)
+            (s2_output / "prototype.md").write_text("# 原型\n不适用：无 GUI\n", encoding="utf-8")
+            refreshed = get_run_detail(root, rid)
+            refreshed_s2 = next(s for s in refreshed["stages"] if s["code"] == "S2")
+            self.assertIn("prototype.md", refreshed_s2["rounds"][0]["artifacts"])
 
             # 3. 模拟进入 needs-human 状态并通过 Web 提交人工回复
             run = Run(root / "workspace" / "runs" / rid)

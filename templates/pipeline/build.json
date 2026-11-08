@@ -14,7 +14,7 @@
    "role": "coder",
    "outputs": ["exec-report.md"],
    "verdicts": ["DONE", "BLOCK"],
-   "inputs": ["request", "analysis", "design", "plan", "workdir", "check_prev", "review_code_prev", "human"],
+   "inputs": ["request", "analysis", "design", "plan", "prototype", "workdir", "check_prev", "review_code_prev", "human"],
    "workdir": "write",
    "on": {
     "DONE": {"goto": "S5", "round": "same"}
@@ -41,7 +41,7 @@
    "role": "code_reviewer",
    "outputs": ["review.md"],
    "verdicts": ["PASS", "REWORK", "BLOCK"],
-   "inputs": ["request", "analysis", "design", "plan", "full_diff", "check_now", "workdir_ro", "human"],
+   "inputs": ["request", "analysis", "design", "plan", "prototype", "full_diff", "check_now", "workdir_ro", "human"],
    "workdir": "readonly",
    "on": {
     "PASS": {"goto": "S7", "round": "same"},
@@ -92,7 +92,7 @@
    "role": "acceptor",
    "outputs": ["acceptance.md"],
    "verdicts": ["PASS", "REWORK", "BLOCK"],
-   "inputs": ["request", "analysis", "design", "plan", "full_diff", "check_now", "usage_now", "workdir_ro", "human"],
+   "inputs": ["request", "analysis", "design", "plan", "prototype", "full_diff", "check_now", "usage_now", "workdir_ro", "human"],
    "workdir": "readonly",
    "required_sections": {"acceptance.md": "原文对照"},
    "on": {
