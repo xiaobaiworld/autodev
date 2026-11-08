@@ -7,11 +7,13 @@ import logging
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import lark_oapi as lark
 from lark_oapi.api.im.v1 import P2ImMessageReceiveV1
 
 from requirements.config import load_req_config
+from cockpit.projects import RegistryError, register_project
 from requirements.handoff import HandoffVerificationError, handoff_srs_to_pipeline
 from requirements.llm_provider import load_model_registry, resolve_model_spec
 from requirements.presentation import FeishuCardPresenter
@@ -70,6 +72,7 @@ def main() -> None:
     )
     work_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="req-worker")
     send_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="req-sender")
+    pending_project_init = {}
 
     log.info("AutoDev 需求分析师机器人启动中... app_id=%s, default_cwd=%s", cfg.app_id, cfg.default_cwd)
 
@@ -106,6 +109,40 @@ def main() -> None:
         if clean_text in ("/project", "/项目") or clean_text.startswith("/project ") or clean_text.startswith("/cd "):
             sess = store.get(chat_id)
             parts = clean_text.split(maxsplit=1)
+            if clean_text == "/project init yes":
+                pending = pending_project_init.pop(chat_id, None)
+                if not pending:
+                    send_pool.submit(responder.send_text, chat_id, "没有待确认的项目登记请求，请重新发送 `/project add <名称> <路径>`。")
+                    return
+                try:
+                    result = register_project(Path(__file__).resolve().parents[2], pending["name"], pending["path"], init_git=True)
+                    updated = store.set_project(chat_id, pending["name"], cwd=pending["path"])
+                    send_pool.submit(responder.send_text, chat_id, f"✅ 项目已登记并切换：`{updated['project']}`\n目录：`{updated['cwd']}`")
+                except RegistryError as e:
+                    send_pool.submit(responder.send_text, chat_id, f"⚠️ 项目登记失败：{e}")
+                return
+            if clean_text.startswith("/project add "):
+                add = clean_text.split(maxsplit=3)
+                if len(add) != 4:
+                    send_pool.submit(responder.send_text, chat_id, "用法：`/project add <名称> <路径>`")
+                    return
+                name, raw_path = add[2], add[3]
+                resolved = str(Path(raw_path).expanduser().resolve())
+                allowed_dirs = [Path(d).expanduser().resolve() for d in cfg.allow_dirs]
+                if not any(Path(resolved) == d or d in Path(resolved).parents for d in allowed_dirs):
+                    send_pool.submit(responder.send_text, chat_id, f"⚠️ 拒绝：目录不在白名单内 `{resolved}`")
+                    return
+                try:
+                    result = register_project(Path(__file__).resolve().parents[2], name, resolved)
+                    if result["status"] == "needs_init":
+                        pending_project_init[chat_id] = {"name": name, "path": resolved}
+                        send_pool.submit(responder.send_text, chat_id, "该目录不是 Git 仓库，是否执行 git init？请回复 `/project init yes`。")
+                        return
+                    updated = store.set_project(chat_id, name, cwd=resolved)
+                    send_pool.submit(responder.send_text, chat_id, f"✅ 项目已登记并切换：`{updated['project']}`\n目录：`{updated['cwd']}`")
+                except RegistryError as e:
+                    send_pool.submit(responder.send_text, chat_id, f"⚠️ 项目登记失败：{e}")
+                return
             if len(parts) == 1:
                 cur_proj = sess.get("project") or os.path.basename(sess["cwd"].rstrip(os.sep))
                 cur_req = sess.get("active_req_id") or "待定稿"
@@ -118,7 +155,7 @@ def main() -> None:
                     f"• **关联工程路径**：`{sess['cwd']}`\n"
                     f"• **当前活跃需求**：`{cur_req}`\n"
                     f"• **会话历史深度**：{history_count} 轮对话\n\n"
-                    f"💡 发送 `/project <项目路径或名称>` 可切换目标项目。切换时系统将自动隔离不同项目的历史记忆，杜绝上下文串扰。",
+                    f"💡 发送 `/project <项目路径或名称>` 可切换；发送 `/project add <名称> <路径>` 可登记项目。切换时系统将隔离历史记忆。",
                 )
                 return
 

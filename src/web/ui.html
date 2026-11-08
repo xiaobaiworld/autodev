@@ -471,6 +471,7 @@
         <span style="color:var(--muted);">项目</span>
         <select id="project-select" aria-label="当前项目" onchange="switchProject(this.value)"></select>
       </label>
+      <button class="btn" onclick="addProject()">新增项目</button>
       <div class="nav-tabs" role="tablist">
         <button class="nav-tab active" data-tab="tab-req" onclick="switchMainTab('tab-req')">
           📝 1. 需求澄清工作台 (含 9 章节实时预览 & 校验)
@@ -870,6 +871,25 @@
       localStorage.setItem("autodev.project", name);
       STATE.currentRunId = null;
       await refreshOverview();
+    }
+
+    async function addProject() {
+      const name = prompt("项目名称（字母、数字、-、_，最长 64 字符）");
+      if (name === null) return;
+      const path = prompt("项目目录路径（支持 ~）");
+      if (path === null) return;
+      const submit = async init_git => fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, path, init_git, expected_hash: STATE.config?.version_hash })
+      }).then(r => r.json());
+      let result = await submit(false);
+      if (result.status === "needs_init") {
+        if (!confirm("该目录不是 Git 仓库，是否执行 git init 并登记？")) return;
+        result = await submit(true);
+      }
+      if (!result.ok) { alert(result.error || "项目登记失败"); return; }
+      await switchProject(name.trim());
     }
 
     async function refreshOverview() {

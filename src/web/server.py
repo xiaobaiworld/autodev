@@ -11,6 +11,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from cockpit.store import atomic_write
+from cockpit.projects import RegistryError, register_project
 from requirements.handoff import HandoffVerificationError, handoff_srs_to_pipeline
 from requirements.llm_provider import load_model_registry
 from requirements.session import ReqSessionStore
@@ -176,6 +177,17 @@ def make_handler(root_dir: Path):
                     })
                     return
 
+                if path == "/api/projects":
+                    result = register_project(
+                        root_dir,
+                        body.get("name", ""),
+                        body.get("path", ""),
+                        init_git=body.get("init_git") is True,
+                        expected_hash=body.get("expected_hash"),
+                    )
+                    self._send_json({"ok": True, **result})
+                    return
+
                 if path == "/api/srs/handoff":
                     fname = str(body.get("filename") or "").strip()
                     project = str(body.get("project") or "").strip() or None
@@ -243,6 +255,8 @@ def make_handler(root_dir: Path):
                     return
 
                 self._send_json({"ok": False, "error": f"未知接口: {path}"}, status=404)
+            except RegistryError as e:
+                self._send_json({"ok": False, "error": str(e)}, status=400)
             except Exception as e:
                 self._send_json({"ok": False, "error": str(e)}, status=400)
 

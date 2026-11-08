@@ -111,8 +111,8 @@ def list_projects(root: str | Path) -> list[dict[str, str]]:
         name = re.search(r"^  - name:\s*([^\s#]+)", part, re.M)
         if not name:
             continue
-        repo = re.search(r"^    repo:\s*([^\s#]+)", part, re.M)
-        out.append({"name": name.group(1), "repo": repo.group(1) if repo else ""})
+        repo = re.search(r'^    repo:\s*(?:"([^"]+)"|([^\s#]+))', part, re.M)
+        out.append({"name": name.group(1), "repo": (repo.group(1) or repo.group(2)) if repo else ""})
     return out
 
 

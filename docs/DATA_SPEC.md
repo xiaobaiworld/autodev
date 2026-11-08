@@ -95,6 +95,8 @@ original_filename: tag-filter.md
 | original_filename | 用户原文件名 | string | 是 | 无 | 用于追溯 | 程序 | raw |
 | 正文 | 需求原文 | markdown | 是 | 无 | 非空 | 用户 | raw |
 
+`project` 是 `config.yaml` 的 `projects[].name` 稳定标识；其 `repo` 路径必须唯一。登记入口只写项目名称和解析后的绝对仓库路径，流水线仍按 `projects` 项的 `name` 与 `repo` 读取。
+
 校验失败（缺 `project`、项目不存在、正文为空）时，触发 D016 分级处置：
 - **前台交互侧（飞书/Web 澄清）**：程序直接拒绝移交，打回当前对话并提示明确原因，要求用户补充或修改项目标识；
 - **流水线领取侧**：文件不领取，移到 `needs-human/`，并按第 9 节生成一条决策请求（`decision-K.md`），说明原因并由用户人工拍板裁决。

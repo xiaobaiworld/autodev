@@ -307,8 +307,8 @@ def _snapshot_project_context(root, state, out):
     project = str(state.get("project", ""))
     entry = next((part for part in entries if re.search(
         rf"^  - name:\s*{re.escape(project)}\s*$", part, re.M)), "")
-    repo_match = re.search(r"^    repo:\s*([^\s#]+)", entry, re.M)
-    repo = Path(repo_match.group(1)).expanduser() if repo_match else None
+    repo_match = re.search(r'^    repo:\s*(?:"([^"]+)"|([^\s#]+))', entry, re.M)
+    repo = Path(repo_match.group(1) or repo_match.group(2)).expanduser() if repo_match else None
     configured = re.findall(r"^      -\s*([^\s#]+)", entry, re.M) if re.search(
         r"^    context:\s*$", entry, re.M) else []
     candidates = list(dict.fromkeys(["README.md", *configured]))
