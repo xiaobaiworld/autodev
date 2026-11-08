@@ -13,7 +13,7 @@ from cockpit.store import Run
 CFG = (Path(__file__).resolve().parents[1] / "config.yaml").read_text(encoding="utf-8")
 LIMITS = {"design_review_rounds": 3, "check_rounds": 3, "code_review_rounds": 3, "usage_rounds": 3,
           "acceptance_rounds": 2, "step_retries": 2, "step_timeout_minutes": 60}
-OUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"], "S4": ["exec-report.md"],
+OUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md", "prototype.md"], "S3": ["review.md"], "S4": ["exec-report.md"],
         "S6": ["review.md"], "S8": ["acceptance.md"]}
 VERDICT = {"S1": "ACCEPT", "S2": "DONE", "S3": "PASS", "S4": "DONE", "S8": "PASS"}
 REVIEW_FILES = ("review.md", "acceptance.md")                          # 这两个产物必须有“原文对照”小节

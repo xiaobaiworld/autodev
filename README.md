@@ -10,6 +10,7 @@ AutoDev 是本机运行的需求驱动开发流程。确定性程序控制阶段
 
 - **已跑通 S1 到 S9 全流程**：真实 Agent 完整跑通 S1 需求分析、S2 设计、S3 设计审查、S4 编码、S5 检查、S6 代码审查、S7 发布候选、S7U 使用验证、S8 验收与 S9 正式发布（见 [`next.md`](next.md)）。
 - **独立需求澄清模块与飞书机器人（`src/requirements/`）**：常驻守护（`com.autodev.req-bot`），支持从模糊到清晰的 4 步拼图澄清、9 章节 SRS 标准产出与 `validator.py` 自动验真、独立完整模型 ID 调用层（`llm_provider.py`）、双端共享对话与耗时审计服务（`service.py`），并支持通过 `handoff.py` 跳过重复 S1、一键直通 `S2 架构设计`。
+- **设计阶段交付**：S2/S3 读取上游需求分析和目标项目说明快照，交付设计、开发计划与独立原型文件；审核通过后现有开发/测试阶段可读取原型。需原型时的人工确认和 D019 分级放行仍在后续实现。
 - **全系统统一网页客户端（`src/web/`，`v0.3.3`）**：把「源头需求澄清工作台」与前面分析设计的「S1~S9 系统流水线管理网站」完整连接成一体（需求规格见 [`docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md`](docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md)），相比飞书新增 **9 章节 SRS 实时生长预览、RULE-01~09 校验红绿灯、需求规模与关联网络图谱、每轮耗时审计**，并可一键直通切入 **S1~S9 流水线驾驶舱、在线产物阅读器、待你决定人工回复与 Agent 角色模型配置**。
 - **命令行看板**：`src/dashboard/` 实时显示各需求阶段与日志，布局放在 Herdr 的 `pro2` 空间。
 
@@ -21,7 +22,7 @@ Agent/模型统一登记在 [`config/agents.toml`](config/agents.toml)，包含�
 
 ```sh
 PYTHONPATH=src python3 -m web.server --port 8765              # 启动全系统统一本机网页客户端 (http://127.0.0.1:8765)
-PYTHONPATH=src python3 -m unittest discover -s tests          # 单元测试，不联网 (297 项测试)
+PYTHONPATH=src python3 -m unittest discover -s tests          # 单元测试，不联网 (311 项测试)
 python3 -I tests/smoke_autoloop.py                            # 联机冒烟，假 Agent，不花额度
 ```
 
@@ -36,10 +37,11 @@ python3 -I tests/smoke_autoloop.py                            # 联机冒烟，�
 - [`docs/modules/requirements/README.md`](docs/modules/requirements/README.md)：需求澄清模块与飞书机器人入口（`v0.3.3`）
 - [`docs/design/2026-11-05-autoloop-foundation.md`](docs/design/2026-11-05-autoloop-foundation.md)：当前主线方案
 - [`docs/design/2026-11-02-autodev-design.md`](docs/design/2026-11-02-autodev-design.md)：九阶段流水线设计
+- [`docs/design/2026-11-08-stage-bots-design.md`](docs/design/2026-11-08-stage-bots-design.md)：阶段机器人设计与当前实施边界
 - [`docs/DECISIONS.md`](docs/DECISIONS.md)：决策记录
 - [`docs/lessons.md`](docs/lessons.md)：踩过的坑
 - [`docs/MODELS.md`](docs/MODELS.md)：模型名规则（只写完整 ID）
-- [`config.yaml`](config.yaml)：项目、Agent、角色和轮次上限配置
+- [`config.yaml`](config.yaml)：项目与轮次上限配置，并引用 Agent/模型注册表
 - [`AGENT_HANDOFF.md`](AGENT_HANDOFF.md)：换机器时用
 
 已被取代的文档在 `docs/archive/`，只供追溯。

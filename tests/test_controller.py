@@ -11,7 +11,7 @@ from cockpit.store import Run
 
 CFG = (Path(__file__).resolve().parents[1] / "config.yaml").read_text(encoding="utf-8")
 LIMITS = {"design_review_rounds": 3, "step_retries": 2, "step_timeout_minutes": 60}
-OUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"]}
+OUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md", "prototype.md"], "S3": ["review.md"]}
 
 
 class CrashError(Exception):

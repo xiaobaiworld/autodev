@@ -1,7 +1,7 @@
 {
  "kind": "pipeline/design",
  "order": ["S1", "S2", "S3"],
- "scope": "这是流水线中的一轮，不是在开发 AutoDev 本身。只读下面“输入文件”列出的文件和本步骤目录；不要按 AGENTS.md 的“开始任务前”去读 next.md、lessons.md、TOOLS.md、INDEX.md，也不要读全局开发规范。运行环境没有网络：设计和实现只能用 Python 标准库和本机已有的东西，不要依赖需要联网下载安装的包或构建工具（如 pip 安装 setuptools）。",
+ "scope": "这是目标项目的一轮设计工作。只读下面列出的需求、分析、项目说明快照和本步骤产物；不要自行扩大读取范围。项目说明快照由项目配置中的 repo 与 context 清单生成，S2 与 S3 使用同一份快照。已有资产优先复用；若资料缺失或彼此冲突，列明证据与影响，不要自行改写事实。此阶段只产出设计文档，不修改目标项目代码。",
  "stages": {
   "S1": {
    "dir": "S1-analysis",
@@ -19,26 +19,26 @@
   "S2": {
    "dir": "S2-design",
    "role": "designer",
-   "outputs": ["design.md", "dev-plan.md"],
+   "outputs": ["design.md", "dev-plan.md", "prototype.md"],
    "verdicts": ["DONE", "BLOCK"],
-   "inputs": ["request", "analysis", "review_prev", "human"],
+   "inputs": ["request", "analysis", "project_context", "review_prev", "human"],
    "on": {
     "DONE": {"goto": "S3", "round": "same"}
    },
-   "task": "按分析结论写设计稿 design.md 和开发计划 dev-plan.md（frontmatter 含 verdict、summary，dev-plan.md 另含 tasks 列表）。若有上轮审查意见，逐条回应并写 response.md。"
+   "task": "以需求原文和上游 analysis.md 为本轮业务输入，并结合项目说明快照中的 README 与项目配置 context 清单。先查明现有结构和可复用资产；仅在与需求有实质冲突时提出变更并说明理由。写 design.md、dev-plan.md 与 prototype.md：design.md frontmatter 含 verdict、summary，包含架构与数据流、资产复用及证据、完整接口契约（调用方/被调用方、输入输出、错误、权限、版本/兼容）及界面/交互设计；dev-plan.md frontmatter 另含可执行 tasks 列表，逐项写明依赖、输入输出、接口、测试与验收映射、完成条件。若有人使用的界面，在 prototype.md 提供可评审原型，覆盖关键页面、操作、状态及待用户确认项；若无 GUI，则在 prototype.md 明确写‘不适用’及理由。遇到资料缺失、需求歧义或重大冲突时写 BLOCK 并说明依据。若有上轮审查意见，逐条回应并写 response.md。"
   },
   "S3": {
    "dir": "S3-design-review",
    "role": "design_reviewer",
    "outputs": ["review.md"],
    "verdicts": ["PASS", "REWORK", "BLOCK"],
-   "inputs": ["request", "analysis", "design", "plan"],
+   "inputs": ["request", "analysis", "project_context", "design", "plan", "prototype"],
    "on": {
     "PASS": "done",
     "REWORK": {"goto": "S2", "round": "inc", "counter": "design_review_rounds"}
    },
    "required_sections": {"review.md": "原文对照"},
-   "task": "审查设计稿与开发计划：写 review.md，frontmatter 含 verdict、findings（列表，每项含 id、severity、location、problem、expected）。只报会导致错误或不满足验收标准的问题，不报风格。verdict 为 PASS 时不得有 critical 或 high 级别的问题。分析是对需求的转述，转述可能悄悄改了需求：先逐句读“需求”原文，不要只信分析。review.md 里必须有一个标题为“原文对照”的小节（写成 Markdown 标题，如 ## 原文对照），在里面逐条列出需求原文的每一个要求，注明它在设计和开发计划里对应哪里；原文有、分析或设计里没有（或被改写了）的，单独标出，并在 findings 里按其影响定级。"
+   "task": "独立审查需求、上游分析、同一份项目上下文快照、完整设计、开发计划和 prototype.md：写 review.md，frontmatter 含 verdict、findings（列表，每项含 id、severity、location、problem、expected）。核对资产复用是否有证据；接口契约是否足以让开发按计划执行；有 GUI 时原型是否覆盖关键操作、状态和待确认项，无 GUI 时是否说明不适用。只报会导致错误、重要信息缺失或不满足验收标准的问题，不报风格。verdict 为 PASS 时不得有 critical 或 high 级别的问题。分析是对需求的转述，转述可能悄悄改了需求：先逐句读‘需求’原文，不要只信分析。review.md 必须有‘原文对照’小节，逐条列出需求原文每个要求及其在设计、计划或原型中的位置；遗漏、改写或与项目事实冲突的内容在 findings 中按影响定级。"
   }
  }
 }

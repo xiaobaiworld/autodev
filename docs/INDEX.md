@@ -28,8 +28,8 @@
 | `docs/modules/requirements/README.md` | 需求澄清独立模块入口：需求、完成条件、状态循环、接口与实现/测试计划 | 模块已落地（含飞书长连接、Web 端互通与直通 S2） |
 | `docs/modules/requirements/feishu-requirement-bot.md` | 需求澄清模块与飞书端沉淀说明书：Session 演进全记录、九大类别体系与标准需求文档范本 | 权威说明与需求沉淀规范 |
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
-| `docs/design/2026-11-08-stage-bots-requirements.md` | 需求、设计、开发、测试、优化阶段机器人的用户目标与建议验收 | 讨论稿，范围细节待确认 |
-| `docs/design/2026-11-08-stage-bots-design.md` | 五工作区、角色上下文、交接与协作展示；第 8 节为渠道独立的设计机器人工作说明 v0.1 | 三层划分已接受，具体契约待讨论，未实现 |
+| `docs/design/2026-11-08-stage-bots-requirements.md` | 需求、设计、开发、测试、优化阶段机器人的用户目标与建议验收 | 目标已接受；S2/S3 输入输出契约已接入 |
+| `docs/design/2026-11-08-stage-bots-design.md` | 五工作区、角色上下文、交接与协作展示；第 8 节为渠道独立的设计机器人工作说明 v0.1 | 项目上下文快照与 prototype.md 下游交付已实现；渠道交互、D019 执行与条件式原型确认待续 |
 | `docs/design/2026-11-08-agent-model-registry.md`、`config/agents.toml`、`docs/config/agent-registry.example.toml` | 本机执行器/模型能力、任务限制、角色默认值与环境变量凭证 | D021 第一版已实现；docs/config 为默认禁用教学样例 |
 | `docs/design/2026-11-02-autodev-design.md` | 九阶段流水线、角色、产物、人工参与、Web 界面、复盘、规则 | 当前设计基线；第 3.2、3.3、5 节的执行与调度部分已被地基方案部分取代，各节顶部有说明 |
 | `docs/OPTIMIZATIONS.md` | 流程优化记录：每次小优化改了什么、为什么、怎么回退、效果量到多少；只追加，回退和反复都如实记 | 只记优化这一件事；没量过写“未测” |

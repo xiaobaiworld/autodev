@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 DEFAULT = {"S1": "ACCEPT", "S2": "DONE", "S3": "PASS", "S4": "DONE", "S6": "PASS", "S8": "PASS"}
-OUTPUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md"], "S3": ["review.md"], "S4": ["exec-report.md"],
+OUTPUTS = {"S1": ["analysis.md"], "S2": ["design.md", "dev-plan.md", "prototype.md"], "S3": ["review.md"], "S4": ["exec-report.md"],
            "S6": ["review.md"], "S8": ["acceptance.md"]}
 
 policy_path, prompt = Path(sys.argv[1]), sys.argv[2]
