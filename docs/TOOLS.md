@@ -106,3 +106,11 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - config.yaml 以 agent_registry 引用 config/agents.toml，角色默认值和模型能力统一在注册表登记。本机 workspace/agent-registry.toml 或 AUTODEV_AGENT_REGISTRY 指定文件整体替代它，不叠加隐藏备用模型。
 - 只读检查：`PYTHONPATH=src python3 -m cockpit.registry`；角色解析加 `--role designer`；检查其他文件用 `--file PATH`，均不调用模型、不打印 Key 值。
 - Ollama 仅提供无状态文本适配，不自动探测服务或下载模型，不具备流水线代码产物协议。自定义 executable 不支持 autoloop 内置适配器，直接调用路径可用。细节见注册表设计第 8 节。
+
+## 11. 项目登记（网页与飞书共用，2026-11-08）
+
+- 唯一写入入口：`cockpit.projects.register_project(root, name, path, *, init_git=False, expected_hash=None)`，写 `config.yaml` 的 `projects` 段（`name`、`repo`），返回 `registered`（附 `version_hash`）或 `needs_init`，失败抛 `RegistryError`。网页和飞书都只调用它，不另写规则。
+- 规则：名称仅字母/数字/`-`/`_`、以字母或数字开头、最长 64 字符且不重名；路径展开 `~` 后取绝对路径，必须是已存在目录且不能与已登记项目相同；路径不是 Git 仓库时返回 `needs_init` 且不改配置，用户明确同意后才 `git init`；写入用 `atomic_write`，支持 `expected_hash` 乐观锁，写后回读不到新条目则恢复原文件。
+- 网页：`POST /api/projects`，请求体 `{name, path, init_git, expected_hash}`；顶栏“新增项目”按钮收到 `needs_init` 时弹确认框，确认后带 `init_git: true` 重提。
+- 飞书：`/project add <名称> <路径>`（路径须在 `allow_dirs` 白名单内）；非 Git 目录时回复提示，同一会话回复 `/project init yes` 才初始化并登记，随后切换到该项目。待确认状态只在守护进程内存里，重启即失效，需重新发送 `add`。
+- 验证范围：`tests/test_project_registry.py` 6 项临时目录测试；网页 `/api/projects` 另在临时根目录上用真实 HTTP 服务实测过成功、需初始化、重名、非法名、过期哈希五种情形。飞书 `on_message` 路由与白名单分支未真机验证。

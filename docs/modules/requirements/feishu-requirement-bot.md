@@ -194,6 +194,9 @@ flowchart TD
    - **飞书内一键触发**：定稿后直接发送 `启动设计`、`移交设计` 或 `/handoff`；
    - **命令行触发**：`PYTHONPATH=src python3 -m requirements.handoff --req docs/requirements/REQ-xxx.md`。
 
+### 3. 项目登记命令（[`src/cockpit/projects.py`](../../../src/cockpit/projects.py)）
+需求分析开始时要先确定目标项目。新项目用 `/project add <名称> <路径>` 登记（路径须在 `allow_dirs` 白名单内）；路径不是 Git 仓库时机器人会询问，回复 `/project init yes` 才会执行 `git init` 并登记，登记后自动切换到该项目并隔离历史上下文。规则与网页共用同一函数，详见 [`docs/TOOLS.md`](../../TOOLS.md) 第 11 节。待确认状态只保存在守护进程内存中，重启后需重新发送 `add`。
+
 ---
 
 ## 五、后续演进建议与待办事项

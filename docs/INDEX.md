@@ -26,7 +26,7 @@
 | `docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md` | AutoDev 全系统统一网页客户端标准需求规格说明书（`SOFTWARE` 类，`SPEC-VALIDATED: PASS`）：连接源头需求澄清工作台与前面分析的 S1~S9 系统 Web 管理界面 | 已验证并落地的软件类标准 SRS 需求文档 |
 | `docs/requirements/REQ-DEPLOY-WEB_DAEMON-20261108.md` | AutoDev 统一网页客户端本机守护部署与健康自检工程（`DEPLOYMENT` 类，`SPEC-VALIDATED: PASS`）：含部署脚本清单、五步生命周期、部署拓扑草图与幂等/回滚验收标准 | 已验证的环境部署类黄金需求文档 |
 | `docs/modules/requirements/README.md` | 需求澄清独立模块入口：需求、完成条件、状态循环、接口与实现/测试计划 | 模块已落地（含飞书长连接、Web 端互通与直通 S2） |
-| `docs/modules/requirements/feishu-requirement-bot.md` | 需求澄清模块与飞书端沉淀说明书：Session 演进全记录、九大类别体系与标准需求文档范本 | 权威说明与需求沉淀规范 |
+| `docs/modules/requirements/feishu-requirement-bot.md` | 需求澄清模块与飞书端沉淀说明书：Session 演进全记录、九大类别体系与标准需求文档范本；含项目登记命令 `/project add` | 权威说明与需求沉淀规范 |
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
 | `docs/design/2026-11-08-stage-bots-requirements.md` | 需求、设计、开发、测试、优化阶段机器人的用户目标与建议验收 | 目标已接受；S2/S3 输入输出契约已接入 |
 | `docs/design/2026-11-08-stage-bots-design.md` | 五工作区、角色上下文、交接与协作展示；第 8 节为渠道独立的设计机器人工作说明 v0.1 | 项目上下文快照与 prototype.md 下游交付已实现；渠道交互、D019 执行与条件式原型确认待续 |

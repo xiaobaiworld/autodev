@@ -1,6 +1,6 @@
 # next.md
 
-## 当前执行目标：将本机工作分支收敛到 main（2026-11-08）
+## 已完成：项目登记（网页与飞书共用）及本机分支收敛到 main（2026-11-08）
 
 - 实现范围：`cockpit.projects.register_project` 是唯一写入入口；验证名称、绝对路径、项目名/路径唯一性、Git 初始化确认、配置 expected_hash、原子写和写后回读恢复。
 - Web 使用 `POST /api/projects` 和顶栏新增按钮；飞书使用 `/project add <名称> <路径>`，非 Git 目录仅在同会话回复 `/project init yes` 后初始化。
