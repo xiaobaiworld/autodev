@@ -21,7 +21,7 @@ ACTIONS={'列表':'list','查看':'show','继续':'step','重试':'retry','修�
 
 
 def parse_command(text):
-    from requirements.session import SessionError
+    from requirements.versioned_session import SessionError
     if not isinstance(text,str) or len(text.encode())>128000:
         raise SessionError('invalid-input','需求消息为空或过大')
     head,_,rest=text.strip().partition(' ')

@@ -9,7 +9,7 @@ from channels.feishu import FeishuRequirements
 from channels.gateway import ChannelError,MessageGateway
 from requirements.agent import DemoAgent,HubAgent,load_settings
 from requirements.messaging import RequirementsMessages
-from requirements.session import SessionError,SessionStore
+from requirements.versioned_session import SessionError,SessionStore
 
 
 def main(argv=None):

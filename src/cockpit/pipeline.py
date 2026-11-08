@@ -199,6 +199,25 @@ def workdir_of(root, state):
     return Path(root) / "workspace" / "projects" / state.get("project", "toy") / state["id"]
 
 
+def wait_reason(p):
+    """一个等人的需求在等什么（命令行看板与 Web 驾驶舱共用，O4）。全部从 state.json 已有的字段推出来，推不出就老实写“等你处理”。"""
+    h, step = p.get("human") or {}, p.get("step") or {}
+    stage = p.get("stage", "-")
+    gate = str(h.get("pending_decision") or "")
+    if gate.startswith("gate:"):
+        return f"要你批准才进 {gate[5:]}"
+    if step.get("state") == "failed":
+        return f"{stage} 步骤失败（{step.get('fail_reason') or '原因未记录'}），重试用完"
+    verdict = step.get("verdict")
+    if verdict == "BLOCK":
+        return f"{stage} 的 Agent 报 BLOCK，要你判断"
+    if verdict == "CLARIFY":
+        return f"{stage} 需求不清楚，要你澄清"
+    if verdict in ("REWORK", "FAIL"):
+        return f"{stage} 返工轮次用完，仍是 {verdict}"
+    return "等你处理"
+
+
 def write_input(root, run_dir, state):
     """写本步骤的 input.md（DATA_SPEC 7.1）。返回路径。root 是 AutoDev 根目录。"""
     root, run_dir = Path(root), Path(run_dir)

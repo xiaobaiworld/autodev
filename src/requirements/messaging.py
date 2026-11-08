@@ -3,7 +3,7 @@ import hashlib
 import json
 
 from cockpit.store import acquire_lock, atomic_write
-from .session import SessionError
+from .versioned_session import SessionError
 
 
 class RequirementsMessages:

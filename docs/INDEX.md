@@ -1,6 +1,6 @@
 # 文档与关键文件索引
 
-更新日期：2026-11-07
+更新日期：2026-11-08 ｜ 当前版本：`v0.3.3`
 
 本索引按用途列出当前有效的入口、设计与参考资料。状态描述的是 AutoDev 自身资料的权威性；外部参考不能覆盖项目决策。已被取代的文档在 `docs/archive/`，只供追溯。
 
@@ -22,23 +22,31 @@
 | 路径 | 职责 | 状态与权威性 |
 | --- | --- | --- |
 | `docs/design/2026-11-05-autoloop-foundation.md` | 以 agent-autoloop 为地基的方案：结构、F0 到 F6、界面共用数据、待决事项 | 当前主线 |
-| `docs/modules/requirements/README.md` | 需求澄清独立模块入口：需求、状态循环、协议与开发计划 | v0.8 需求已确认，已实现；独立后端供 CLI、网页及上层项目复用，验证见模块 verification.md |
-| `docs/modules/requirements/baselines/v0.8.md` | 包含可选模型、双模型审核及人工确认的固定需求副本 | 用户确认的 v0.8 基线，后续变更另建版本 |
-| `docs/modules/requirements/web-design.md` | 网页工作台分区、页签、待办与真实入口 | 已实现并做浏览器验证 |
-| `docs/modules/requirements/usage.md` | CLI/网页启动、演示与真实模型、恢复和测试 | 当前使用入口 |
-| `docs/modules/requirements/verification.md` | 250 项自动测试、浏览器及真实双模型证据与限制 | 验证记录 |
-| `docs/modules/requirements/channels.md` | 手机端通用组件与飞书/微信接线边界 | 通用组件及飞书已接，手机验收待用户发命令 |
-| `docs/modules/requirements/dev-plan.md` | M1～M6 的文件范围、测试、验收、复用边界及提交收口 | 当前实施计划，执行证据见 verification.md |
+| `docs/specs/REQUIREMENT_SPEC_STANDARD.md` | 软件与部署需求规格说明书产出规范与校验标准 (SRS Standard v1.1)：软件/部署/混合双轨分类、九大章节同构异核契约、Linter 校验规则与 S2 交接协议 | 需求产物向 S2 架构交接的标准契约 |
+| `docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md` | AutoDev 全系统统一网页客户端标准需求规格说明书（`SOFTWARE` 类，`SPEC-VALIDATED: PASS`）：连接源头需求澄清工作台与前面分析的 S1~S9 系统 Web 管理界面 | 已验证并落地的软件类标准 SRS 需求文档 |
+| `docs/requirements/REQ-DEPLOY-WEB_DAEMON-20261108.md` | AutoDev 统一网页客户端本机守护部署与健康自检工程（`DEPLOYMENT` 类，`SPEC-VALIDATED: PASS`）：含部署脚本清单、五步生命周期、部署拓扑草图与幂等/回滚验收标准 | 已验证的环境部署类黄金需求文档 |
+| `docs/modules/requirements/README.md` | 需求澄清独立模块入口：需求、完成条件、状态循环、接口与实现/测试计划 | 模块已落地（含飞书长连接、Web 端互通与直通 S2） |
+| `docs/modules/requirements/feishu-requirement-bot.md` | 需求澄清模块与飞书端沉淀说明书：Session 演进全记录、九大类别体系与标准需求文档范本 | 权威说明与需求沉淀规范 |
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
-| `docs/design/2026-11-08-stage-bots-requirements.md` | 需求、开发、测试、优化阶段机器人的用户目标与建议验收 | 讨论稿，范围细节待确认 |
+| `docs/design/2026-11-08-stage-bots-requirements.md` | 需求、设计、开发、测试、优化阶段机器人的用户目标与建议验收 | 讨论稿，范围细节待确认 |
 | `docs/design/2026-11-08-stage-bots-design.md` | 五工作区、角色上下文、交接与协作展示；第 8 节为渠道独立的设计机器人工作说明 v0.1 | 三层划分已接受，具体契约待讨论，未实现 |
 | `docs/design/2026-11-02-autodev-design.md` | 九阶段流水线、角色、产物、人工参与、Web 界面、复盘、规则 | 当前设计基线；第 3.2、3.3、5 节的执行与调度部分已被地基方案部分取代，各节顶部有说明 |
 | `docs/OPTIMIZATIONS.md` | 流程优化记录：每次小优化改了什么、为什么、怎么回退、效果量到多少；只追加，回退和反复都如实记 | 只记优化这一件事；没量过写“未测” |
-| `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D019 | 决策事实源；D020 分层及 D019 分级审查原则已接受，实施细节待定 |
+| `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D020 | 决策事实源；D019 分级审查优先，D020 阶段机器人方案 |
 | `docs/DATA_SPEC.md` | 数据目录、实体与文件格式 | 设计规范；`state.json`、`done.json` 已在代码里使用 |
 | `docs/MODELS.md` | 模型名规则：只写完整 ID、magpie 映射原因、各 CLI 的指定方式 | 规则；改 `config.yaml` 的 `agents` 或写启动命令前必读 |
-| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L012 | 开始新功能前先读 |
+| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L016 | 开始新功能前先读 |
 | `docs/design/autodev-workflow-prototype.html` | 工作流界面原型 | 静态讨论稿，示例数据，不代表可运行系统 |
+
+## 版本化需求工作台兼容入口
+
+| 路径 | 职责 | 状态与权威性 |
+| --- | --- | --- |
+| `docs/design/2026-11-08-requirements-merge.md` | 以 main 为准的整合范围、数据与接口边界、验收与合并流程 | 当前整合方案，D018 |
+| `docs/modules/requirements/usage.md`、`channels.md` | 兼容 CLI/可选网页、消息授权去重与一次性配对 | 只适用版本化工作台，历史服务状态未复核 |
+| `docs/modules/requirements/verification.md`、`dev-plan.md`、`web-design.md` | 兼容入口验证、原开发计划、网页设计 | 历史证据及整合验证 |
+| `docs/modules/requirements/baselines/v0.8.md`、`baselines/v0.9.md` | 原工作台固定需求基线 | 历史确认版本，非 AutoDev 发布号 |
+| `src/requirements/versioned_session.py`、`src/channels/` | 版本化审核/确认/导出与通用消息适配 | 兼容 API，不替代 main 的 ReqSessionStore/SRS |
 
 ## 验证记录
 
@@ -56,6 +64,9 @@
 | --- | --- |
 | `src/driver/` | 向 autoloop 中台发事件、读事实流（`hub.py`、`runner.py`）；每步写记录（`record.py`）；两次运行的确定性比对（`compare.py`）；生成并安装规则（`setup.py`）；启动一个需求 `run.py`；人工回复 `reply.py`（批准、退回、拒绝） |
 | `src/cockpit/` | 需求类型登记（`kinds.py`）；阶段表、转移规则、输入清单、产物校验（`pipeline.py`，都读 `templates/pipeline/`）；主循环与人工回复入口 `resume`（`controller.py`）；程序步骤 `check`、`release`（`tools.py`）；代码目录的 git 操作（`workdir.py`）；状态落盘（`store.py`）；`config.yaml` 读取（`agents.py`）。窗格驱动的旧方案已在 F6 移除 |
+| `src/requirements/` | 需求澄清专属模块：飞书长连接守护服务（`feishu_daemon.py`）、飞书与 Web 共享对话编排与耗时审计服务（`service.py`）、提示词与选项列表约束（`flow.py`，支持 req-guided-v5）、确定性程序化检查器与章节透视（`validator.py`，断言 RULE-01~09 规范）、直通 S2 架构设计阶段交接器（`handoff.py`）、独立大模型注册表与多调用方式层（`llm_provider.py`，遵循 `docs/MODELS.md` 完整模型 ID）、项目上下文探测（`context_detector.py`）、多渠道呈现适配器（`presentation/`）、只读 Agent 会话驱动（`agent_runner.py`）与项目会话存储（`session.py`） |
+| `src/web/` | 全系统统一本机网页客户端（`server.py`、`api.py`、`ui.html`，仅监听 `127.0.0.1`）：把「需求澄清三栏工作台（含 9 章节实时预览、RULE-01~09 校验灯、需求规模与关联网络图谱、每轮耗时审计）」与前面分析设计的「S1~S9 流水线驾驶舱（阶段进展、产物阅读器、待你决定人工回复表单、Agent 与完整模型 ID 配置）」连成一体 |
+| `deploy/` | 系统守护管理脚本：`install-req-bot.sh`（把需求分析机器人安装为 macOS launchd 服务 `com.autodev.req-bot` 并自启）、`uninstall-req-bot.sh` |
 | `templates/pipeline/` | 流水线模板：每个 `pipeline/*` 类型一个 JSON（`build` 继承 `design`），写阶段顺序、角色、产物、可选结论、结论去向、输入文件、必须有的小节、人工关口和任务说明；改这里即改下一次运行 |
 | `src/dashboard/` | 命令行看板与日志窗格 |
 | `tests/` | 单元测试；`smoke_autoloop.py`、`f1_agents.py`、`f2_pipeline.py`、`f5_crash.py` 是联机验证脚本。`f1_agents.py` 和不带任何参数的 `f2_pipeline.py` 花额度；`f2_pipeline.py --build`（跑完整 S1 到 S9）、`--fake-rework`、`f5_crash.py` 用假 Agent，不花额度 |

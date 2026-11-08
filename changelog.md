@@ -3,15 +3,93 @@
 ## 2026-11-08：阶段机器人设计与分级审查规则
 - 新增阶段机器人需求与设计草案：需求、设计、开发、测试、优化五工作区复用 S1～S9 与 autoloop；记录角色上下文、渠道独立的设计后端、输入输出、工具分工及交付契约（D020）。
 - 明确界面原型须人工确认、无界面设计不强制人工确认；审查以 D019 为准，优先独立模型/跨厂商，允许同厂商、单模型降级与已验证简单复用免审，保留真实检查和放行依据。
-- 同步项目规则、索引、主线与需求模块文档，列出旧厂商校验、结果协议与流转待适配位置。本轮仅文档，未实现新机器人或更改运行机制；258 项 unittest 与文档链接/差异检查通过。
+- 同步项目规则、索引、主线与需求模块文档，列出旧厂商校验、结果协议与流转待适配位置。本轮设计改动仅为文档，提交时同步远端已有实现，未部署或重启服务；合并前 258 项、同步后 297 项 unittest 通过，文档链接/差异与决策编号唯一性检查通过。
 
-## 2026-11-07：需求工作台 v0.9
-- 优化网页版：搜索列表、交流与章节文档三栏布局，审核/调用记录页签、明确待办与版本确认、网页飞书配对；修复跨会话轮询覆盖。真实本机网页 8766 常驻并与飞书共享后端，演示单列 8767。258 项测试和浏览器演示交互、桌面/手机布局通过。
-- 接入现有飞书机器人：/需求 命令后台调用共享需求后端，支持新建、回答、审核、确认、导出与一次性跨端配对；新增独立中台常驻，现有白名单与 App 复用。AutoDev 257 项测试通过；autosys 589 项通过、1 skip，机器人已重载并连接。真实手机消息验收待用户发起，未主动发测试消息。
-- 实现独立需求后端、CLI 与本机网页：多轮澄清、可选双模型审核修订、人工介入、当前版本确认、固定版导出和故障恢复。无费用演示与真实模式隔离。新增通用手机消息路由与需求适配，平台连接待选择。250 项单元测试、隔离中台假 Agent 集成、既有流水线回归、浏览器交互及真实双模型匿名案例通过，细节见模块 verification.md。
+## 2026-11-08：整合需求工作台分支
+
+- 以 main v0.3.3 的统一网页、独立飞书、九章节 SRS 与 S2 交接为准，保留版本化兼容 API 的双模型审核、哈希确认、固定版导出、CLI/可选网页与消息去重配对。拆开两套同名会话后端，保留旧导入和磁盘格式；两套会话不自动同步或转换。
+- 297 项 unittest、隔离中台假 Agent 集成、S1～S9 假 Agent 全流程与 JS 语法检查通过。未调收费模型、未发送真实飞书消息、未部署或重启服务。整合范围和文档核对见 docs/design/2026-11-08-requirements-merge.md。
+
+## 2026-11-07：全项目代码重叠合并与冲突隐患收敛优化（`O1~O4` + `C1~C3`，`v0.3.2`）
+- **O1（统一飞书与 Web 需求澄清编排与耗时审计，`src/requirements/service.py`）**：抽离 `execute_clarification_turn` 与 `load_audit_log`/`append_audit_entry`（统一写入 `workspace/requirements/audit.jsonl`）；`ReqSessionStore` 新增 `get_active_chat_id()` 并在加载时自动将历史遗留 `"cc"` 归一为 `"claude-sonnet"`，使飞书端与 Web 客户端共享同一活跃会话；
+- **O2（统一 SRS 章节解析与规则透视，`src/requirements/validator.py`）**：将章节正文切分、元数据提取（`extract_srs_metadata`）与 9 章节 + `RULE-01~09` 逐项红绿灯透视（`inspect_srs_document`）全部收敛至 `validator.py`，消除 `handoff.py` 与 `web/api.py` 的重复正则；
+- **O3（统一运行号防碰撞分配与状态初始化，`src/cockpit/controller.py`）**：提炼 `allocate_run_id`（取已有最大序号 + 1，防止删除中间目录后撞号）与 `build_initial_state`，供 `start_run` 与 `handoff_srs_to_pipeline` 共用；
+- **O4（统一命令行看板与 Web 驾驶舱等待原因推断，`src/cockpit/pipeline.py`）**：将 `wait_reason` 下沉至 `cockpit.pipeline`，使命令行看板与 Web 驾驶舱对 `needs-human` 的原因展示 100% 一致；
+- **C1~C3（消除早期草案冲突、拦截 `agy` 流水线角色误绑、补齐 Web 写操作单实例锁）**：为 `docs/modules/requirements/` 下的三份早期草案加上明确的吸收/取代声明；在 `update_roles_config` 中校验流水线角色 CLI 是否受 `driver.setup.USE` 支持；在 `handoff_srs_to_pipeline` 与 `submit_human_decision` 中统一加 `acquire_lock(workspace/.lock)` 保护。全库 245 项单元测试通过。
+
+## 2026-11-07：全项目重构优化前基线文档与版本号统一同步（`v0.3.1`）
+- **统一全库文档与前端界面版本号至 `v0.3.1`**：消除 `README.md`、`REQUIREMENT_SPEC_STANDARD.md`、`feishu-requirement-bot.md`、`ui.html` 与 `INDEX.md`/`next.md` 之间的版本号跨度残余（`v0.2.2` vs `v0.3.0`），形成全项目代码审查与重构优化前的干净基线快照 `v0.3.1`。
+
+## 2026-11-07：全系统统一网页客户端标准需求沉淀与落地（连接需求澄清工作台与 S1~S9 流水线驾驶舱，`v0.3.0`）
+- **沉淀全系统统一网页客户端标准需求规格（`docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md`）**：按飞书 9 章节 SRS 标准（`SPEC-REQ-STANDARD-v1.0`）完整编写并通过 `validator.py`（`RULE-01 ~ RULE-09` 零错误通过），明确规模为 `Epic`，并在关系矩阵中直接连接前面分析设计的 `2026-11-02-autodev-design.md` 第 9 节 Web 管理界面与 `autodev-workflow-prototype.html`；
+- **落地全系统统一网页客户端（`src/web/`）**：
+  - **Tab 1（需求澄清三栏工作台，比飞书多出的桌面大屏能力）**：左栏展示需求库、`Epic/Feature/Sub-feature` 规模与关联网络图谱、每轮原始问答与耗时审计；中栏提供与飞书同源的引导式对话、1/2 选项按钮点选、完整模型 ID（`claude-sonnet`/`claude-opus`/`codex`/`agy`）与调用方式（`cli_session`/`cli_stateless`）切换；右栏提供 **9 章节 SRS 实时生长预览、`RULE-01~09` 逐项红绿灯校验器、第 6 节界面原型独立预览、Markdown 在线编辑** 以及 **【🚀 直通 S2 架构设计】** 按钮；
+  - **Tab 2（S1~S9 流水线驾驶舱，承接前面分析的系统网页客户端）**：置顶「待你决定」需求，展示 S1~S9（含 S7U）阶段进度时间线、真实落盘产物在线阅读器（含密钥脱敏）、以及「◉ 需要你参与」在线人工拍板回复表单（`continue`/`rework`/`reject`，原子写入 `human/reply-K.md`）；
+  - **Tab 3（Agent 与完整模型 ID 配置）**：支持查看与调整各阶段角色绑定的 Agent，保存前强制执行乐观锁哈希比对与 D008（作者与审查者厂商不同）校验；
+- **测试与版本同步**：新增 `tests/test_web_client.py`（含 HTTP 端到端集成测试），全库 244 项单元测试全部通过；同步更新全库文档版本号至 `v0.3.0`。
+
+## 2026-11-07：独立大模型与调用方式层（B1）及直通 S2 架构设计阶段交接器（A1）落地（`v0.2.2`）
+- **独立大模型注册表与多调用方式层（`src/requirements/llm_provider.py`）**：统一从 `config.yaml` 读取完整模型 ID（遵循 `docs/MODELS.md`，严禁 `sonnet`/`opus` 等短别名）；支持 `cli_session`（CLI 原生 `--resume` 续接 + 本地历史兜底）与 `cli_stateless`（无状态单次调用 + 自动注入前序问答历史，支持跨模型/跨厂商无缝切换）两种调用方式；飞书端新增 `/model` 与 `/mode` 查看和切换指令；
+- **直通 S2 架构设计阶段交接器（`src/requirements/handoff.py`）**：定稿的 `REQ-xxx.md` 经 `validator.py`（RULE-01~09）校验通过后，支持在飞书发送 `启动设计` / `/handoff` 或通过 CLI 命令一键转化为主流水线的 `workspace/requests/active/{rid}.md` 与 `S1-analysis/round-1/{analysis.md, done.json}` 基线，并将 `state.json` 直接初始化为 `stage: "S2"`（跳过重复 S1 分析，直通 S2 架构设计）；
+- **测试与文档同步**：新增 `tests/test_requirements_llm_and_handoff.py`（含假 Agent 从 S2 直通推进至 S3 完成的端到端集成测试），全量 239 项单元测试全部通过；同步更新 `REQUIREMENT_SPEC_STANDARD.md`、`feishu-requirement-bot.md`、`README.md`、`INDEX.md` 与 `next.md`。
+
+## 2026-11-07：交叉审计与修复需求规范、实现说明书及索引契约一致性
+- **修复黄金范本与校验器标题偏差**：修正 [`docs/modules/requirements/feishu-requirement-bot.md`](docs/modules/requirements/feishu-requirement-bot.md) 第 9 节标题为标准 `## 9. 下游架构设计关注点`，并统一第 1 节元数据字段（`定稿时间`、`req-guided-v5`），使黄金范本 100% 通过 `validator.py`；
+- **强化定稿 Prompt 二级标题约束**：在 [`src/requirements/flow.py`](src/requirements/flow.py) 定稿分支中显式要求原样输出 `## 1.` ~ `## 9.` 固定二级标题与必填字段字样，杜绝模型输出标题微调导致程序误拦；
+- **修复规范文档相对死链与代码对齐**：修正 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md) 指向实现说明书的相对路径、RULE-09 字符阈值与第六节真实 `validator.py` 接口示例；
+- **补全模块入口与契约回归测试**：在 [`docs/modules/requirements/README.md`](docs/modules/requirements/README.md) 补齐同目录早期草案索引；在 `tests/test_requirements_validator.py` 新增黄金范本直验与本地相对链接存在性测试，全量 234 项测试通过。
+
+## 2026-11-07：完善需求规格标准与模块说明书，同步全量权威索引
+- **模块总览入口重构**：更新 [`docs/modules/requirements/README.md`](docs/modules/requirements/README.md)，全面反映当前已落地常驻的架构、代码拓扑与两份核心文档索引；
+- **同步更新权威索引与进展**：更新 [`docs/INDEX.md`](docs/INDEX.md) 和 [`next.md`](next.md)，将需求澄清模块（232 项单元测试）纳入主线全景视图，严格遵循项目与全局开发规范。
+
+## 2026-11-07：确立从模糊到清晰的渐进式需求演进流程规范
+- **四阶段演进生命周期标准化**：在 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md) 扩充第三节，正式确立“阶段 1 模糊摄入与上下文对齐 -> 阶段 2 后台自动吸收与草案整理 -> 阶段 3 关键分歧点人机确认 -> 阶段 4 标准收口与程序化验真”的标准流程；
+- **抓大放小交互契约**：明确日常细节由大模型结合工程上下文主动推断补齐，仅在关键规模边界（大需求拆解）与流程走向时向人类发起 1、2 选项确认，兼顾极简体验与确定性标准。
+
+## 2026-11-07：引入需求规模类别 (Epic/Feature/Sub-feature) 与网状关系矩阵表示法
+- **需求规模与粒度分类体系确立**：在 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md) 扩充第 2 节为【需求规模分类与需求关联网络】，明确支持 `史诗级大需求(Epic)`、`标准功能(Feature)`、`子功能小需求(Sub-feature)` 和 `改动增强(Enhancement)` 四大标准粒度；
+- **网状关系矩阵标准化**：确立与其他需求的标准化关系前缀（`Parent` 所属父需求、`Depends-on` 前置依赖、`Relates-to` 业务协同、`Blocks` 后置阻塞、`Supersedes` 演进替代）；
+- **提示词与程序校验器联动**：升级至 `req-guided-v5`；`validator.py` 增强 RULE-03 断言，严格校验规模声明与关系网络，全量 232 项测试全部通过。
+
+## 2026-11-07：需求规格标准 (SRS v1.0) 确立与程序化校验器落地
+- **需求产出标准规范落盘**：制定 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md)，确立“输入可发散、输出必收敛、人机可共读、程序可自检”的核心契约，明确九大章节与 RULE-01~09 校验规则；
+- **程序化检查器实现（validator.py）**：落地确定性检查逻辑，毫秒级断言章节完整性、架构拓扑双维度、非目标边界、低保真原型线框图以及防技术越权规则；
+- **飞书定稿落盘自动验真**：在 `feishu_daemon.py` 定稿时无缝执行程序化校验，自动追加 `<!-- SPEC-VALIDATED: PASS -->` 合规元数据；
+- **测试套件扩增**：新增 `tests/test_requirements_validator.py`，全量测试套件扩增至 231 项持续全绿。
+
+## 2026-11-07：飞书端需求模块全流程沉淀与九大类别规范确立
+- **Session 演进说明书落盘**：沉淀 [`docs/modules/requirements/feishu-requirement-bot.md`](docs/modules/requirements/feishu-requirement-bot.md)，完整记录从飞书长连接、多渠道呈现抽象、引导式拼图、场景举例、外部界面原型到全局架构拓扑判断的 6 大演进阶段；
+- **确立需求规格说明九大标准类别**：定义标识元数据、架构拓扑与近期关联、背景与目标、范围用例、非目标边界、界面原型草图、业务约束、验收标准、下游设计关注点等九大核心分类体系；
+- **同步文档索引**：更新 `docs/INDEX.md` 权威索引，全量 226 项测试验证通过。
+
+## 2026-11-07：功能模块层级归属与近期功能关联判断（req-guided-v4）
+- **项目上下文自动感知（context_detector.py）**：实现轻量探测器，实时抽取目标项目的业务域大模块（`src/`）、最近 Git 提交记录与近期已落盘需求文档，为大模型提供真实确切的上下文基准；
+- **功能层级归属判断（Feature Hierarchy）**：提示词升级为 `req-guided-v4`，强制大模型在每轮响应（尤其是新需求开启时）首先明确指出：当前功能是属于项目哪个已有大功能/主模块下的细分子功能，还是属于全新的独立顶级模块；
+- **近期功能关联度判断（Recent Feature Affinity）**：基于项目最近几项 Git 变更和需求规格，准确判断当前功能与近期做的几个功能是否存在关联（属于同一业务链路延伸、实体与能力复用、前后依赖、还是彼此独立）；
+- **全量测试与服务无缝热更**：新增 `tests/test_requirements_context.py`，全量测试套件扩增至 226 项全部通过，LaunchAgent 守护服务重启生效。
+
+## 2026-11-07：外部界面原型图生成与立体感知（req-guided-v3）
+- **外部界面原型（UI Wireframe）引入**：提示词升级为 `req-guided-v3`，支持生成立体、直观的低保真文本线框图（ASCII/Unicode Mockup），直观展现页面标题、输入控件、操作按钮与数据展示区；
+- **主动原型提议**：在业务流程探讨时主动询问“需要为这一块做个界面原型示例吗？随时告诉我【看原型】”，降低认知负担；
+- **原型指令标准化**：输入层支持 `看原型`、`做个原型`、`需要原型`、`界面长什么样` 等口语化输入，自动标准化为原型生成意图；
+- **定稿文档沉淀原型草图**：在导出的《软件需求规格说明》中沉淀【外部界面原型草图】章节；
+- **全量测试与服务重启**：测试套件新增 2 项断言扩展至 223 项全部通过，`com.autodev.req-bot` 平滑重启上线。
+
+## 2026-11-07：提示词升级为启发式引导与具象业务场景举例（req-guided-v2）
+- **引导式拼图法落地**：系统提示词全面升级为 `req-guided-v2`，将长篇大论收敛为 4 块核心需求拼图（目标与场景 -> 核心流程 -> 非目标/边界 -> 验收标准），严格限制字数 < 250 字；
+- **具象业务场景举例约束**：彻底剔除技术架构黑话（严禁谈数据库、API、框架），强制单点推进，并将每个选择题都赋予确切、生动的业务场景例子（例如具体操作行为），降低用户理解门槛，用户可直接回复数字 `1` 或 `2` 快速决策；
+- **测试与服务同步**：同步更新 `tests/test_requirements_flow.py`，全量 221 个单测持续通过；平滑重启 LaunchAgent 守护进程 `com.autodev.req-bot`，新提示词立即在飞书生效。
+
+## 2026-11-07：需求澄清模块与专属飞书机器人落地（v0.2.0）
+- **独立模块实现**：在 AutoDev 项目内落地独立的专属需求澄清模块（`src/requirements/`），完全自包含与解耦，不依赖外部项目；
+- **专属飞书机器人常驻**：基于官方 WebSocket 长连接实现 `feishu_daemon.py`，点开即聊需求；强制只读安全模式（Plan Mode），杜绝误改代码；支持 `/new` 开始新需求、`/project` 切换目录、回复 `定稿` 生成《需求规格说明草案》并自动落盘；
+- **多渠道呈现层抽象（Presentation Adapter）**：创建 `presentation/` 抽象层，提炼渠道无关的领域语义模型（`RequirementResponse`、`RequirementChoice`）；实现 `FeishuCardPresenter`（飞书高颜值交互卡片）与 `PlainTextPresenter`（微信/控制台纯文本），后续拓展 Web 或微信只需新增 Presenter；
+- **问答选项列表化与极简数字决策**：强化提示词将方案抉择收敛为精简编号的 1、2 选项；输入层实现 `normalize_user_input`，支持手机端直接回复 `1`、`2` 自动规范化为清晰决策意图；
+- **系统守护脚本**：新增 `deploy/install-req-bot.sh` 与 `uninstall-req-bot.sh`，将服务注册为 macOS LaunchAgent（`com.autodev.req-bot`，开机自启、崩溃自愈）；
+- **全量测试通过**：新增 9 个单元测试，测试套件扩增至 221 项全量通过（`Ran 221 tests OK`）。
 
 ## 2026-11-07：需求澄清模块设计
-- 按用户确认保存 v0.8 需求基线：补入模型可选、独立模型审核、先模型间修订复核、必要时人介入及最终人工确认；记录 D016。新增 M1～M6 开发计划，落实独立后端、CLI 先行、未来网页及上层项目共用 API；同步设计、协议、索引与 next.md。本轮仅文档，尚未实现或调用真实模型。
 - 细化第一版程序协议：CLI/Python 调用、初始通用清单、需求 JSON 与原始输入输出、逐次调用开始/结束/耗时；明确用户等待不计入、失败重试分别计时、中断未知不伪造数值。补 R11 验收、更新设计与 next.md；仅设计，文档链接及差异检查通过，尚未实现。
 - 按用户进一步限定，原始交流记录收窄为外部输入与大模型输出，撤回此前向工具调用、内部过程等底层审计的设计扩展；需求版本、人工确认和必要运行状态保留。仅文档调整，差异格式检查通过。
 - 补充用户明确要求的原始交互审计：原文、实际输入快照、可取得的原始输出、失败重试、人工确认关联留存；区分原始资料、需求版本与后续分析，明确本地隐私边界和补充验收。仍为设计，未实现；将拟用的 `workspace/requirements/` 加入 gitignore，并验证忽略规则，防止后续原始交流被误提交。

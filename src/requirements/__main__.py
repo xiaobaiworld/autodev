@@ -6,7 +6,7 @@ import sys
 import uuid
 
 from .agent import DemoAgent, HubAgent, ROOT, load_settings
-from .session import SessionError, SessionStore
+from .versioned_session import SessionError, SessionStore
 
 
 def parser():

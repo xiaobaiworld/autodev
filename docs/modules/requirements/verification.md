@@ -1,5 +1,7 @@
 # 需求工作台验证记录
 
+> 2026-11-08 整合说明：本文件对应版本化兼容工作台（`requirements.versioned_session.SessionStore`），不作为默认统一网页、`ReqSessionStore` 或九章节 SRS 的契约。两套会话不自动同步；端口、launchd 与真实试用记录是当时证据，本次未复核运行服务。入口与边界见 [模块说明](README.md)。
+
 日期：2026-11-07。分支：feat/requirements-workbench。对应需求：v0.9（保留已确认 v0.8，并补入本期网页）。结论：独立后端、CLI、本机网页以及真实双模型梳理/审核已可运行；消息平台连接尚未交付。
 
 ## 自动验证
@@ -58,3 +60,9 @@
 设计见 web-design.md。新增同源 POST /api/sessions/ID/pair 及回归测试；全量 258 项通过，JS 语法与差异格式检查通过。界面改为搜索/列表、交流、章节文档，审核与调用独立页签；修复跨会话请求过期覆盖及等待状态，支持网页飞书配对，保留纯文本 DOM 输出。
 
 浏览器在 8767 演示页实际新建“网页新版验收”，补充六项信息，看到版本 v2 审核后确认完成；查看审核页签和配对弹窗，控制台无消息。桌面和手机截图 /tmp/requirements-web-v2-desktop.png、/tmp/requirements-web-v2-mobile.png 已查看。真实 8766 服务启动并只读检查 200、demo=false、模型连接配置有效；本轮不额外调用真实模型。页面与模型完整后端链路沿用上文已验证能力。
+
+## main 整合验证（2026-11-08）
+
+以 main v0.3.3 为准解决 11 个同名文件冲突。ReqSessionStore 与默认 SRS/统一网页/飞书/S2 交接保留，版本化后端移至 versioned_session.py，原 session 与顶层导入兼容。297 项 unittest 通过，包含 main 和旧分支原测试，以及两套存储同根共存、重启恢复和双向不互写测试。隔离 AutoLoop 假 Agent 集成通过；pipeline/build 假 Agent 完整 S1～S9 回归通过，覆盖 S5/S6/S7U 返工和人工关口，证据目录 `/var/folders/7h/pjw56r4n4fs4ng3_n9zdw4j80000gn/T/autoloop-f2-znbrdz06`（临时目录）。JS 语法检查通过。
+
+本轮不额外调用收费模型、不发送真实飞书消息、不部署或重启服务；未重新做浏览器视觉验收，网页代码沿用原分支。两套格式无自动转换，版本化确认结果不自动进入九章节 SRS/S2。原工作区未提交的阶段机器人文档与 requests/ 不在此次整合内。

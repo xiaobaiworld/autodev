@@ -2,6 +2,8 @@
 
 > 运行限制（2026-11-08）：当前工具仍运行 v0.9 的强制双模型/跨厂商路径，尚未支持 [D019](../../DECISIONS.md#d019-设计审查分级优先独立审核允许降级与简单复用免审) 允许的降级与免审。新规则优先级已确认，下面的限制只描述旧程序行为，不能解释为新规则不允许单模型。
 
+> 2026-11-08 整合说明：本文件对应版本化兼容工作台（`requirements.versioned_session.SessionStore`），不作为默认统一网页、`ReqSessionStore` 或九章节 SRS 的契约。两套会话不自动同步；端口、launchd 与真实试用记录是当时证据，本次未复核运行服务。入口与边界见 [模块说明](README.md)。
+
 本机 CLI 和网页共用 `SessionStore` 后端与 `workspace/requirements/` 会话文件。命令从 AutoDev 仓库根运行；不需要安装 Python 包。
 
 ## 1. 无费用演示

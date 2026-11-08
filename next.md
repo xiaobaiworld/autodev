@@ -14,15 +14,17 @@
 - 最新确认（D019，取代此前最低双模型硬门槛）：大部分设计优先独立审查，争取不同 Agent/模型及跨厂商；不足时同厂商、单模型也可继续，简单且有适用验证资产可复用免审。不因缺少第二模型强制人工批准，不伪称独立审核通过。现有 check_vendors 与 S3 转移尚未适配。
 - 有用户界面且需要原型时人工确认原型；无界面任务不强制人工确认设计，其他既有人工关口保留。条件式原型门槛尚未实现。下一步细化简单复用选择条件与降级结果协议。
 - 已按用户要求检查新旧规则冲突，明确项目审查规则以 D019 为准（不限于当前设计文档）；活动入口/设计/需求模块文档已同步优先级。冲突清单见设计草案 8.7。代码、模板、配置和固定基线保持原状，仍存在硬厂商校验与无免审路径的实现差距，后续不能误认为已适配。
+- 提交同步：已保留并合入远端 22 个提交，默认 SRS/统一 Web/独立飞书和 S2 交接按 D018 复用；旧版本化兼容 API 保持独立。本轮阶段机器人方案使用 D020，避免覆盖远端 D018。设计稿已校正旧本地版本的“无自动交接”等状态判断；分级审查仍未实现，不重启服务。
+- 本轮同步验证：297 项 unittest 全过；本轮相对远端新增改动仅为文档，源码/模板/测试/配置与远端一致；文档本地链接、决策编号唯一性及差异格式检查通过。未启动收费模型、未发真实飞书消息、未部署/重启服务。
 
-更新：2026-11-07 ｜ 阶段：流水线 S1 到 S9 已全部连通，真实 Agent 第一次完整跑通；接下来一遍遍雕细节
+更新：2026-11-08 ｜ 当前版本：`v0.3.3` ｜ 阶段：流水线 S1 到 S9、飞书与全系统统一 Web 客户端已全部连通；需求模块升级支持「软件研发 (`SOFTWARE`) / 环境部署 (`DEPLOYMENT`) / 硬件接入 (`HARDWARE`) / 跨类复合 (`HYBRID`)」自动分辨与双轨分类、按分类模板吸收内容及同构异核 9 章节模板；接下来一遍遍雕细节
 
 ## 恢复上下文时先读
 
 1. 本文件（尤其是下面的“换窗口接手时要知道”）
 2. `docs/OPTIMIZATIONS.md`：每次流程优化改了什么、效果量到多少（O001 到 O008）和“待定”事项
 3. `docs/design/2026-11-05-autoloop-foundation.md`：地基方案（F0 到 F6、结构、待决）
-4. `docs/DECISIONS.md`：D001 到 D015（D014 用 autoloop 做地基，D015 验收者先绑 Claude）
+4. `docs/DECISIONS.md`：D001 到 D020（D014 用 autoloop 做地基，D015 验收者先绑 Claude）
 5. `docs/lessons.md`：L001 到 L012，开始新功能前先扫一遍
 6. `docs/MODELS.md`：模型名只写完整 ID
 7. `docs/design/2026-11-02-autodev-design.md`：流程设计（第 3.2、3.3、5 节已被地基方案部分取代，见各节顶部说明）
@@ -52,7 +54,9 @@
 - **每步记录**：`done.json` 必填 `summary`；每步写 `record-a<次>.json`（实际模型、归一的 token、中台运行号等）和 `agent-a<次>.log`。字段见 `docs/DATA_SPEC.md` 7.2.1。程序步骤没有中台运行和 Agent 日志，记录里标 `tool`。
 - **比对与优化记录**：`python3 -m driver.compare digest|diff` 做确定性比对；每次流程优化记在 `docs/OPTIMIZATIONS.md`（只追加，没量过写“未测”）。
 - **崩溃与卡住**（假 Agent、真实中台，`tests/f5_crash.py`）：`hang` 超时重试、`crash` 每次崩溃 4 秒转人工（以前 45 分钟，O006）、`ctrl-kill`、`hub-kill` 都通过。
-- 测试：212 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。联机用假 Agent、不花额度：`python3 tests/f2_pipeline.py --build`（跑完整 S1 到 S9，含真实 git 标签）、`--fake-rework`，`tests/f5_crash.py hang|crash|ctrl-kill|hub-kill`。
+- **需求澄清独立模块与飞书机器人（已落地运行并直通 S2）**：`src/requirements/` 完全自包含内聚，macOS LaunchAgent 常驻长连接守护（`com.autodev.req-bot`）；发布规范 [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md)，确立“从模糊到清晰”的渐进式演进生命周期、九大标准章节与网状关系矩阵；配套确定性规则检查器（`src/requirements/validator.py`）在定稿时自动断言验真；抽离独立大模型调用层（`src/requirements/llm_provider.py`，统一 `config.yaml` 完整模型 ID，支持 `cli_session` / `cli_stateless` 与 `/model` 在线切换）与阶段交接器（`src/requirements/handoff.py`，定稿后回复 `启动设计` 或 `/handoff` 自动生成 S1 基线并直通 `S2 架构设计`）。
+- **全系统统一网页客户端与全项目代码收敛优化（`src/web/`、`src/requirements/service.py`，`v0.3.2`）**：严格按飞书 9 章节标准沉淀并通过校验的需求文档 [`docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md`](docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md)；实现 `src/web/`（`server.py`、`api.py`、`ui.html`，仅监听 `127.0.0.1`），把「需求澄清三栏工作台」与「S1~S9 系统工作流客户端」连成一体；完成 O1~O4 与 C1~C3 共 7 项跨模块去重与冲突消解。
+- 测试：297 个单元测试通过（`PYTHONPATH=src python3 -m unittest discover -s tests`）。联机用假 Agent、不花额度：`python3 tests/f2_pipeline.py --build`（跑完整 S1 到 S9，含真实 git 标签）、`--fake-rework`，`tests/f5_crash.py hang|crash|ctrl-kill|hub-kill`。
 
 ### 真实运行的证据（演示需求：命令行待办 `todo`）
 
@@ -74,18 +78,13 @@
 - `docs/design/2026-11-06-ticket-model.md` 第 5 节的 6 个待讨论问题；Agent 做分类和拆解与 D004 的协调方式（我的提议是 Agent 只提方案文件，程序校验后才执行，没确认过）。
 - D015（验收者先绑 Claude 而不是 agy）是我按“自动往下走”的授权选的默认，没单独确认过。
 
-## 当前目标：需求澄清模块 v0.9 已实现（2026-11-07）
+## 当前新增工作：需求澄清模块与专属飞书机器人落地（2026-11-07，已落地）
 
-用户确认 v0.8 后补入本期 CLI + 网页，保留两个固定基线。已按 M1～M5 实现，M6 用真实双模型匿名案例走到人工确认前。
-
-- 入口：`docs/modules/requirements/README.md`、usage.md、verification.md；计划 dev-plan.md；范围与取舍 D016/D017。
-- 后端 `src/requirements/`：文档校验、版本/哈希、原文、逐次计时、双模型审核修订、人工确认、固定版导出与恢复。CLI 与本机网页共用后端，接口供上层项目复用。
-- 启动演示：`PYTHONPATH=src python3 -m requirements --demo serve --port 8765`，访问本机 127.0.0.1:8765。真实模式用 --home 指向已启动中台，模型取现有配置，真实调用花额度。
-- 验证：250 项 unittest 通过，隔离中台假 Agent 集成通过，原 pipeline/build 假 Agent 回归通过；实际浏览器创建/补充/模拟审核/确认/下载通过，查看桌面与手机布局。
-- 真实案例 Q9c3406e4f917：两模型 low 调用 13345ms/7240ms，审核 PASS，停在等人确认；证据 `/tmp/requirements-real-20261107-v1`，中台已停。模型信息为请求配置，未独立解析响应模型。
-- 手机补充：通用 `src/channels/` 与 requirements.messaging 已实现授权/去重/应用路由及会话绑定；先读 channels.md。飞书现有 autosys 可复用，但未修改或启动它；首个渠道待用户选择，真实平台未接通。
-- 下一步：用户试用需求迭代；确定飞书/企业微信/个人微信及授权账号后完成平台适配。网页只监听本机，不公开部署。
-- 旧流水线待办继续保留，不表示已完成所有真实项目集成。
+需求澄清模块已在 AutoDev 内部完全独立落地，并打通到 `S2 架构设计` 的阶段交接：
+- 代码模块：`src/requirements/`（`feishu_daemon.py`、`flow.py`、`validator.py`、`handoff.py`、`llm_provider.py`、`context_detector.py`、`agent_runner.py`、`session.py`、`presentation/`）；
+- 核心特性：只读安全模式、提示词方案选项 1/2 列表化与具象场景举例、低保真文本线框图、需求规模与关联矩阵、9 章节 SRS 程序化校验（RULE-01~09）、独立完整模型 ID 与双调用方式层（`cli_session`/`cli_stateless`）、一键直通 `S2 架构设计`；
+- 系统守护：`deploy/install-req-bot.sh` 已将服务注册为 macOS launchd 守护进程 `com.autodev.req-bot` 并常驻运行；
+- 测试验证：全量 239 个单元测试全部通过。
 
 ## 下一步
 
@@ -126,10 +125,6 @@
 
 `docs/archive/`：驾驶舱设计与开发计划、autoloop 测试计划 v1 与 v2、空的 `goal.md` 模板。
 
-## 当前执行：飞书需求客户端
+## 当前整合步骤（2026-11-08）
 
-飞书平台命令、短期一次性配对和 autosys 可选调用器已完成；已有机器人 /需求 分流已启用、重载后连上飞书。独立中台 home=~/.local/state/autodev/requirements-hub，launchd=com.autodev.requirements-hub。AutoDev 全量 257 项、桥接器 589 项（1 skip）；本地端到端通过。下一步由用户在现有飞书机器人发 /需求 做真实手机验收；未主动发测试消息。使用和完整证据见模块 channels.md。
-
-## 当前执行：网页版工作台优化
-
-已完成新版三栏工作台、章节文档、审核/调用页签、搜索、中文待办、网页飞书配对及过期轮询处理。全量 258 项通过，演示浏览器新建/补充/审核/确认及手机布局验证完成。真实入口 http://127.0.0.1:8766 已用 launchd=com.autodev.requirements-web 启动，共用现有根和独立中台；演示在 8767，不混用。下一步用户在真实网页试用并反馈布局/流程。
+已按用户授权，以 main v0.3.3 为准整合旧需求工作台；297 项 unittest、隔离中台与 S1～S9 假 Agent 回归通过。默认入口保持现行 SRS 流程，版本化能力独立兼容；范围与数据边界见 [整合设计](docs/design/2026-11-08-requirements-merge.md)。下一步按用户试用决定是否单列统一 UI 的审核/确认与格式迁移需求。该整合提交未包含并行的阶段机器人文档；本轮提交现已合入并同步这些文档（D019/D020）。

@@ -1,23 +1,106 @@
-# 需求澄清模块
+# 需求澄清模块 (Requirements Clarification Module)
 
-> 规则优先级更新（2026-11-08）：本文及模块文档描述的 v0.9 交付仍是旧实现。审查强度以 [D019](../../DECISIONS.md#d019-设计审查分级优先独立审核允许降级与简单复用免审) 为准，跨厂商/双模型不再是所有任务的硬门槛；分级、降级与免审在本模块尚未实现。旧固定基线与验证记录保留追溯，不能反过来覆盖新规则。人工确认需求基线仍保留。
+> 审查规则更新（2026-11-08）：审查强度以 [D019](../../DECISIONS.md#d019-设计审查分级优先独立审核允许降级与简单复用免审) 为准，允许同厂商、单模型降级和简单复用免审。默认 SRS 流程与版本化兼容工作台的现有实现分别见下文；分级策略尚未完整适配，旧固定基线不能覆盖新规则。版本化需求基线的人工确认仍保留。
 
-状态：2026-11-07 用户确认 v0.9 需求范围（由已确认 v0.8 补入本期网页），设计阶段收口，已实现独立后端、CLI、本机网页及通用消息路由与飞书接线；验证状态见 verification.md。具体接口和字段是本版本的实施方案，不等于已验证能力。
+> **当前版本**：`v0.3.3` (2026-11-08)  
+> **当前状态**：**飞书端与全系统 Web 客户端双端支持「软件研发(`SOFTWARE`)/环境部署(`DEPLOYMENT`)/硬件接入(`HARDWARE`)/跨类复合(`HYBRID`)」双轨分类（Agent 自动寻找分类 + 人工指定）与差异化 9 章节模板**
+> **服务状态**：macOS LaunchAgent 常驻守护 (`com.autodev.req-bot`) + 本机 Web 客户端 (`python3 -m web.server`)  
+> **测试状态**：整合后 297 项单元测试全量通过 (`python -m unittest discover -s tests`)
 
-本模块接收外部原始需求，通过人与 Agent 多轮交流形成需求说明书；程序检查明确的完成条件后结束。输出供后续项目开发计划使用，不负责拆任务或执行开发。
+---
 
-- [需求与验收](requirements.md)：用户已明确的目标、边界和验收场景。
-- [v0.9 需求基线](baselines/v0.9.md)：本期增加 CLI 与网页共享流程。
-- [v0.8 需求基线](baselines/v0.8.md)：本次确认的固定副本，包含模型选择与双模型审核，后续变更另建版本。
-- [设计](design.md)：状态循环、文件协议、接口和经验清单。
-- [开发计划](dev-plan.md)：实施顺序、改动范围、测试、验收、风险与阶段收口。
+## 一、模块定位与核心设计哲学
 
-逻辑独立，第一版仍在 AutoDev 仓库内实现：拟用 `src/requirements/`、`tests/test_requirements*.py`、本目录和 `templates/requirements/`；不建立独立仓库或复制现有执行器；本机 HTTP 入口作为共享后端的薄客户端。
+AutoDev 需求澄清模块是整个研发流水线（S1~S9）的源头枢纽。它通过飞书/桌面/命令行等交互渠道，协助项目负责人把朴素、模糊的业务想法，逐步梳理为一份标准、严谨、边界完备且机器可验证的《软件需求规格说明书（草案）》（SRS）。
 
-- [程序协议](protocol.md)：第一版 CLI、草稿 JSON、清单、每轮输入输出及计时约定。
+### 核心三原则：
+1. **输入端宽松容错**：输入可以发散、口语化、碎片化甚至直接贴粗糙文档；
+2. **后台增量拼图**：结合系统已有代码模块、Git 提交记录与历史需求，由大模型在后台增量推断并自动归纳；
+3. **输出端确定性收敛**：人机只在关键分歧点确认，最终产出必须 100% 符合统一结构，并由程序自动执行规则验真。
 
-- [使用指南](usage.md)：CLI、网页、真实模型与无费用演示。
-- [验证报告](verification.md)：自动测试、浏览器及真实双模型证据。
-- [手机渠道](channels.md)：通用消息路由已实现，飞书已启用，手机验收待发命令；微信未接。
+---
 
-- [网页设计](web-design.md)：工作台分区、页签、响应式及本轮交互边界。真实网页版 http://127.0.0.1:8766 。
+## 二、核心权威文档直达（两份标准文档）
+
+本模块的体系规范与实现说明由以下两份核心文档构成：
+
+| 文档路径 | 文档名称 | 核心职责 |
+| :--- | :--- | :--- |
+| 📘 **[`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](../../specs/REQUIREMENT_SPEC_STANDARD.md)** | **《软件需求规格说明书产出规范与校验标准 (SRS Standard v1.0)》** | **产出物标准契约**：<br>• 从模糊到清晰的四阶段演进生命周期；<br>• 九大必填标准章节与格式规范；<br>• 需求规模分类 (Epic/Feature/Sub-feature) 与网状关系矩阵表示法；<br>• 自动化规则引擎断言（RULE-01 ~ RULE-09）。 |
+| 📗 **[`docs/modules/requirements/feishu-requirement-bot.md`](feishu-requirement-bot.md)** | **《需求澄清模块与飞书端沉淀说明书》** | **模块实现与运行指南**：<br>• Session 演进全过程与核心决策全记录；<br>• 多渠道呈现层抽象（FeishuCard / PlainText）；<br>• 模型提示词演进（从 v1 到 v5）；<br>• 外部界面低保真线框图 (ASCII Wireframe) 原理；<br>• 真实场景黄金范本（Gold Standard Sample）。 |
+
+### 本目录早期设计草案（保留备查与后续阶段合入）
+- [`requirements.md`](requirements.md)：早期关于通用经验清单、版本基线与逐轮原始交互审计的需求草案；
+- [`design.md`](design.md)：早期本机 CLI 小状态循环与 `workspace/requirements/` 目录结构设计草案；
+- [`protocol.md`](protocol.md)：早期 CLI 命令、草稿 JSON 及逐轮调用计时约定草案（尚未在飞书守护进程中全量实现，供后续迭代参考）。
+
+---
+
+## 三、代码结构与技术拓扑
+
+所有代码、配置与测试完全内聚在 `autodev` 项目内部，不依赖任何外部系统：
+
+```text
+autodev/
+├── src/requirements/
+│   ├── feishu_daemon.py       # 飞书官方 WebSocket 长连接常驻服务入口
+│   ├── service.py             # 飞书与 Web 共享的需求澄清单轮编排、定稿归档与耗时审计服务 (O1)
+│   ├── flow.py                # 提示词构建 (req-guided-v5)、极简数字输入标准化、定稿判断
+│   ├── validator.py           # 确定性程序化检查器、章节解析与 RULE-01~09 统一透视 (O2)
+│   ├── handoff.py             # 阶段交接器 (加锁将通过校验的 SRS 直通移交 S2 架构设计)
+│   ├── llm_provider.py        # 独立大模型注册表与调用层 (完整模型 ID 校验、cli_session/cli_stateless)
+│   ├── context_detector.py    # 项目上下文探测器 (模块概貌、近期 Git 提交、历史需求)
+│   ├── agent_runner.py        # Claude/Codex/agy CLI 驱动、只读沙箱保障、横幅过滤解析
+│   ├── responder.py           # 飞书消息发送、交互卡片推送、Markdown 产物上传
+│   ├── session.py             # 会话持久化 (项目路径、模型、调用模式、session_id、历史问答、最近定稿)
+│   ├── config.py              # TOML 配置加载与鉴权白名单过滤
+│   └── presentation/          # 多渠道呈现抽象层 (领域语义模型、FeishuCard、PlainText)
+├── tests/
+│   ├── test_requirements_flow.py           # 流程与提示词断言测试
+│   ├── test_requirements_presentation.py   # 卡片与文本呈现器测试
+│   ├── test_requirements_config.py         # 配置与目录校验测试
+│   ├── test_requirements_context.py        # 上下文探测测试
+│   ├── test_requirements_validator.py      # 程序化规则校验器与黄金范本契约测试
+│   └── test_requirements_llm_and_handoff.py# 独立模型层与直通 S2 交接器测试
+└── deploy/
+    ├── install-req-bot.sh     # macOS LaunchAgent 一键安装/平滑重启脚本
+    └── uninstall-req-bot.sh   # 服务安全卸载脚本
+```
+
+---
+
+## 四、服务运维与使用指南
+
+### 1. 服务控制与状态检查
+```bash
+# 查看服务是否在后台常驻运行
+launchctl list | grep autodev
+
+# 平滑重启服务（配置或代码更新后）
+bash deploy/install-req-bot.sh
+
+# 查看实时运行日志
+tail -f logs/req_daemon.out
+```
+
+### 2. 飞书日常交互
+- **直接发想法**：在飞书对话框直接描述需求（无需任何命令前缀）；
+- **极简确认**：手机端直接回复 `1` 或 `2` 秒选方案；
+- **看界面原型**：回复 `看原型` 或 `做个原型` 查看等宽文本线框图；
+- **查看/切换大模型**：发送 `/model` 查看完整模型 ID 列表，发送 `/model <名称>`（如 `/model claude-opus`、`/model codex`）随时切换模型并保留历史对话；
+- **查看/切换调用方式**：发送 `/mode` 或 `/mode <cli_session|cli_stateless>`；
+- **重置新需求**：发送 `/new` 或 `新需求`；
+- **需求定稿**：回复 `定稿`，系统自动完成程序化验真并在 `docs/requirements/` 落盘 Markdown 文档；
+- **直通 S2 架构设计**：定稿后回复 `启动设计` 或 `/handoff`，跳过重复 S1 分析，直接初始化主流水线 `S2 架构设计` 任务。
+
+## 五、版本化工作台兼容 API
+
+2026-11-08 以 main v0.3.3 为准整合旧功能分支。`session.py` 的 `ReqSessionStore` 与默认飞书/统一网页/SRS/S2 交接保持原契约；`versioned_session.py` 提供 `SessionStore` 和 `SessionError`，顶层及旧 session 导入继续可用。版本化后端保留双模型有界审核、人工版本哈希确认、固定版本导出和故障恢复；通用 `channels/` 保留消息授权、去重与一次性配对。
+
+- [整合设计与验收](../../design/2026-11-08-requirements-merge.md)：两套存储、接口和数据边界。
+- [兼容工作台使用](usage.md)：CLI、演示和可选独立网页入口。
+- [兼容消息适配](channels.md)：旧 `/需求` 适配与配对协议，不自动接入默认飞书守护。
+- [验证记录](verification.md)、[原开发计划](dev-plan.md)、[网页设计](web-design.md)：兼容入口的历史与整合验证。
+- [v0.8](baselines/v0.8.md) / [v0.9](baselines/v0.9.md)：原工作台需求基线，不代表 AutoDev 发布版本。
+
+两套会话不互转；兼容工作台导出结果不自动满足现行九章节 SRS 或移交 S2。旧版运行端口与服务记录仅供追溯，本次不部署、不重启、不另建飞书连接。
