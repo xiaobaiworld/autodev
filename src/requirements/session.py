@@ -18,11 +18,17 @@ class ReqSessionStore:
         default_cwd: str,
         default_agent: str,
         default_mode: str = "cli_session",
+        default_project: str | None = None,
     ) -> None:
         self.path = path
         self.default_cwd = default_cwd
         self.default_agent = "claude-sonnet" if default_agent == "cc" else default_agent
         self.default_mode = default_mode
+        self.default_project = (
+            default_project
+            or (os.path.basename(default_cwd.rstrip(os.sep)) if default_cwd else "autodev")
+            or "autodev"
+        )
         self._data: dict[str, dict[str, Any]] = {}
         self._load()
 
@@ -60,6 +66,8 @@ class ReqSessionStore:
 
     def _ensure_defaults(self, entry: dict[str, Any]) -> dict[str, Any]:
         entry.setdefault("cwd", self.default_cwd)
+        entry.setdefault("project", self.default_project)
+        entry.setdefault("active_req_id", "")
         raw_agent = entry.get("agent") or self.default_agent
         entry["agent"] = "claude-sonnet" if raw_agent == "cc" else raw_agent
         entry.setdefault("mode", self.default_mode)
@@ -98,6 +106,30 @@ class ReqSessionStore:
     def set_cwd(self, chat_id: str, cwd: str) -> None:
         curr = self.get(chat_id)
         curr["cwd"] = cwd
+        self._data[chat_id] = curr
+        self._save()
+
+    def set_project(self, chat_id: str, project: str, cwd: str | None = None) -> dict[str, Any]:
+        """显式设置或切换当前会话的目标项目身份（D016 不变量）。若项目发生切换，强制隔离/清空历史问答记忆，防止跨项目污染。"""
+        curr = self.get(chat_id)
+        old_project = curr.get("project")
+        curr["project"] = project
+        if cwd:
+            curr["cwd"] = cwd
+        if old_project and old_project != project:
+            curr["session_id"] = ""
+            curr["history"] = []
+            curr["active_req_id"] = ""
+            curr["last_archived_req"] = ""
+            log.info("会话 %s 项目由 %s 切换为 %s，已隔离清空历史上下文", chat_id, old_project, project)
+        self._data[chat_id] = curr
+        self._save()
+        return dict(curr)
+
+    def set_active_req_id(self, chat_id: str, req_id: str) -> None:
+        """记录当前会话正在澄清或最近定稿的需求编号（D016 不变量）。"""
+        curr = self.get(chat_id)
+        curr["active_req_id"] = req_id
         self._data[chat_id] = curr
         self._save()
 

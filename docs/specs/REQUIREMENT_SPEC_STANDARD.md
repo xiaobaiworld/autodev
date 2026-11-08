@@ -187,6 +187,7 @@ flowchart TD
 
 | 规则编号 | 规则名称 | 校验级别 | 检查逻辑与通过标准 |
 | :---: | :--- | :---: | :--- |
+| **RULE-00** | 明确项目与需求身份 (D016) | BLOCKER | 必须显式包含有效的【归属项目】(`project`)与【需求编号】(`id`/`REQ-ID`)，严禁为空或占位符，杜绝隐式推断。 |
 | **RULE-01** | 文件编码与命名 | BLOCKER | 文件必须是 UTF-8；文件名必须符合 `REQ-*.md` 命名范式。 |
 | **RULE-02** | 章节完整性 | BLOCKER | 必须严格包含 9 个 `## N.` 二级标题，文字字样与规范 100% 匹配。 |
 | **RULE-03** | 需求类别与拓扑矩阵 | BLOCKER | 第 2 节内必须同时包含 `需求规模`、`模块归属` 与 `需求关系`（或 Parent/Depends-on/Relates-to/None），且内容不可为空。 |
@@ -232,8 +233,11 @@ if not result.is_valid:
 
 当一份 `REQ-xxx.md` 通过本规范第五、六节的程序化校验（`ValidationResult.is_valid == True`）后，即可通过阶段交接器 [`src/requirements/handoff.py`](../../src/requirements/handoff.py) 直接移交至主流水线 **S2 架构设计** 阶段（跳过重复的 S1 需求分析）：
 
-1. **输入前置断言**：`handoff_srs_to_pipeline()` 强制执行 `validate_requirement_spec()`，任何违反 `RULE-01 ~ RULE-09` 的文档均被拒绝移交；
-2. **产物映射契约**：
-   - `workspace/requests/active/{rid}.md`：写入完整 9 章节 SRS 原文（供 S2 架构师与 S3 设计审查者逐句做“原文对照”）；
-   - `workspace/runs/{rid}/S1-analysis/round-1/{analysis.md, done.json}`：由交接器从 SRS 第 1、3、4、8 节确定性提取摘要、范围与验收标准生成 `verdict: ACCEPT` 基线产物；
-   - `workspace/runs/{rid}/state.json`：初始 `stage` 直接设为 `"S2"`，`round` 设为 `1`，`step` 指向 `S2-design/round-1`（角色 `designer`）。
+1. **输入前置身份断言（D016）**：`handoff_srs_to_pipeline()` 强制执行来源定稿的 `project` 与 `id` 双身份核验。若来源与目标项目不一致、未在系统登记或缺失身份，触发分级处置：
+   - **直接阻断（Fast-Fail 拒绝交接）**：即时阻断并打回前端交互窗口，要求明确项目后重新定稿；
+   - **挂起转人工介入（`needs-human`）**：在流水线侧若遇到项目别名或未登记目标等复杂情况，挂起生成 `decision.md` 等待用户拍板。
+2. **规范契约断言**：强制执行 `validate_requirement_spec()`，任何违反 `RULE-00 ~ RULE-09` 的文档均被拒绝移交；
+3. **产物映射契约**：
+   - `workspace/requests/active/{rid}.md`：写入包含权威 `project` 与 `id` 元数据以及完整 9 章节 SRS 原文（供 S2 架构师与 S3 设计审查者逐句做“原文对照”）；
+   - `workspace/runs/{rid}/S1-analysis/round-1/{analysis.md, done.json}`：由交接器从 SRS 第 1、3、4、8 节确定性提取摘要、范围与验收标准生成 `verdict: ACCEPT` 基线产物（显式携带 `project` 和 `id`）；
+   - `workspace/runs/{rid}/state.json`：初始 `stage` 直接设为 `"S2"`，`round` 设为 `1`，`project` 设为核验通过的项目标识，`step` 指向 `S2-design/round-1`（角色 `designer`）。

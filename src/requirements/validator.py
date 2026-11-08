@@ -62,6 +62,7 @@ SECTION_SPECS: list[tuple[int, str, list[str]]] = [
 ]
 
 RULE_DESCRIPTIONS: list[tuple[str, str]] = [
+    ("RULE-00", "明确项目与需求身份 (D016)"),
     ("RULE-01", "UTF-8 编码与 REQ-*.md 命名规范"),
     ("RULE-02", "九大标准章节标题完整性"),
     ("RULE-03", "需求类型(软件/部署)、规模与关系矩阵"),
@@ -111,6 +112,48 @@ def extract_req_type(markdown_text: str) -> str:
     return inferred
 
 
+def extract_project(srs_text: str) -> str:
+    """提取归属项目标识（优先 Frontmatter 中的 project，其次第 1 节元数据，D016 不变量）。"""
+    clean_text = strip_validation_comment(srs_text)
+    fm_match = re.match(r"^---\n(.*?)\n---", clean_text, re.DOTALL)
+    if fm_match:
+        for line in fm_match.group(1).splitlines():
+            line = line.strip()
+            if line.startswith("project:"):
+                val = line.split(":", 1)[1].strip().strip("\"'`")
+                if val and not (val.startswith("（") or val.startswith("(")):
+                    return val
+    sec1 = extract_section_body(clean_text, 1)
+    if sec1:
+        m = re.search(r"[-*]\s*\*\*(?:归属项目|项目标识|目标项目|项目名称)\*\*[：:]\s*`?([^\n`]+)`?", sec1)
+        if m:
+            val = m.group(1).strip().strip("\"'`")
+            if val and not (val.startswith("（") or val.startswith("(")):
+                return val
+    return ""
+
+
+def extract_req_id(srs_text: str) -> str:
+    """提取需求编号（优先 Frontmatter 中的 id/req_id，其次第 1 节元数据，D016 不变量）。"""
+    clean_text = strip_validation_comment(srs_text)
+    fm_match = re.match(r"^---\n(.*?)\n---", clean_text, re.DOTALL)
+    if fm_match:
+        for line in fm_match.group(1).splitlines():
+            line = line.strip()
+            if line.startswith("id:") or line.startswith("req_id:"):
+                val = line.split(":", 1)[1].strip().strip("\"'`")
+                if val and not (val.startswith("（") or val.startswith("(")):
+                    return val
+    sec1 = extract_section_body(clean_text, 1)
+    if sec1:
+        m = re.search(r"[-*]\s*\*\*(?:需求编号|需求ID|REQ编号|编号)\*\*[：:]\s*`?([^\n`]+)`?", sec1)
+        if m:
+            val = m.group(1).strip().strip("\"'`")
+            if val and not (val.startswith("（") or val.startswith("(")):
+                return val
+    return ""
+
+
 def extract_deliverables(markdown_text: str) -> list[str]:
     """提取第 4 节或全文中声明的脚本/配置交付物（如 deploy/*.sh, *.plist, *.service, Dockerfile）。"""
     clean_text = strip_validation_comment(markdown_text)
@@ -149,6 +192,8 @@ def extract_srs_metadata(srs_text: str) -> dict[str, Any]:
         name_match = re.search(r"\*\*需求名称\*\*[：:]\s*(.+?)\s*$", clean_text, flags=re.MULTILINE)
         title = name_match.group(1).strip() if name_match else "未命名需求"
 
+    req_id = extract_req_id(clean_text)
+    project = extract_project(clean_text)
     req_type = extract_req_type(clean_text)
     deliverables = extract_deliverables(clean_text)
 
@@ -176,6 +221,8 @@ def extract_srs_metadata(srs_text: str) -> dict[str, Any]:
     ]
 
     return {
+        "id": req_id,
+        "project": project,
         "title": title,
         "req_type": req_type,
         "deliverables": deliverables,
@@ -193,6 +240,14 @@ def validate_requirement_spec(content: str) -> ValidationResult:
     text = strip_validation_comment(content)
     if not text:
         return ValidationResult(is_valid=False, errors=["[RULE-00] 需求文档内容为空"])
+
+    # RULE-00: 检查明确项目身份与需求身份 (D016 不变量)
+    proj_val = extract_project(text)
+    id_val = extract_req_id(text)
+    if not proj_val:
+        errors.append("[RULE-00] 缺少明确的项目身份 (project/归属项目)，严禁隐式推断")
+    if not id_val:
+        errors.append("[RULE-00] 缺少明确的需求身份 (id/需求编号)，严禁隐式推断")
 
     req_type = extract_req_type(text)
 

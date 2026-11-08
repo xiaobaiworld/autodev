@@ -22,8 +22,13 @@ from requirements.validator import (
 AUTODEV_ROOT = Path(__file__).resolve().parents[2]
 
 
-def _build_s1_baseline_analysis(rid: str, srs_text: str, meta: dict[str, Any]) -> str:
-    """生成 S1-analysis/round-1/analysis.md 基线产物，使 S2/S3/S4 既能读到结构化分析结论又能感知软件/部署类型差异与完整 SRS。"""
+class HandoffVerificationError(ValueError):
+    """交接验真失败错误（D016），用于前台即时阻断并提示原因。"""
+    pass
+
+
+def _build_s1_baseline_analysis(rid: str, project: str, srs_text: str, meta: dict[str, Any]) -> str:
+    """生成 S1-analysis/round-1/analysis.md 基线产物，显式携带 project 与 rid 双身份（D016）。"""
     ac_yaml = "\n".join(f'  - "{item.replace(chr(34), chr(39))}"' for item in meta["acceptance_criteria"])
     safe_summary = meta["summary"].replace('"', "'")
     safe_scope = meta["scope"].replace('"', "'")
@@ -47,6 +52,7 @@ def _build_s1_baseline_analysis(rid: str, srs_text: str, meta: dict[str, Any]) -
     return (
         f"---\n"
         f"id: {rid}\n"
+        f"project: {project}\n"
         f"stage: S1\n"
         f"round: 1\n"
         f"role: analyst\n"
@@ -59,6 +65,7 @@ def _build_s1_baseline_analysis(rid: str, srs_text: str, meta: dict[str, Any]) -
         f"---\n\n"
         f"# 需求分析结论（由飞书/Web 需求分析师 SRS v1.1 定稿直通生成）\n\n"
         f"- **需求标题**：{meta['title']}\n"
+        f"- **目标项目**：`{project}`\n"
         f"- **需求类型**：`{req_type}`\n"
         f"- **一句话摘要**：{meta['summary']}\n"
         f"- **核心范围**：{meta['scope']}\n"
@@ -75,12 +82,12 @@ def _build_s1_baseline_analysis(rid: str, srs_text: str, meta: dict[str, Any]) -
 def handoff_srs_to_pipeline(
     srs_path: str | Path,
     root: str | Path | None = None,
-    project: str = "toy",
+    project: str | None = None,
     kind: str = DEFAULT_KIND,
     config_yaml: str | Path | None = None,
     today: datetime | None = None,
 ) -> dict[str, Any]:
-    """将定稿并通过契约校验的 REQ-xxx.md 移交至主流水线，跳过重复的 S1，直接初始化为 S2（架构设计）待执行状态。"""
+    """将定稿并通过契约校验的 REQ-xxx.md 移交至主流水线（D016 强核验与分级处置）。"""
     check_kind(kind)
     srs_file = Path(srs_path).resolve()
     if not srs_file.is_file():
@@ -89,9 +96,27 @@ def handoff_srs_to_pipeline(
     raw_text = srs_file.read_text(encoding="utf-8")
     clean_srs = strip_validation_comment(raw_text)
 
+    # 1. 契约校验 (含 RULE-00 双身份与 9 大章节)
     v_res = validate_requirement_spec(clean_srs)
     if not v_res.is_valid:
-        raise ValueError(f"需求文档未通过 SRS v1.0 程序化契约校验，拒绝移交 S2：{'; '.join(v_res.errors)}")
+        raise HandoffVerificationError(f"需求文档未通过 SRS v1.0 程序化契约校验，拒绝移交 S2：{'; '.join(v_res.errors)}")
+
+    # 2. 来源与目标项目身份强核对（D016 不变量）
+    meta = extract_srs_metadata(clean_srs)
+    doc_project = (meta.get("project") or "").strip()
+    if not doc_project:
+        raise HandoffVerificationError("定稿文档缺少明确的项目身份 (project/归属项目)，拒绝移交 S2！")
+
+    if project and project.strip():
+        # 允许绝对路径或规范化名称匹配（如 /Users/bai/code/personagent 与 personagent）
+        doc_norm = Path(doc_project).name.lower()
+        call_norm = Path(project.strip()).name.lower()
+        if doc_project.lower() != project.strip().lower() and doc_norm != call_norm:
+            raise HandoffVerificationError(
+                f"定稿声明项目 '{doc_project}' 与调用方指定项目 '{project}' 不一致，拒绝移交！"
+            )
+
+    effective_project = Path(project.strip()).name if (project and project.strip()) else Path(doc_project).name
 
     root_dir = Path(root).resolve() if root else AUTODEV_ROOT
     cfg_file = Path(config_yaml).resolve() if config_yaml else (root_dir / "config.yaml")
@@ -114,12 +139,14 @@ def handoff_srs_to_pipeline(
         req_type = meta.get("req_type", "SOFTWARE")
 
         req_file = active_dir / f"{rid}.md"
+        doc_req_id = meta.get("id") or rid
         atomic_write(
             req_file,
             f"---\n"
             f"schema_version: 1\n"
             f"id: {rid}\n"
-            f"project: {project}\n"
+            f"req_id: {doc_req_id}\n"
+            f"project: {effective_project}\n"
             f"req_type: {req_type}\n"
             f"source_srs: {srs_file.name}\n"
             f"submitted_at: {now_iso()}\n"
@@ -130,12 +157,13 @@ def handoff_srs_to_pipeline(
         run_dir = root_dir / "workspace" / "runs" / rid
         s1_dir = run_dir / step_dir("S1", 1, kind)
         analysis_path = s1_dir / "analysis.md"
-        atomic_write(analysis_path, _build_s1_baseline_analysis(rid, clean_srs, meta))
+        atomic_write(analysis_path, _build_s1_baseline_analysis(rid, effective_project, clean_srs, meta))
         atomic_write(
             s1_dir / "done.json",
             json.dumps(
                 {
                     "id": rid,
+                    "project": effective_project,
                     "stage": "S1",
                     "round": 1,
                     "role": "analyst",
@@ -150,7 +178,7 @@ def handoff_srs_to_pipeline(
             + "\n",
         )
 
-        state = build_initial_state(rid, project, kind=kind, stage="S2", round_num=1)
+        state = build_initial_state(rid, effective_project, kind=kind, stage="S2", round_num=1)
         s2_spec = template_for(state)["stages"]["S2"]
         designer_role = s2_spec["role"]
         designer_agent = roles[designer_role]
@@ -194,7 +222,7 @@ def handoff_srs_to_pipeline(
         "title": meta["title"],
         "req_type": req_type,
         "deliverables": meta.get("deliverables", []),
-        "project": project,
+        "project": effective_project,
         "kind": kind,
         "stage": "S2",
         "round": 1,
@@ -210,7 +238,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="将定稿的飞书/Web SRS 文档直通移交至主流水线 S2 架构设计阶段")
     ap.add_argument("--req", required=True, help="定稿的 REQ-xxx.md 文件路径")
     ap.add_argument("--root", default=str(AUTODEV_ROOT), help="AutoDev 根目录（默认当前仓库根）")
-    ap.add_argument("--project", default="toy", help="目标项目名（默认 toy）")
+    ap.add_argument("--project", default=None, help="目标项目名（默认从定稿文档读取）")
     ap.add_argument("--kind", default=DEFAULT_KIND, help="流水线类型（pipeline/design 或 pipeline/build）")
     args = ap.parse_args(argv)
 

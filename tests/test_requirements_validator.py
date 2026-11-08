@@ -167,6 +167,24 @@ class TestRequirementsValidator(unittest.TestCase):
         self.assertFalse(res_broken_hw.is_valid)
         self.assertTrue(any("RULE-07" in e and "HARDWARE" in e for e in res_broken_hw.errors))
 
+    def test_rule_00_identity_validation(self):
+        # 缺少归属项目
+        no_project = VALID_SPEC_SAMPLE.replace("- **归属项目**：/tmp/project", "")
+        res_no_proj = validate_requirement_spec(no_project)
+        self.assertFalse(res_no_proj.is_valid)
+        self.assertTrue(any("RULE-00" in e and "项目身份" in e for e in res_no_proj.errors))
+
+        # 缺少需求编号
+        no_id = VALID_SPEC_SAMPLE.replace("- **需求编号**：REQ-ORDER-PAY-20261107", "")
+        res_no_id = validate_requirement_spec(no_id)
+        self.assertFalse(res_no_id.is_valid)
+        self.assertTrue(any("RULE-00" in e and "需求身份" in e for e in res_no_id.errors))
+
+        # 验证 extract_srs_metadata 正常提取 id 与 project
+        inspected = inspect_srs_document(VALID_SPEC_SAMPLE)
+        self.assertEqual(inspected["metadata"]["id"], "REQ-ORDER-PAY-20261107")
+        self.assertEqual(inspected["metadata"]["project"], "/tmp/project")
+
 
 if __name__ == "__main__":
     unittest.main()

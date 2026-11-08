@@ -11,7 +11,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from cockpit.store import atomic_write
-from requirements.handoff import handoff_srs_to_pipeline
+from requirements.handoff import HandoffVerificationError, handoff_srs_to_pipeline
 from requirements.llm_provider import load_model_registry
 from requirements.session import ReqSessionStore
 from web.api import (
@@ -176,23 +176,28 @@ def make_handler(root_dir: Path):
 
                 if path == "/api/srs/handoff":
                     fname = str(body.get("filename") or "").strip()
-                    project = str(body.get("project") or "autodev").strip()
+                    project = str(body.get("project") or "").strip() or None
                     kind = str(body.get("kind") or "pipeline/build").strip()
                     if not fname or "/" in fname or "\\" in fname:
                         self._send_json({"ok": False, "error": "请指定有效的 REQ-*.md 文件名"}, status=400)
                         return
                     fpath = root_dir / "docs" / "requirements" / fname
-                    info = handoff_srs_to_pipeline(
-                        srs_path=fpath,
-                        root=root_dir,
-                        project=project,
-                        kind=kind,
-                    )
-                    self._send_json({
-                        "ok": True,
-                        "handoff": info,
-                        "runs": list_pipeline_runs(root_dir),
-                    })
+                    try:
+                        info = handoff_srs_to_pipeline(
+                            srs_path=fpath,
+                            root=root_dir,
+                            project=project,
+                            kind=kind,
+                        )
+                        self._send_json({
+                            "ok": True,
+                            "handoff": info,
+                            "runs": list_pipeline_runs(root_dir),
+                        })
+                    except HandoffVerificationError as e:
+                        self._send_json({"ok": False, "error": f"移交被程序强核验拦截（拒绝交接 S2，D016）：{e}"}, status=400)
+                    except Exception as e:
+                        self._send_json({"ok": False, "error": f"移交异常：{e}"}, status=500)
                     return
 
                 if path == "/api/req/type":

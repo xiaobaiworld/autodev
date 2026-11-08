@@ -7,7 +7,7 @@ from cockpit.agents import parse_agents, parse_limits, parse_roles
 from cockpit.controller import Controller
 from cockpit.pipeline import validate_done
 from cockpit.store import Run
-from requirements.handoff import extract_srs_metadata, handoff_srs_to_pipeline
+from requirements.handoff import HandoffVerificationError, extract_srs_metadata, handoff_srs_to_pipeline
 from requirements.llm_provider import (
     ModelSpec,
     build_model_argv,
@@ -220,6 +220,38 @@ class TestRequirementsLlmAndHandoff(unittest.TestCase):
             final_state = run.load()
             self.assertEqual(final_state["status"], "done")
             self.assertEqual(final_state["stage"], "S3")
+
+    def test_handoff_rejects_project_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            srs_file = root / "REQ-test.md"
+            srs_file.write_text(VALID_SRS_SAMPLE, encoding="utf-8")
+            with self.assertRaises(HandoffVerificationError) as ctx:
+                handoff_srs_to_pipeline(srs_file, root=root, project="personagent")
+            self.assertIn("不一致，拒绝移交", str(ctx.exception))
+
+    def test_session_project_isolation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            sfile = Path(tmp) / "session.json"
+            store = ReqSessionStore(str(sfile), default_cwd="/tmp/autodev", default_agent="claude-sonnet")
+            store.set_project("chat-1", "autodev")
+            store.update_session_id("chat-1", "sess-123")
+            store.append_history("chat-1", "开发需求A", "好的")
+            store.set_active_req_id("chat-1", "REQ-001")
+
+            s0 = store.get("chat-1")
+            self.assertEqual(s0["project"], "autodev")
+            self.assertEqual(s0["session_id"], "sess-123")
+            self.assertEqual(len(s0["history"]), 1)
+            self.assertEqual(s0["active_req_id"], "REQ-001")
+
+            # 切换项目：强制隔离清空历史上下文（D016 不变量）
+            store.set_project("chat-1", "personagent")
+            s1 = store.get("chat-1")
+            self.assertEqual(s1["project"], "personagent")
+            self.assertEqual(s1["session_id"], "")
+            self.assertEqual(len(s1["history"]), 0)
+            self.assertEqual(s1["active_req_id"], "")
 
 
 if __name__ == "__main__":

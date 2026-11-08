@@ -95,7 +95,11 @@ original_filename: tag-filter.md
 | original_filename | 用户原文件名 | string | 是 | 无 | 用于追溯 | 程序 | raw |
 | 正文 | 需求原文 | markdown | 是 | 无 | 非空 | 用户 | raw |
 
-校验失败（缺 `project`、项目不存在、正文为空）时，文件不领取，移到 `needs-human/`，并按第 9 节生成一条决策请求，说明原因。
+校验失败（缺 `project`、项目不存在、正文为空）时，触发 D016 分级处置：
+- **前台交互侧（飞书/Web 澄清）**：程序直接拒绝移交，打回当前对话并提示明确原因，要求用户补充或修改项目标识；
+- **流水线领取侧**：文件不领取，移到 `needs-human/`，并按第 9 节生成一条决策请求（`decision-K.md`），说明原因并由用户人工拍板裁决。
+
+根据 D016 架构不变量，系统全链路（需求会话 ReqSession、定稿版本 REQ-*.md、运行状态 RunState、各阶段产物 Frontmatter）必须显式携带同一对 `project` 与 `id`，严禁隐式推断。
 
 ## 5. RunState（state.json）
 

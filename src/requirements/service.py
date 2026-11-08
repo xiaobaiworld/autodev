@@ -24,7 +24,12 @@ from requirements.flow import (
 from requirements.llm_provider import resolve_model_spec
 from requirements.presentation import RequirementResponse, extract_semantic_response
 from requirements.session import ReqSessionStore
-from requirements.validator import ValidationResult, extract_req_type, validate_requirement_spec
+from requirements.validator import (
+    ValidationResult,
+    extract_req_id,
+    extract_req_type,
+    validate_requirement_spec,
+)
 
 log = logging.getLogger("autodev.req")
 
@@ -274,9 +279,12 @@ def execute_clarification_turn(
             )
             atomic_write(archived_path, reply_text + "\n" + suffix)
             store.set_last_archived_req(chat_id, archived_path)
+            detected_req_id = extract_req_id(reply_text) or os.path.splitext(archived_filename)[0]
+            store.set_active_req_id(chat_id, detected_req_id)
             log.info(
-                "需求定稿文件已落盘: %s (type=%s, valid=%s)",
+                "需求定稿文件已落盘: %s (id=%s, type=%s, valid=%s)",
                 archived_path,
+                detected_req_id,
                 final_req_type,
                 v_res.is_valid,
             )

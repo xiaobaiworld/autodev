@@ -12,7 +12,7 @@ import lark_oapi as lark
 from lark_oapi.api.im.v1 import P2ImMessageReceiveV1
 
 from requirements.config import load_req_config
-from requirements.handoff import handoff_srs_to_pipeline
+from requirements.handoff import HandoffVerificationError, handoff_srs_to_pipeline
 from requirements.llm_provider import load_model_registry, resolve_model_spec
 from requirements.presentation import FeishuCardPresenter
 from requirements.responder import FeishuResponder
@@ -103,20 +103,42 @@ def main() -> None:
             )
             return
 
-        if clean_text.startswith("/project ") or clean_text.startswith("/cd "):
-            target_path = clean_text.split(maxsplit=1)[1].strip()
+        if clean_text in ("/project", "/项目") or clean_text.startswith("/project ") or clean_text.startswith("/cd "):
             sess = store.get(chat_id)
+            parts = clean_text.split(maxsplit=1)
+            if len(parts) == 1:
+                cur_proj = sess.get("project") or os.path.basename(sess["cwd"].rstrip(os.sep))
+                cur_req = sess.get("active_req_id") or "待定稿"
+                history_count = len(sess.get("history") or [])
+                send_pool.submit(
+                    responder.send_text,
+                    chat_id,
+                    f"📁 **当前项目身份与需求绑定状态**（D016）：\n\n"
+                    f"• **目标项目身份**：`{cur_proj}`\n"
+                    f"• **关联工程路径**：`{sess['cwd']}`\n"
+                    f"• **当前活跃需求**：`{cur_req}`\n"
+                    f"• **会话历史深度**：{history_count} 轮对话\n\n"
+                    f"💡 发送 `/project <项目路径或名称>` 可切换目标项目。切换时系统将自动隔离不同项目的历史记忆，杜绝上下文串扰。",
+                )
+                return
+
+            target_path = parts[1].strip()
             expanded = os.path.expanduser(target_path)
             resolved = os.path.realpath(expanded) if os.path.isabs(expanded) else os.path.realpath(os.path.join(sess["cwd"], expanded))
             allowed = any(resolved == d or resolved.startswith(d + os.sep) for d in cfg.allow_dirs)
-            if not allowed:
+            if not allowed and os.path.exists(resolved):
                 send_pool.submit(responder.send_text, chat_id, f"⚠️ 拒绝：目录不在白名单内 `{resolved}`")
                 return
-            store.set_cwd(chat_id, resolved)
+
+            target_proj_name = os.path.basename(resolved.rstrip(os.sep)) if os.path.exists(resolved) else target_path
+            target_cwd = resolved if os.path.exists(resolved) else sess["cwd"]
+            updated = store.set_project(chat_id, target_proj_name, cwd=target_cwd)
             send_pool.submit(
                 responder.send_text,
                 chat_id,
-                f"📁 目标项目已切换至：`{resolved}`\n已关联该项目上下文，可继续聊需求。",
+                f"📁 **目标项目身份已切换至：`{updated['project']}`**\n"
+                f"• 关联目录：`{updated['cwd']}`\n"
+                f"• 上下文隔离状态：已隔离清空历史上下文（D016），新需求会话已就绪，请直接描述你的想法。",
             )
             return
 
@@ -235,10 +257,11 @@ def main() -> None:
                 return
 
             try:
-                proj_name = os.path.basename(sess["cwd"].rstrip(os.sep)) or "toy"
+                proj_name = sess.get("project") or os.path.basename(sess["cwd"].rstrip(os.sep))
+                autodev_root = getattr(cfg, "autodev_root", "") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
                 info = handoff_srs_to_pipeline(
                     srs_path=req_path,
-                    root=sess["cwd"],
+                    root=autodev_root,
                     project=proj_name,
                 )
                 send_pool.submit(
@@ -246,6 +269,7 @@ def main() -> None:
                     chat_id,
                     f"🚀 **已将定稿需求直通移交至下一阶段（S2 架构设计）！**\n\n"
                     f"• **运行编号**：`{info['run_id']}`\n"
+                    f"• **目标项目**：`{info['project']}`\n"
                     f"• **需求标题**：{info['title']}\n"
                     f"• **来源文档**：`{os.path.basename(info['source_srs'])}`\n"
                     f"• **当前阶段**：`{info['stage']} (第 {info['round']} 轮)` — 已自动生成 S1 基线并跳过重复分析\n"
@@ -253,8 +277,19 @@ def main() -> None:
                     f"• **设计审查（S3）**：`{info['reviewer_agent']}` (`{info['reviewer_model']}`)\n"
                     f"• **运行目录**：`{info['run_dir']}`",
                 )
+            except HandoffVerificationError as e:
+                send_pool.submit(
+                    responder.send_text,
+                    chat_id,
+                    f"🛑 **移交被程序拦截（拒绝交接 S2，D016）**：\n\n"
+                    f"原因：{e}\n\n"
+                    f"💡 **排查指引**：\n"
+                    f"1. 检查定稿文档第 1 节中的【归属项目】与【需求编号】是否完整有效；\n"
+                    f"2. 当前会话绑定的项目身份为 `{sess.get('project')}`，若不符请发送 `/project <项目>` 切换后重新定稿；\n"
+                    f"3. 无法核实的项目将被坚决拒绝，严禁带病移交下游。",
+                )
             except Exception as e:
-                send_pool.submit(responder.send_text, chat_id, f"⚠️ 移交 S2 架构设计失败：{e}")
+                send_pool.submit(responder.send_text, chat_id, f"⚠️ 移交 S2 架构设计异常：{e}")
             return
 
         if clean_text in ("/status", "/状态"):
@@ -266,10 +301,13 @@ def main() -> None:
                 model_desc = f"`{sess['agent']}`"
             has_session = "已建立 (" + sess["session_id"][:8] + "...)" if sess["session_id"] else "未建立 (发送任意需求即可开始)"
             last_req = os.path.basename(sess["last_archived_req"]) if sess.get("last_archived_req") else "暂无"
+            cur_req = sess.get("active_req_id") or "待定稿"
+            cur_proj = sess.get("project") or os.path.basename(sess["cwd"].rstrip(os.sep))
             src_label = "👤 人工指定" if sess.get("req_type_source") == "manual" else "🤖 Agent自动分类"
             status_msg = (
-                f"🤖 **AutoDev 需求分析师状态**\n"
-                f"• 当前目标项目：`{sess['cwd']}`\n"
+                f"🤖 **AutoDev 需求分析师状态**（D016 双身份绑定）\n"
+                f"• 当前目标项目：`{cur_proj}` (`{sess['cwd']}`)\n"
+                f"• 当前活跃需求：`{cur_req}`\n"
                 f"• 需求类型分类：`{sess.get('req_type', 'AUTO')}` ({src_label})\n"
                 f"• 分析推理模型：{model_desc}\n"
                 f"• 调用方式：`{sess.get('mode', 'cli_session')}`（已记录 {len(sess.get('history') or [])} 轮问答）\n"
