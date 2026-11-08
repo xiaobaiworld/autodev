@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import threading
 import time
@@ -6,6 +7,7 @@ import unittest
 import urllib.error
 import urllib.request
 
+from requirements.__main__ import parser as req_parser
 from requirements.agent import DemoAgent
 from requirements.session import SessionStore
 from requirements.web import make_server
@@ -90,3 +92,24 @@ class WebTest(unittest.TestCase):
         self.assertTrue(result['command'].startswith('/需求 绑定 '))
         self.assertEqual(self.store.status(s['id'])['calls'],[])
         self.assertGreater(result['expires_at'],time.time())
+
+    def test_autodev_web_port_env_support(self):
+        # 1. 验证 requirements.web.make_server 在未指定 port 时读取 AUTODEV_WEB_PORT
+        orig = os.environ.get("AUTODEV_WEB_PORT")
+        try:
+            os.environ["AUTODEV_WEB_PORT"] = "9876"
+            # make_server 默认 port 为 None 时应读取 9876
+            from unittest.mock import patch
+            with patch("requirements.web.WorkbenchServer") as mock_server:
+                make_server(self.store)
+                mock_server.assert_called_with(self.store, "127.0.0.1", 9876)
+
+            # 2. 验证 requirements.__main__ parser 在未传 --port 时读取 AUTODEV_WEB_PORT
+            p = req_parser()
+            args = p.parse_args(["serve"])
+            self.assertEqual(args.port, 9876)
+        finally:
+            if orig is not None:
+                os.environ["AUTODEV_WEB_PORT"] = orig
+            else:
+                os.environ.pop("AUTODEV_WEB_PORT", None)

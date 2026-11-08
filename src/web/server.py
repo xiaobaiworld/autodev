@@ -249,12 +249,25 @@ def make_handler(root_dir: Path):
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="启动 AutoDev 全系统统一本机网页客户端 (仅监听 127.0.0.1)")
-    ap.add_argument("--port", type=int, default=int(os.environ.get("AUTODEV_WEB_PORT", "8765")), help="监听端口 (默认 8765)")
+    ap.add_argument("--port", type=int, default=int(os.environ.get("AUTODEV_WEB_PORT", "8765")), help="监听端口 (默认 8765，可通过 AUTODEV_WEB_PORT 环境变量覆盖)")
     ap.add_argument("--root", default=str(AUTODEV_ROOT), help="AutoDev 根目录")
     args = ap.parse_args(argv)
 
     root_dir = Path(args.root).resolve()
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(root_dir))
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(root_dir))
+    except OSError as e:
+        if getattr(e, "errno", None) == 48:
+            print(
+                f"❌ 端口 {args.port} 已被占用，绑定失败！\n"
+                f"💡 若有另一个 AutoDev 实例正在运行，请使用不同端口：\n"
+                f"   python3 -m web.server --port <新端口>\n"
+                f"   或设置环境变量：AUTODEV_WEB_PORT=<新端口> python3 -m web.server",
+                file=sys.stderr,
+                flush=True,
+            )
+            return 1
+        raise
     print(f"🌐 AutoDev 统一网页客户端已启动: http://127.0.0.1:{args.port} (root={root_dir})", flush=True)
     try:
         server.serve_forever()

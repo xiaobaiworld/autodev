@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import tempfile
 import unittest
@@ -278,6 +279,27 @@ class TestWebUnifiedClient(unittest.TestCase):
             self.assertIn("req_type: DEPLOYMENT", s1_text)
             self.assertIn("部署工程与脚本交付指令（DEPLOYMENT）", s1_text)
             self.assertIn("deploy/install-web-client.sh", s1_text)
+
+    def test_web_server_port_and_env(self):
+        orig = os.environ.get("AUTODEV_WEB_PORT")
+        try:
+            os.environ["AUTODEV_WEB_PORT"] = "8999"
+            from web.server import main as web_main
+            from unittest.mock import patch
+            # 验证端口冲突时安全返回退出码 1，不崩溃
+            with patch("web.server.ThreadingHTTPServer") as mock_srv:
+                err = OSError("Address already in use")
+                err.errno = 48
+                mock_srv.side_effect = err
+                code = web_main(["--root", str(AUTODEV_ROOT)])
+                self.assertEqual(code, 1)
+                # 验证 mock_srv 收到的端口是环境变量设置的 8999
+                mock_srv.assert_called_with(("127.0.0.1", 8999), unittest.mock.ANY)
+        finally:
+            if orig is not None:
+                os.environ["AUTODEV_WEB_PORT"] = orig
+            else:
+                os.environ.pop("AUTODEV_WEB_PORT", None)
 
 
 if __name__ == "__main__":

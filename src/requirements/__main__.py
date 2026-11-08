@@ -1,6 +1,7 @@
 """CLI client for the reusable SessionStore application API."""
 import argparse
 import json
+import os
 from pathlib import Path
 import sys
 import uuid
@@ -37,7 +38,7 @@ def parser():
             cmd.add_argument('--hash', required=True)
     serve = sub.add_parser('serve')
     serve.add_argument('--host', default='127.0.0.1')
-    serve.add_argument('--port', default=8765, type=int)
+    serve.add_argument('--port', default=int(os.environ.get('AUTODEV_WEB_PORT', '8765')), type=int)
     return ap
 
 
@@ -49,7 +50,16 @@ def main(argv=None):
         cmd = args.command
         if cmd == 'serve':
             from .web import make_server
-            server = make_server(store, host=args.host, port=args.port)
+            try:
+                server = make_server(store, host=args.host, port=args.port)
+            except OSError as e:
+                if getattr(e, 'errno', None) == 48:
+                    print(f'❌ 端口 {args.port} 已被占用，绑定失败！\n'
+                          f'💡 若有其他 AutoDev 实例正在运行，请指定不同端口：\n'
+                          f'   python3 -m requirements serve --port <新端口>\n'
+                          f'   或设置环境变量：AUTODEV_WEB_PORT=<新端口>', file=sys.stderr, flush=True)
+                    return 1
+                raise
             print(f'需求工作台 http://{args.host}:{server.server_port}（{"无费用演示" if args.demo else "真实模型模式"}）', flush=True)
             try:
                 server.serve_forever()

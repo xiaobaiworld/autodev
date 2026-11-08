@@ -1,5 +1,6 @@
 """Loopback HTTP adapter. Business rules stay in SessionStore."""
 import json
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import secrets
@@ -43,7 +44,9 @@ class WorkbenchServer(ThreadingHTTPServer):
         return dict(accepted=True, id=sid)
 
 
-def make_server(store, host='127.0.0.1', port=8765):
+def make_server(store, host='127.0.0.1', port=None):
+    if port is None:
+        port = int(os.environ.get('AUTODEV_WEB_PORT', '8765'))
     return WorkbenchServer(store, host, port)
 
 
