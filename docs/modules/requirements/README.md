@@ -3,7 +3,7 @@
 > **当前版本**：`v0.3.3` (2026-11-08)  
 > **当前状态**：**飞书端与全系统 Web 客户端双端支持「软件研发(`SOFTWARE`)/环境部署(`DEPLOYMENT`)/混合(`HYBRID`)」双轨分类（Agent 自动寻找分类 + 人工指定）与差异化 9 章节模板**  
 > **服务状态**：macOS LaunchAgent 常驻守护 (`com.autodev.req-bot`) + 本机 Web 客户端 (`python3 -m web.server`)  
-> **测试状态**：249 项单元测试全量通过 (`python -m unittest discover -s tests`)
+> **测试状态**：整合后 297 项单元测试全量通过 (`python -m unittest discover -s tests`)
 
 ---
 
@@ -90,3 +90,15 @@ tail -f logs/req_daemon.out
 - **重置新需求**：发送 `/new` 或 `新需求`；
 - **需求定稿**：回复 `定稿`，系统自动完成程序化验真并在 `docs/requirements/` 落盘 Markdown 文档；
 - **直通 S2 架构设计**：定稿后回复 `启动设计` 或 `/handoff`，跳过重复 S1 分析，直接初始化主流水线 `S2 架构设计` 任务。
+
+## 五、版本化工作台兼容 API
+
+2026-11-08 以 main v0.3.3 为准整合旧功能分支。`session.py` 的 `ReqSessionStore` 与默认飞书/统一网页/SRS/S2 交接保持原契约；`versioned_session.py` 提供 `SessionStore` 和 `SessionError`，顶层及旧 session 导入继续可用。版本化后端保留双模型有界审核、人工版本哈希确认、固定版本导出和故障恢复；通用 `channels/` 保留消息授权、去重与一次性配对。
+
+- [整合设计与验收](../../design/2026-11-08-requirements-merge.md)：两套存储、接口和数据边界。
+- [兼容工作台使用](usage.md)：CLI、演示和可选独立网页入口。
+- [兼容消息适配](channels.md)：旧 `/需求` 适配与配对协议，不自动接入默认飞书守护。
+- [验证记录](verification.md)、[原开发计划](dev-plan.md)、[网页设计](web-design.md)：兼容入口的历史与整合验证。
+- [v0.8](baselines/v0.8.md) / [v0.9](baselines/v0.9.md)：原工作台需求基线，不代表 AutoDev 发布版本。
+
+两套会话不互转；兼容工作台导出结果不自动满足现行九章节 SRS 或移交 S2。旧版运行端口与服务记录仅供追溯，本次不部署、不重启、不另建飞书连接。

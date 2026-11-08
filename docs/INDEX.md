@@ -36,6 +36,16 @@
 | `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L012 | 开始新功能前先读 |
 | `docs/design/autodev-workflow-prototype.html` | 工作流界面原型 | 静态讨论稿，示例数据，不代表可运行系统 |
 
+## 版本化需求工作台兼容入口
+
+| 路径 | 职责 | 状态与权威性 |
+| --- | --- | --- |
+| `docs/design/2026-11-08-requirements-merge.md` | 以 main 为准的整合范围、数据与接口边界、验收与合并流程 | 当前整合方案，D018 |
+| `docs/modules/requirements/usage.md`、`channels.md` | 兼容 CLI/可选网页、消息授权去重与一次性配对 | 只适用版本化工作台，历史服务状态未复核 |
+| `docs/modules/requirements/verification.md`、`dev-plan.md`、`web-design.md` | 兼容入口验证、原开发计划、网页设计 | 历史证据及整合验证 |
+| `docs/modules/requirements/baselines/v0.8.md`、`baselines/v0.9.md` | 原工作台固定需求基线 | 历史确认版本，非 AutoDev 发布号 |
+| `src/requirements/versioned_session.py`、`src/channels/` | 版本化审核/确认/导出与通用消息适配 | 兼容 API，不替代 main 的 ReqSessionStore/SRS |
+
 ## 验证记录
 
 | 路径 | 内容 |

@@ -163,3 +163,6 @@ class ReqSessionStore:
         curr["last_archived_req"] = req_path
         self._data[chat_id] = curr
         self._save()
+
+# Compatibility for callers of the versioned workbench API.
+from .versioned_session import SessionError, SessionStore

@@ -1,4 +1,5 @@
 # AutoDev 需求澄清模块
+from .versioned_session import SessionError, SessionStore
 from requirements.config import ReqConfig, load_req_config
 from requirements.flow import build_req_prompt, is_finalize_request, normalize_user_input
 from requirements.presentation import (
@@ -11,6 +12,8 @@ from requirements.presentation import (
 )
 
 __all__ = [
+    "SessionError",
+    "SessionStore",
     "BasePresenter",
     "FeishuCardPresenter",
     "PlainTextPresenter",

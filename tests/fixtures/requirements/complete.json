@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "sections": {"goal": "让社区活动接受报名", "audience": "活动组织者和居民", "scope": "本期报名与查询，不做支付", "constraints": "仅本机演示，使用匿名数据"},
+  "functions": [{"id": "F1", "text": "居民填写昵称报名", "sources": ["message:1"]}],
+  "acceptance": [{"id": "A1", "text": "报名后组织者能查到该昵称", "sources": ["message:1"]}],
+  "checklist": [
+    {"id": "goal", "status": "answered", "answer": "活动报名", "sources": ["message:1"]},
+    {"id": "audience", "status": "answered", "answer": "组织者和居民", "sources": ["message:1"]},
+    {"id": "functions", "status": "answered", "answer": "报名和查询", "sources": ["message:1"]},
+    {"id": "scope", "status": "answered", "answer": "本期不做支付", "sources": ["message:1"]},
+    {"id": "constraints", "status": "answered", "answer": "仅本机", "sources": ["message:1"]},
+    {"id": "acceptance", "status": "answered", "answer": "可查询报名", "sources": ["message:1"]}
+  ],
+  "suggestions": [], "open_questions": []
+}
