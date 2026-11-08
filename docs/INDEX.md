@@ -15,7 +15,7 @@
 | `AGENT_HANDOFF.md` | 换机器时的仓库获取方式、personagent 本地补丁的转移方法 | 只在换机器时读；其中的“当前状态”以 `next.md` 为准 |
 | `config.yaml`、`config/agents.toml` | 项目/轮次、注册表引用与角色覆盖；执行器、模型能力及角色默认值 | 运行配置；本机覆盖与模型规则见 `docs/MODELS.md` |
 | `docs/guides/rerun-with-another-agent.md` | 想用别的 Agent 或模型再跑一遍并比较：分清驾驶员、流水线里的 Agent、模型三层；怎么换、先跑哪些不花额度的验证、怎么比较、已知的坑 | 操作指南 |
-| `docs/reports/2026-11-07-session-report-sonnet-5-5.md` | 一次完整会话的报告：完成了什么、能证明什么、不能证明什么、驾驶员犯过的错。以后换驾驶员重做时的比较底稿 | 报告，只追加新报告，不改旧的 |
+| `docs/reports/2026-11-07-session-report-sonnet-5-5.md`、`docs/reports/2026-11-07-session-report-luna.md` | Sonnet 基线与 Luna S1–S9 复跑报告，记录代码/阶段/证据对照及比较限制 | 报告，只追加新报告，不改旧的 |
 
 ## 设计与决策
 
@@ -33,10 +33,10 @@
 | `docs/design/2026-11-08-agent-model-registry.md`、`config/agents.toml`、`docs/config/agent-registry.example.toml` | 本机执行器/模型能力、任务限制、角色默认值与环境变量凭证 | D021 第一版已实现；docs/config 为默认禁用教学样例 |
 | `docs/design/2026-11-02-autodev-design.md` | 九阶段流水线、角色、产物、人工参与、Web 界面、复盘、规则 | 当前设计基线；第 3.2、3.3、5 节的执行与调度部分已被地基方案部分取代，各节顶部有说明 |
 | `docs/OPTIMIZATIONS.md` | 流程优化记录：每次小优化改了什么、为什么、怎么回退、效果量到多少；只追加，回退和反复都如实记 | 只记优化这一件事；没量过写“未测” |
-| `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D021 | 决策事实源；D019 分级审查优先，D020 阶段机器人，D021 能力注册表 |
+| `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D022 | 决策事实源；D019 分级审查优先，D020 阶段机器人，D021 能力注册表，D022 项目与需求双身份 |
 | `docs/DATA_SPEC.md` | 数据目录、实体与文件格式 | 设计规范；`state.json`、`done.json` 已在代码里使用 |
 | `docs/MODELS.md` | 完整 ID、机器注册表、默认值及各 CLI 的指定方式 | 改模型登记或写启动命令前必读 |
-| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L016 | 开始新功能前先读 |
+| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L020 | 开始新功能前先读 |
 | `docs/design/autodev-workflow-prototype.html` | 工作流界面原型 | 静态讨论稿，示例数据，不代表可运行系统 |
 
 ## 版本化需求工作台兼容入口

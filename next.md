@@ -1,13 +1,15 @@
 # next.md
 
-## 已完成阶段：项目登记（网页与飞书共用，2026-11-08）
+## 当前执行目标：将本机工作分支收敛到 main（2026-11-08）
 
 - 实现范围：`cockpit.projects.register_project` 是唯一写入入口；验证名称、绝对路径、项目名/路径唯一性、Git 初始化确认、配置 expected_hash、原子写和写后回读恢复。
 - Web 使用 `POST /api/projects` 和顶栏新增按钮；飞书使用 `/project add <名称> <路径>`，非 Git 目录仅在同会话回复 `/project init yes` 后初始化。
 - 测试均使用临时目录；禁止真实飞书发送、服务重启和真实模型调用。完成后运行 `PYTHONPATH=src python3 -m unittest discover -s tests`，记录准确计数并本地提交到 `feat/project-registry`。
 - 验证：`src/cockpit/projects.py` AST 检查通过；新增 6 项登记测试通过；全量 unittest 324 项通过；`git diff --check` 通过。
 - 未验证：飞书真机交互、网页人工验收。未发送飞书消息、重启服务或调用真实模型。
-- 已本地提交至 `feat/project-registry`；推送、PR 与合并需用户另行确认。
+- 项目登记已提交于 `5f1ecc1`。设计机器人分支、网页选择器、注册表及需求工作台提交已在候选主线历史中；Luna 复跑提交已合并其历史，保留报告并使用已验证的当前主线实现。
+- 已试合并的混合树出现 53 个错误、1 个失败；撤销后将重跑全量测试，再将候选主线 fast-forward 到 `main`，清理其他本地/远端分支。工作区内未跟踪的 requests/workspace 数据必须保留。
+- 当前本地整合提交还未推送；分支清理待完成。
 
 ## 下一步：继续设计机器人渠道无关交互与修订入口
 
