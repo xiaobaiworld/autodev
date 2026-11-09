@@ -1,0 +1,21 @@
+# AutoDev 机器人清单（D023）。可提交，不含任何密钥；密钥与白名单在各机器人自己的被 git 忽略的本机文件里。
+# runs_on：该机器人应当运行的环境名，必须与安装时的 AUTODEV_ENV（默认 home-mac）一致，否则拒绝安装。
+#   同一个飞书应用同一时间只能有一个长连接，所以每个机器人只允许声明一个运行环境。
+
+[bots.req]
+description = "需求分析师机器人"
+module      = "requirements.feishu_daemon"
+config_file = "config.req.toml"
+config_env  = "AUTODEV_REQ_CONFIG"
+label       = "com.autodev.req-bot"
+stages      = ["requirements"]
+runs_on     = "home-mac"
+
+[bots.design]
+description = "设计机器人"
+module      = "requirements.design_bot"
+config_file = "config.design.toml"
+config_env  = "AUTODEV_DESIGN_CONFIG"
+label       = "com.autodev.design-bot"
+stages      = ["S2", "S3"]
+runs_on     = "home-mac"
