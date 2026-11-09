@@ -114,3 +114,11 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - 网页：`POST /api/projects`，请求体 `{name, path, init_git, expected_hash}`；顶栏“新增项目”按钮收到 `needs_init` 时弹确认框（区分“目录不存在”与“不是 Git 仓库”两种说法），确认后带 `init_git: true` 重提。
 - 飞书：`/project add <名称> <路径>`（路径须在 `allow_dirs` 白名单内）；目录不存在或非 Git 目录时回复提示，同一会话回复 `/project init yes` 才新建并初始化并登记；新建目录只限白名单内（网页端目前没有白名单，沿用现状），随后切换到该项目。待确认状态只在守护进程内存里，重启即失效，需重新发送 `add`。
 - 验证范围：`tests/test_project_registry.py` 9 项临时目录测试（含目录不存在先询问、同意后本地新建、不存在目录仍先查重名与重复路径、路径是文件被拒绝）；网页 `/api/projects` 另在临时根目录上用真实 HTTP 服务实测过成功、需初始化、重名、非法名、过期哈希五种情形。飞书 `on_message` 路由与白名单分支未真机验证。
+
+## 12. 设计机器人常驻部署（2026-11-09）
+
+- **当前选定的部署目录：`/Users/bai/code/autodev`**。常驻服务（launchd 标签 `com.autodev.design-bot`）固定指向安装脚本所在的检出目录，用该目录下的 `.venv` 和 `config.design.toml` 运行，日志在该目录的 `logs/`。
+- 安装：在部署目录里执行 `deploy/install-design-bot.sh`；卸载：`deploy/uninstall-design-bot.sh`。只动设计机器人，不碰需求机器人（`com.autodev.req-bot`）。前提是该目录已有 `.venv`（装了 `lark_oapi`）和 `config.design.toml`。
+- 凭证文件 `config.design.toml` 已被 `.gitignore` 忽略，只存在于本机，权限 600；`[allow] users` 为空且未开 `discover` 时机器人拒绝启动。首次取 open_id：临时设 `discover = true`，机器人只记录发送者、不回复。
+- **以后换环境或换目录部署**：脚本按自身位置确定目录，不需要改脚本内容。步骤：在旧位置执行卸载脚本 → 在新目录取得代码、建 `.venv` 并安装 `lark_oapi`、放入 `config.design.toml` → 在新目录执行安装脚本 → 同步修改本节“当前选定的部署目录”。需要同时跑多份时用环境变量 `AUTODEV_DESIGN_LABEL` 换标签，避免互相覆盖；同一应用凭证只能有一个长连接在线，否则消息会被分走。
+- 已验证：长连接可建立；白名单用户发消息能收到回复（手动进程，2026-11-09）。未验证：launchd 重启后自动恢复、崩溃自动拉起。
