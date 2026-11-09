@@ -1,0 +1,210 @@
+# 工程规则库（V2.1 第 5 节最低基线）。可提交，不含密钥；由 src/designsys/rules.py 读取。
+# 成熟度：当前没有任何验证器与测试样例，按 V2.1 第 14.1 节，18 条全部只能是 R1（结构化），不是 R3；
+# R1 原则上不阻断设计，severity 记录的是“违规时的严重程度”，不代表已经由程序强制。
+# 安全类即使停在 R1，也不能因验证器未实现而自动放行（V2.1 第 14.1 节），由人工确认与门禁兜底。
+# 适用条件：always = true 表示全部项目；features/risks 任一命中即适用（all_features = true 时须全部命中）；
+# content_based = true 表示适用性取决于设计产物的内容，当前无法由特征判定，放入 deferred，不猜。
+version = "0.1.0"
+
+[[rules]]
+rule_id = "SEC-001"
+version = "1.0.0"
+name = "密钥与凭证不得硬编码或提交"
+category = "security"
+maturity = "R1"
+severity = "blocking"
+always = true
+requirement = "密钥和凭证不得硬编码或提交仓库。"
+verification = "密钥扫描"
+
+[[rules]]
+rule_id = "SEC-002"
+version = "1.0.0"
+name = "服务端身份与资源级授权"
+category = "security"
+maturity = "R1"
+severity = "blocking"
+features = ["auth"]
+requirement = "服务端执行身份及资源级授权检查。"
+verification = "授权测试"
+
+[[rules]]
+rule_id = "SEC-003"
+version = "1.0.0"
+name = "输入校验"
+category = "security"
+maturity = "R1"
+severity = "blocking"
+features = ["api", "file_upload", "ui", "ai", "external_integration"]
+requirement = "输入类型、长度、格式校验；避免不安全拼接。"
+verification = "边界测试、静态检查"
+
+[[rules]]
+rule_id = "SEC-004"
+version = "1.0.0"
+name = "敏感数据保护"
+category = "security"
+maturity = "R1"
+severity = "blocking"
+features = ["sensitive_data"]
+requirement = "数据分类、最小暴露、日志脱敏、存储与传输保护。"
+verification = "数据流与日志检查"
+
+[[rules]]
+rule_id = "SEC-005"
+version = "1.0.0"
+name = "多项目/多租户隔离"
+category = "security"
+maturity = "R1"
+severity = "blocking"
+risks = ["cross_tenant"]
+requirement = "数据访问隔离，禁止跨边界读取。"
+verification = "隔离测试"
+
+[[rules]]
+rule_id = "SEC-006"
+version = "1.0.0"
+name = "文件上传控制"
+category = "security"
+maturity = "R1"
+severity = "blocking"
+features = ["file_upload"]
+requirement = "类型、大小、路径和存储访问控制。"
+verification = "恶意/异常文件测试"
+
+[[rules]]
+rule_id = "SEC-007"
+version = "1.0.0"
+name = "AI/Agent 指令隔离与权限边界"
+category = "security"
+maturity = "R1"
+severity = "blocking"
+features = ["ai"]
+requirement = "不可信内容与指令隔离；工具调用遵守权限边界。"
+verification = "注入及越权测试"
+
+[[rules]]
+rule_id = "SEC-008"
+version = "1.0.0"
+name = "关键修改与审批可追踪"
+category = "security"
+maturity = "R1"
+severity = "blocking"
+risks = ["high_impact_operation"]
+requirement = "可追踪的操作记录和责任主体。"
+verification = "审计测试"
+
+[[rules]]
+rule_id = "DATA-001"
+version = "1.0.0"
+name = "持久化实体标识与约束"
+category = "data"
+maturity = "R1"
+severity = "blocking"
+features = ["persistence"]
+requirement = "稳定标识、字段类型、必要唯一约束。"
+verification = "Schema/迁移检查"
+
+[[rules]]
+rule_id = "DATA-002"
+version = "1.0.0"
+name = "时间数据格式与时区"
+category = "data"
+maturity = "R1"
+severity = "high"
+content_based = true
+artifacts = ["A05"]
+requirement = "明确时间格式、时区及存储规则。"
+verification = "类型与时区测试"
+
+[[rules]]
+rule_id = "DATA-003"
+version = "1.0.0"
+name = "关联数据完整性与删除行为"
+category = "data"
+maturity = "R1"
+severity = "high"
+content_based = true
+artifacts = ["A05"]
+requirement = "明确实体关系、完整性与删除行为。"
+verification = "关系及约束测试"
+
+[[rules]]
+rule_id = "DATA-004"
+version = "1.0.0"
+name = "结构变更的迁移与兼容"
+category = "data"
+maturity = "R1"
+severity = "high"
+content_based = true
+artifacts = ["A05"]
+requirement = "迁移方案及兼容性要求。"
+verification = "迁移测试"
+
+[[rules]]
+rule_id = "DATA-005"
+version = "1.0.0"
+name = "敏感字段分类与访问控制关联"
+category = "data"
+maturity = "R1"
+severity = "blocking"
+features = ["sensitive_data", "persistence"]
+all_features = true
+requirement = "字段分类与访问控制关联。"
+verification = "分类覆盖检查"
+
+[[rules]]
+rule_id = "DATA-006"
+version = "1.0.0"
+name = "AI 提取/证据型数据溯源"
+category = "data"
+maturity = "R1"
+severity = "high"
+features = ["ai", "persistence"]
+all_features = true
+requirement = "记录来源、定位、版本与核查状态。"
+verification = "溯源完整性测试"
+
+[[rules]]
+rule_id = "API-001"
+version = "1.0.0"
+name = "接口请求、响应、错误与鉴权契约"
+category = "api"
+maturity = "R1"
+severity = "blocking"
+features = ["api"]
+requirement = "有 API 时明确请求、响应、错误与鉴权契约。"
+verification = "OpenAPI 解析与契约检查"
+
+[[rules]]
+rule_id = "ERR-001"
+version = "1.0.0"
+name = "关键失败路径处理"
+category = "error"
+maturity = "R1"
+severity = "high"
+features = ["api", "async_task", "external_integration", "file_upload", "ai"]
+requirement = "关键失败路径有明确处理、提示及必要的恢复策略。"
+verification = "失败路径评审"
+
+[[rules]]
+rule_id = "CODE-001"
+version = "1.0.0"
+name = "遵循现有技术栈与模块边界"
+category = "code"
+maturity = "R1"
+severity = "medium"
+always = true
+requirement = "优先遵循现有技术栈和模块边界，避免无依据引入新依赖。"
+verification = "依赖与边界检查"
+
+[[rules]]
+rule_id = "UI-001"
+version = "1.0.0"
+name = "核心操作的状态反馈"
+category = "ui"
+maturity = "R1"
+severity = "high"
+features = ["ui"]
+requirement = "核心操作有加载、成功、失败、空数据状态与可见反馈。"
+verification = "原型交互检查"
