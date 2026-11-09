@@ -14,6 +14,8 @@ AutoDev 是本机运行的需求驱动开发流程。确定性程序控制阶段
 - **全系统统一网页客户端（`src/web/`，`v0.3.3`）**：把「源头需求澄清工作台」与前面分析设计的「S1~S9 系统流水线管理网站」完整连接成一体（需求规格见 [`docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md`](docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md)），相比飞书新增 **9 章节 SRS 实时生长预览、RULE-01~09 校验红绿灯、需求规模与关联网络图谱、每轮耗时审计**，并可一键直通切入 **S1~S9 流水线驾驶舱、在线产物阅读器、待你决定人工回复与 Agent 角色模型配置**。
 - **命令行看板**：`src/dashboard/` 实时显示各需求阶段与日志，布局放在 Herdr 的 `pro2` 空间。
 
+**设计阶段 V2.1**：分类、规则、Schema 与设计包验证的 MVP 1 独立模块已实现，尚未接入流水线/机器人。规范与当前旧契约分别从 [S2](docs/stages/S2-design/README.md)、[S3](docs/stages/S3-design-review/README.md) 和 [执行资产](design-system/README.md) 查阅。
+
 当前步骤和下一步见 [`next.md`](next.md)，方案见 [`docs/design/2026-11-05-autoloop-foundation.md`](docs/design/2026-11-05-autoloop-foundation.md)。
 
 Agent/模型统一登记在 [`config/agents.toml`](config/agents.toml)，包含厂商、完整 ID、调用方式、能力限制与角色默认值；本机覆盖及环境变量凭证见[注册表使用说明](docs/design/2026-11-08-agent-model-registry.md)。可用 `PYTHONPATH=src python3 -m cockpit.registry --role designer` 检查选择，不调用模型。
@@ -22,7 +24,7 @@ Agent/模型统一登记在 [`config/agents.toml`](config/agents.toml)，包含�
 
 ```sh
 PYTHONPATH=src python3 -m web.server --port 8765              # 启动全系统统一本机网页客户端 (http://127.0.0.1:8765)
-PYTHONPATH=src python3 -m unittest discover -s tests          # 单元测试，不联网 (311 项测试)
+PYTHONPATH=src .venv/bin/python -m unittest discover -s tests          # 单元测试；最近结果见 next.md
 python3 -I tests/smoke_autoloop.py                            # 联机冒烟，假 Agent，不花额度
 ```
 
@@ -33,7 +35,9 @@ python3 -I tests/smoke_autoloop.py                            # 联机冒烟，�
 入口是 [`docs/INDEX.md`](docs/INDEX.md)。最常用的：
 
 - [`next.md`](next.md)：当前状态与下一步
-- [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md)：软件需求规格说明书产出规范与校验标准（SRS Standard v1.0 / `v0.3.3`）
+- [阶段总览](docs/stages/README.md)：十阶段职责；S2/S3 的输入输出契约与工作标准
+- [目录清点与后续缺口](docs/design/2026-11-09-doc-inventory.md)：文档归属、保留/拆分理由与代码路径依赖
+- [`docs/specs/REQUIREMENT_SPEC_STANDARD.md`](docs/specs/REQUIREMENT_SPEC_STANDARD.md)：软件需求规格说明书产出规范与校验标准（SRS Standard v1.1）
 - [`docs/modules/requirements/README.md`](docs/modules/requirements/README.md)：需求澄清模块与飞书机器人入口（`v0.3.3`）
 - [`docs/design/2026-11-05-autoloop-foundation.md`](docs/design/2026-11-05-autoloop-foundation.md)：当前主线方案
 - [`docs/design/2026-11-02-autodev-design.md`](docs/design/2026-11-02-autodev-design.md)：九阶段流水线设计

@@ -1,8 +1,50 @@
 # 文档与关键文件索引
 
-更新日期：2026-11-09 ｜ 当前版本：`v0.3.3`
+更新日期：2026-11-09 ｜ 本轮完成目录职责与 S2/S3 契约整理；实现状态逐项标注
 
 本索引按用途列出当前有效的入口、设计与参考资料。状态描述的是 AutoDev 自身资料的权威性；外部参考不能覆盖项目决策。已被取代的文档在 `docs/archive/`，只供追溯。
+
+## 目录怎么用
+
+先读 [next.md](../next.md) 确认当前目标，再按任务进入阶段或模块。目录按资料职责与生命周期划分，不按机器人或模型另存一套正文：
+
+```text
+根目录 README / AGENTS / next / changelog / AGENT_HANDOFF
+  docs/INDEX.md                    文档总入口（本页）
+  docs/stages/                     阶段职责、契约、标准
+    S2-design/                    README + contract + standard
+    S3-design-review/             README + contract + standard
+    其余八阶段/                   README 已包含当前契约，按需再拆
+  docs/design/                     AutoDev 平台方案、实施取舍与提案
+  docs/specs/                      跨阶段产出规范（当前为 SRS）
+  docs/Agent自动化设计阶段规范_V2.1.md  设计主规范，保留现有路径
+  docs/requirements/               AutoDev 自身的正式 SRS，程序读写
+  docs/modules/requirements/       软件模块实现、使用及独立兼容入口
+  docs/config/                     文档配套配置样例
+  docs/guides/                     操作指南
+  docs/spikes/                     可行性实验与验证报告
+  docs/reports/                    会话/复跑等证据报告
+  docs/archive/                    被替代资料和历史快照
+  templates/                      机器执行模板及兼容入口文档模板
+  design-system/                  V2.1 可执行规则与 Schema
+  src/designsys/                  对应分类/验证实现
+  reference/                      外部资料，不是项目规则
+  workspace/                      本机运行产物与数据归档，不入 Git
+```
+
+| 要找什么 | 入口与归属 |
+| --- | --- |
+| 某阶段负责什么、如何交接 | [阶段总览](stages/README.md)；S2/S3 的 contract 写输入输出，standard 写做法与门槛 |
+| 需求澄清与 S1 的关系 | [S1](stages/S1-analysis/README.md)、[需求模块](modules/requirements/README.md)；默认 SRS 与版本化会话分别管理 |
+| 执行规则、Schema 与校验能力 | [design-system](../design-system/README.md)、[工具手册](TOOLS.md)；不能作为普通模板搬入阶段目录 |
+| 机器模板和兼容模板 | [design.json](../templates/pipeline/design.json)、[build.json](../templates/pipeline/build.json)；[templates/requirements](../templates/requirements/) 仅服务兼容入口 |
+| 项目正式需求/设计及业务规则 | 归目标项目；本库 docs/requirements 只放 AutoDev 自身需求；每次执行副本归运行目录 |
+| 某次执行的产物和证据 | [DATA_SPEC](DATA_SPEC.md) 定义位置；不放 docs/stages，也不与 workspace/requirements 兼容会话合并 |
+| 历史、迁移清单和未做事项 | [归档入口](archive/README.md)、[当前清点清单](design/2026-11-09-doc-inventory.md)、[整理执行记录](design/2026-11-09-doc-organization-review.md) |
+
+新增文档前先判断已有正文能否扩展。跨阶段规范只保留一份；各阶段/模块用链接引用。文件头或索引说明已接受、已实现、已验证、提案或历史，三者不能互相替代。规范目标仍以有效需求/设计和最新决策为准；当前实现事实按模板/代码核对，有差距明确列出。
+
+按需加载：阶段执行从本轮 input.md 和指定项目快照开始，不让模型每轮扫全库。归档、外部参考、其他项目和私人配置不自动加载。详细范围见 [阶段总览](stages/README.md)。
 
 ## 项目入口与状态
 
@@ -29,11 +71,11 @@
 | `docs/modules/requirements/feishu-requirement-bot.md` | 需求澄清模块与飞书端沉淀说明书：Session 演进全记录、九大类别体系与标准需求文档范本；含项目登记命令 `/project add` | 权威说明与需求沉淀规范 |
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
 | `docs/design/2026-11-08-stage-bots-requirements.md` | 需求、设计、开发、测试、优化阶段机器人的用户目标与建议验收 | 目标已接受；S2/S3 输入输出契约已接入 |
-| `docs/design/2026-11-08-stage-bots-design.md` | 五工作区、角色上下文、交接与协作展示；第 8 节为渠道独立的设计机器人工作说明 v0.1 | 项目上下文快照与 prototype.md 下游交付已实现；渠道交互、D019 执行与条件式原型确认待续 |
-| `docs/design/2026-11-09-doc-inventory.md` | 文档清点清单：53 个文件的类别、判定理由、被代码引用情况与建议处理 | 待用户逐项审核；未移动任何文件 |
-| [`docs/stages/README.md`](stages/README.md) | 阶段总览与十个阶段目录（S1–S9、S7U）的入口：角色、输入输出、结论去向、交接、证据、未实现；事实来自模板与源码，不是新规则 | 第一版，2026-11-09；每阶段目前只有一份入口 |
-| `docs/design/2026-11-09-doc-organization-review.md` | 对文档组织提案的审核意见、事实核对、需补充的三处与分步执行状态 | 当前；第 0、1 步已完成，第 2 步起待做 |
-| [`docs/design/2026-11-09-document-organization-proposal.md`](design/2026-11-09-document-organization-proposal.md) | 文档组织检查、阶段目录与输入输出契约建议、LobeHub 组织方法借鉴及后续验收 | 提案；用户认可阶段目录基本方向，未实施迁移，不改变现有阶段协议 |
+| `docs/design/2026-11-08-stage-bots-design.md` | 五工作区、角色上下文、交接与协作展示；第 8 节保留渠道边界与历史核对，S2/S3 详细工作规范已拆到阶段目录 | 项目上下文快照与 prototype.md 下游交付已实现；渠道交互、D019 执行与条件式原型确认待续 |
+| `docs/design/2026-11-09-doc-inventory.md` | 85 份资料的逐项归属、判定理由、路径依赖、迁移结果与后续缺口 | 本轮重新清点；含每份资料归属、路径依赖、迁移/保留理由与后续缺口 |
+| [`docs/stages/README.md`](stages/README.md) | 阶段总览与十个阶段目录（S1–S9、S7U）的入口：角色、输入输出、结论去向、交接、证据、未实现；事实来自模板与源码，不是新规则 | 十阶段入口齐备；S2/S3 已拆 contract/standard，其余按需维护单一 README |
+| `docs/design/2026-11-09-doc-organization-review.md` | 对文档组织提案的审核意见、事实核对、需补充的三处与分步执行状态 | 本轮目录整理的范围、执行结果与验证记录；不改变运行协议 |
+| [`docs/design/2026-11-09-document-organization-proposal.md`](design/2026-11-09-document-organization-proposal.md) | 文档组织检查、阶段目录与输入输出契约建议、LobeHub 组织方法借鉴及后续验收 | 原提案及研究依据；文档整理已落实，实际结果见清单与执行记录，不改变阶段协议 |
 | `docs/Agent自动化设计阶段规范_V2.1.md` | 设计阶段主规范：设计等级 D0–D3、产物注册表、工程规则库、四层验证、设计包与交接协议、模板与规则成熟度 | **当前主规范**（D026），实现按 MVP 1/2/3 推进 |
 | `docs/design/2026-11-09-v21-mapping.md` | 采用 V2.1 的对照、融合方案、需求类型并列维度、人工确认位置、与已有决定的张力 | 当前，D026 的详细说明 |
 | `design-system/`、`src/designsys/` | V2.1 的可执行资产：规则数据（D 档分类规则、18 条基线规则库）、产物 Schema，及分类、规则选择器、最小 Schema 校验器、设计包验证、D0 一页文档 | MVP 1 代码部分已完成并在 main，独立模块，尚未接入流水线 |
@@ -45,7 +87,7 @@
 | `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D026 | 决策事实源；D019 分级审查优先，D020 阶段机器人，D021 能力注册表，D022 项目与需求双身份，D023 多机器人统一部署，D024 移除旧飞书桥，D025 已被 D026 取代，D026 采用设计阶段规范 V2.1 |
 | `docs/DATA_SPEC.md` | 数据目录、实体与文件格式 | 设计规范；`state.json`、`done.json` 已在代码里使用 |
 | `docs/MODELS.md` | 完整 ID、机器注册表、默认值及各 CLI 的指定方式 | 改模型登记或写启动命令前必读 |
-| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L023 | 开始新功能前先读 |
+| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L025 | 开始新功能前先读 |
 | `docs/design/autodev-workflow-prototype.html` | 工作流界面原型 | 静态讨论稿，示例数据，不代表可运行系统 |
 
 ## 版本化需求工作台兼容入口
@@ -92,8 +134,10 @@
 
 ## 已归档
 
-`docs/archive/`：驾驶舱设计与开发计划、autoloop 测试计划 v1 与 v2、空的 `goal.md` 模板。每份文件顶部有被谁取代的说明。
+见 [归档入口](archive/README.md)：按替代关系定位历史设计、测试计划、审阅补丁与 next 快照。固定需求基线和实验报告保留原位置，不机械迁移。
 
 ## 索引维护
 
 新增或移动重要项目文件时更新本索引。外部参考另在 `reference/INDEX.md` 登记；分析结论若被采纳，须进入项目设计或决策记录。
+
+本轮目录梳理不等于流水线能力升级；V2.1 接入、模板样例成熟度与正式设计包持久化等缺口见清点清单末节。

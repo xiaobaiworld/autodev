@@ -1,127 +1,165 @@
-# 文档清点清单（文档整理第 2 步）
+# 文档清点、迁移结果与后续缺口
 
-日期：2026-11-09。状态：**待用户逐项审核**。本清单只读生成，**没有移动、改名或删除任何文件**。依据：[审核意见](2026-11-09-doc-organization-review.md)第 5 节第 2 步。
+日期：2026-11-09。状态：本轮文档组织已执行；替代此前的 53 文件清点快照。依据：[提案](2026-11-09-document-organization-proposal.md)与[执行记录](2026-11-09-doc-organization-review.md)。本清单不批准流水线接入、产品开发或服务变更。
 
-## 1. 怎么看这份清单
+## 1. 覆盖范围与判定方法
 
-共 53 个文件（`docs/` 下除归档外全部，加根目录 Markdown 与 `reference/` 两份）。每行给出类别、判定理由和建议处理。你只需要对**有异议的行**说“不同意，应该是 X”，其余视为同意。
+当前共 85 份资料：根目录 Markdown、docs 全部文件、reference 全部文件，以及 templates/design-system 的 Markdown 入口或文档模板。可执行 JSON/TOML 与源代码另在第 3 节登记路径依赖，不当普通文档搬迁。每份资料只有一个归属；索引、阶段与模块可引用同一正文。
 
-“被代码引用”一栏只在**程序、测试或配置按完整路径读取该文件**时标注；同名但含义不同的不算，见第 4 节。
+优先按内容职责和生命周期判断，再核对来源、替代关系及完整路径/分段拼接依赖。代码注释、配置证据、测试读取和运行时存取分别记录，不能统称“程序在读”。同名的运行 design.md/README.md 不等于文档同名文件。
 
-## 2. 类别说明
+| 类别 | 份数 |
+| --- | --- |
+| 优化记录 | 1 |
+| 兼容文档模板 | 2 |
+| 原位历史 | 2 |
+| 固定需求基线 | 2 |
+| 外部参考 | 5 |
+| 平台入口与公共记录 | 12 |
+| 平台历史设计 | 1 |
+| 平台方案与取舍 | 12 |
+| 执行资产入口 | 1 |
+| 操作指南 | 1 |
+| 文档历史 | 13 |
+| 模块与黄金示例 | 1 |
+| 模块历史计划 | 1 |
+| 模块历史设计 | 1 |
+| 模块文档 | 3 |
+| 正式 SRS | 2 |
+| 跨阶段规范 | 1 |
+| 配置教学样例 | 1 |
+| 阶段主规范 | 1 |
+| 阶段工作契约 | 15 |
+| 验证与过程证据 | 7 |
 
-| 类别 | 含义 | 文件数 |
+## 2. 逐项归属与处理
+
+表中路径即本轮保留或新建的位置；除第 4 节说明的内容拆分外，没有重命名现有完整文件。提案、固定副本、历史证据与运行实现的状态不可互换。
+
+| 文件 | 类别 | 处理理由与状态边界 |
 | --- | --- | --- |
-| A | 平台入口与总账（保持原位） | 10 |
-| B | 平台设计与规范（AutoDev 自身如何工作） | 13 |
-| C | 阶段契约候选（将来可迁入 docs/stages/） | 1 |
-| D | 程序读写的运行产物或程序引用的文件（不得迁移，或迁移须同步改代码） | 8 |
-| E | 已被取代或早期草案（建议移入归档，保留指向替代者的链接） | 5 |
-| F | 验证与过程记录（历史证据，保留，可按主题归并） | 14 |
-| G | 外部参考（保留） | 2 |
+| [AGENTS.md](../../AGENTS.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [AGENT_HANDOFF.md](../../AGENT_HANDOFF.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [CLAUDE.md](../../CLAUDE.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [README.md](../../README.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [changelog.md](../../changelog.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [design-system/README.md](../../design-system/README.md) | 执行资产入口 | 新增导航；规则/Schema 原位，和 docs/stages 互引 |
+| [docs/Agent自动化设计阶段规范_V2.1.md](../Agent自动化设计阶段规范_V2.1.md) | 阶段主规范 | D026 已采用；唯一正文保留现有路径，由 S2/S3 引用 |
+| [docs/DATA_SPEC.md](../DATA_SPEC.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [docs/DECISIONS.md](../DECISIONS.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [docs/INDEX.md](../INDEX.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [docs/MODELS.md](../MODELS.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [docs/OPTIMIZATIONS.md](../OPTIMIZATIONS.md) | 优化记录 | 只追加；优化未对应独立执行阶段，不新增阶段目录 |
+| [docs/TOOLS.md](../TOOLS.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [docs/archive/2026-11-04-autoloop-test-plan.md](../archive/2026-11-04-autoloop-test-plan.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/2026-11-05-autoloop-test-plan-v2.md](../archive/2026-11-05-autoloop-test-plan-v2.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/2026-11-05-cockpit-dev-plan.md](../archive/2026-11-05-cockpit-dev-plan.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/2026-11-05-cockpit.md](../archive/2026-11-05-cockpit.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/2026-11-08-requirements-protocol-early-draft.md](../archive/2026-11-08-requirements-protocol-early-draft.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/2026-11-09-design-bot-work-instructions-v01.md](../archive/2026-11-09-design-bot-work-instructions-v01.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/2026-11-09-design-cases-and-templates.md](../archive/2026-11-09-design-cases-and-templates.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/2026-11-09-design-exit-and-grading.md](../archive/2026-11-09-design-exit-and-grading.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/2026-11-09-design-review-uncommitted.patch](../archive/2026-11-09-design-review-uncommitted.patch) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/2026-11-09-next-before-reorg.md](../archive/2026-11-09-next-before-reorg.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/2026-11-09-next-before-stage-docs.md](../archive/2026-11-09-next-before-stage-docs.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/README.md](../archive/README.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/archive/goal.md](../archive/goal.md) | 文档历史 | 归档与历史快照；当前替代入口见 archive/README，不当现行规则 |
+| [docs/config/agent-registry.example.toml](../config/agent-registry.example.toml) | 配置教学样例 | 不是本机配置或密钥；保持原位 |
+| [docs/design/2026-11-02-autodev-design.md](2026-11-02-autodev-design.md) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/design/2026-11-05-autoloop-foundation.md](2026-11-05-autoloop-foundation.md) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/design/2026-11-06-s4-code-stage.md](2026-11-06-s4-code-stage.md) | 平台历史设计 | 已核对核心内容已实现；原观察保留，不再列为当前待办 |
+| [docs/design/2026-11-06-ticket-model.md](2026-11-06-ticket-model.md) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/design/2026-11-08-agent-model-registry.md](2026-11-08-agent-model-registry.md) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/design/2026-11-08-requirements-merge.md](2026-11-08-requirements-merge.md) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/design/2026-11-08-stage-bots-design.md](2026-11-08-stage-bots-design.md) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/design/2026-11-08-stage-bots-requirements.md](2026-11-08-stage-bots-requirements.md) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/design/2026-11-09-doc-inventory.md](2026-11-09-doc-inventory.md) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/design/2026-11-09-doc-organization-review.md](2026-11-09-doc-organization-review.md) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/design/2026-11-09-document-organization-proposal.md](2026-11-09-document-organization-proposal.md) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/design/2026-11-09-v21-mapping.md](2026-11-09-v21-mapping.md) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/design/autodev-workflow-prototype.html](autodev-workflow-prototype.html) | 平台方案与取舍 | 平台设计或提案，状态以文首为准；阶段细节链接到 stages |
+| [docs/guides/rerun-with-another-agent.md](../guides/rerun-with-another-agent.md) | 操作指南 | 按具体任务读取，保留原位 |
+| [docs/lessons.md](../lessons.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [docs/modules/requirements/README.md](../modules/requirements/README.md) | 模块文档 | 描述软件实现、使用或兼容入口；不重复阶段工作规范 |
+| [docs/modules/requirements/baselines/v0.8.md](../modules/requirements/baselines/v0.8.md) | 固定需求基线 | 原样保留，不能用当前新规则重写旧验收 |
+| [docs/modules/requirements/baselines/v0.9.md](../modules/requirements/baselines/v0.9.md) | 固定需求基线 | 原样保留，不能用当前新规则重写旧验收 |
+| [docs/modules/requirements/design.md](../modules/requirements/design.md) | 原位历史 | 早期草案；固定基线通过 ../design.md 引用，保留路径 |
+| [docs/modules/requirements/dev-plan.md](../modules/requirements/dev-plan.md) | 模块历史计划 | 兼容入口 v0.9 已执行计划，留模块内追溯，不当当前待办 |
+| [docs/modules/requirements/feishu-requirement-bot.md](../modules/requirements/feishu-requirement-bot.md) | 模块与黄金示例 | 测试按路径提取范本，原位保留 |
+| [docs/modules/requirements/requirements.md](../modules/requirements/requirements.md) | 原位历史 | 已被取代；已校验 SRS 仍引用，保留路径和替代说明 |
+| [docs/modules/requirements/usage.md](../modules/requirements/usage.md) | 模块文档 | 描述软件实现、使用或兼容入口；不重复阶段工作规范 |
+| [docs/modules/requirements/verification.md](../modules/requirements/verification.md) | 模块文档 | 描述软件实现、使用或兼容入口；不重复阶段工作规范 |
+| [docs/modules/requirements/web-design.md](../modules/requirements/web-design.md) | 模块历史设计 | 兼容网页设计与移除记录，保留原位 |
+| [docs/reports/2026-11-07-session-report-luna.md](../reports/2026-11-07-session-report-luna.md) | 验证与过程证据 | 保持历史结论与限制；按索引访问，不改写成当前实测 |
+| [docs/reports/2026-11-07-session-report-sonnet-5-5.md](../reports/2026-11-07-session-report-sonnet-5-5.md) | 验证与过程证据 | 保持历史结论与限制；按索引访问，不改写成当前实测 |
+| [docs/requirements/REQ-DEPLOY-WEB_DAEMON-20261108.md](../requirements/REQ-DEPLOY-WEB_DAEMON-20261108.md) | 正式 SRS | AutoDev 自身需求；程序读写目录及测试依赖，保留路径与内容 |
+| [docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md](../requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md) | 正式 SRS | AutoDev 自身需求；程序读写目录及测试依赖，保留路径与内容 |
+| [docs/specs/REQUIREMENT_SPEC_STANDARD.md](../specs/REQUIREMENT_SPEC_STANDARD.md) | 跨阶段规范 | SRS v1.1；测试按路径读取，原位保留 |
+| [docs/spikes/2026-11-04-autoloop-test-report.md](../spikes/2026-11-04-autoloop-test-report.md) | 验证与过程证据 | 保持历史结论与限制；按索引访问，不改写成当前实测 |
+| [docs/spikes/2026-11-05-autoloop-test-report-v2.md](../spikes/2026-11-05-autoloop-test-report-v2.md) | 验证与过程证据 | 保持历史结论与限制；按索引访问，不改写成当前实测 |
+| [docs/spikes/2026-11-05-f1-agents-report.md](../spikes/2026-11-05-f1-agents-report.md) | 验证与过程证据 | 保持历史结论与限制；按索引访问，不改写成当前实测 |
+| [docs/spikes/2026-11-05-f2-pipeline-report.md](../spikes/2026-11-05-f2-pipeline-report.md) | 验证与过程证据 | 保持历史结论与限制；按索引访问，不改写成当前实测 |
+| [docs/spikes/2026-11-06-f3-real-run-report.md](../spikes/2026-11-06-f3-real-run-report.md) | 验证与过程证据 | 保持历史结论与限制；按索引访问，不改写成当前实测 |
+| [docs/stages/README.md](../stages/README.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S1-analysis/README.md](../stages/S1-analysis/README.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S2-design/README.md](../stages/S2-design/README.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S2-design/contract.md](../stages/S2-design/contract.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S2-design/standard.md](../stages/S2-design/standard.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S3-design-review/README.md](../stages/S3-design-review/README.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S3-design-review/contract.md](../stages/S3-design-review/contract.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S3-design-review/standard.md](../stages/S3-design-review/standard.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S4-code/README.md](../stages/S4-code/README.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S5-check/README.md](../stages/S5-check/README.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S6-code-review/README.md](../stages/S6-code-review/README.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S7-release/README.md](../stages/S7-release/README.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S7U-usage/README.md](../stages/S7U-usage/README.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S8-acceptance/README.md](../stages/S8-acceptance/README.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [docs/stages/S9-publish/README.md](../stages/S9-publish/README.md) | 阶段工作契约 | S2/S3 分 README/contract/standard；其余阶段单一 README，不放运行产物 |
+| [next.md](../../next.md) | 平台入口与公共记录 | 保持固定入口；现行目标在 next，决定/经验分别维护 |
+| [reference/INDEX.md](../../reference/INDEX.md) | 外部参考 | 来源与边界见 reference/INDEX，不覆盖项目决策 |
+| [reference/Super-agent设计探索-离线存档.html](../../reference/Super-agent设计探索-离线存档.html) | 外部参考 | 来源与边界见 reference/INDEX，不覆盖项目决策 |
+| [reference/agent-autoloop/README.md](../../reference/agent-autoloop/README.md) | 外部参考 | 来源与边界见 reference/INDEX，不覆盖项目决策 |
+| [reference/agent-autoloop-classification.md](../../reference/agent-autoloop-classification.md) | 外部参考 | 来源与边界见 reference/INDEX，不覆盖项目决策 |
+| [reference/帖子离线存档.html](../../reference/帖子离线存档.html) | 外部参考 | 来源与边界见 reference/INDEX，不覆盖项目决策 |
+| [templates/requirements/clarify.md](../../templates/requirements/clarify.md) | 兼容文档模板 | 仅适用版本化兼容入口；不得冒充默认 SRS 或 V2.1 模板 |
+| [templates/requirements/review.md](../../templates/requirements/review.md) | 兼容文档模板 | 仅适用版本化兼容入口；不得冒充默认 SRS 或 V2.1 模板 |
 
-## 3. 逐项清单
+## 3. 程序路径依赖与不迁移边界
 
-| 文件 | 类别 | 标题 | 最后提交 | 被代码引用 | 判定理由 | 建议处理 |
-| --- | --- | --- | --- | --- | --- | --- |
-| `README.md` | A | AutoDev (`v0.3.3`) | 2026-11-08 | 否 | 项目入口，被 pipeline 测试按名使用的是目标项目的 README，不是本文件 | 保持 |
-| `AGENTS.md` | A | AutoDev：给 Agent 的项目说明 | 2026-11-08 | 否 | Agent 项目说明，CLAUDE.md 引用它 | 保持 |
-| `CLAUDE.md` | A | — | 2026-11-06 | 否 | 仅一行引用 AGENTS.md | 保持 |
-| `next.md` | A | next.md | 2026-11-09 | 否 | 当前工作入口，已在第 1 步整理 | 保持 |
-| `changelog.md` | A | changelog | 2026-11-09 | 否 | 变更记录，全局规范要求每次提交同步 | 保持 |
-| `AGENT_HANDOFF.md` | A | AutoDev 跨机器 Agent 交接（2026-11-03 起草，2026-11-06 精简） | 2026-11-06 | 否 | 仅换机器时读，2026-11-06 后未更新，内容可能过时 | 保持，核对后更新 |
-| `docs/INDEX.md` | A | 文档与关键文件索引 | 2026-11-09 | 否 | 总索引 | 保持，随迁移同步 |
-| `docs/DECISIONS.md` | A | AutoDev 决策记录 | 2026-11-09 | 是 | 决策事实源；被 config/agents.toml 引用 | 保持原位 |
-| `docs/lessons.md` | A | lessons.md | 2026-11-09 | 否 | 经验库；全局规范要求先读 | 保持原位 |
-| `docs/TOOLS.md` | A | 工具手册（已确定的工具和用法） | 2026-11-09 | 否 | 工具手册；AGENTS.md 要求第一步先查 | 保持原位 |
-| `docs/DATA_SPEC.md` | D | AutoDev 数据规范 | 2026-11-09 | 是 | 数据规范；被 src/cockpit/kinds.py 的注释引用，新增类型要写进它 | 保持原位 |
-| `docs/MODELS.md` | D | 模型名规则（2026-11-05） | 2026-11-08 | 是 | 模型名规则；被 config/agents.toml、cockpit/agents.py、llm_provider.py、web/ui.html 引用 | 保持原位 |
-| `docs/OPTIMIZATIONS.md` | F | 流程优化记录 | 2026-11-07 | 否 | 流程优化记录，只追加 | 保持 |
-| `docs/Agent自动化设计阶段规范_V2.1.md` | B | Agent 自动化设计阶段规范 V2.1 | 2026-11-09 | 否 | 设计阶段当前主规范（D026） | 保持；第 3 步试点时由 stages/S2-design 引用 |
-| `docs/design/2026-11-02-autodev-design.md` | B | AutoDev 流程设计（2026-11-02） | 2026-11-08 | 否 | 九阶段流水线总设计，README 与 INDEX 都当基线；部分章节已被地基方案取代，各节顶部有说明 | 保持 |
-| `docs/design/2026-11-05-autoloop-foundation.md` | B | 以 agent-autoloop 为地基：融合方案（2026-11-05） | 2026-11-08 | 否 | 地基方案（D014），AGENTS.md 指定为当前主线 | 保持 |
-| `docs/design/2026-11-06-s4-code-stage.md` | C | S4 编码阶段设计（2026-11-06） | 2026-11-08 | 否 | S4 编码阶段设计，状态“提议，未实现”，没有任何文档引用它 | 候选迁入 stages/S4-code，先确认是否仍有效 |
-| `docs/design/2026-11-06-ticket-model.md` | D | 工单模型：分类、拆解、确定化、成熟工具（2026-11-06） | 2026-11-06 | 是 | 工单模型讨论，被 src/cockpit/kinds.py 的注释引用 | 保持原位，或迁移时同步改代码注释 |
-| `docs/design/2026-11-08-agent-model-registry.md` | B | 本机 Agent 与模型能力注册表 | 2026-11-08 | 否 | D021 注册表契约，已实现 | 保持 |
-| `docs/design/2026-11-08-requirements-merge.md` | B | 需求工作台分支整合 | 2026-11-09 | 否 | D018 整合范围 | 保持 |
-| `docs/design/2026-11-08-stage-bots-design.md` | B | 阶段机器人与协作展示：设计草案 | 2026-11-09 | 否 | 阶段机器人设计；第 8 节含设计机器人工作说明，与阶段契约交织（提案指出的问题） | 保持，第 3 步试点时把 S2/S3 细节拆到 stages，平台关系留在这里 |
-| `docs/design/2026-11-08-stage-bots-requirements.md` | B | 阶段机器人：需求讨论稿 | 2026-11-08 | 否 | 阶段机器人需求讨论稿 | 保持 |
-| `docs/design/2026-11-09-v21-mapping.md` | B | 设计阶段：采用 V2.1 的对照与补充 | 2026-11-09 | 是 | 采用 V2.1 的对照，D026 详细说明；被 design-system 规则文件引用 | 保持原位 |
-| `docs/design/2026-11-09-doc-organization-review.md` | B | 文档组织提案的审核意见与分步执行 | 2026-11-09 | 否 | 本次文档整理的审核与步骤 | 保持 |
-| `docs/design/2026-11-09-document-organization-proposal.md` | B | AutoDev 文档组织检查与阶段目录提案 | 2026-11-09 | 否 | 外部 Agent 的提案 | 保持 |
-| `docs/archive/2026-11-09-design-exit-and-grading.md` | E | 设计阶段的出口、复杂度分级与按类型的完成条件 | 2026-11-09 | 否 | 已被 D026 取代（三档复杂度、五个事实、已定稿出口） | **已移入 docs/archive/（2026-11-09）**，INDEX 已同步 |
-| `docs/archive/2026-11-09-design-cases-and-templates.md` | E | 设计阶段：典型需求、判定标准、结果与模板 | 2026-11-09 | 否 | 按已取代的三档规则生成 | **已移入 docs/archive/（2026-11-09）** |
-| `docs/design/autodev-workflow-prototype.html` | D | — | 2026-11-04 | 否 | 静态原型，被 src/web/ui.html 引用 | 保持原位 |
-| `docs/specs/REQUIREMENT_SPEC_STANDARD.md` | D | 软件与部署需求规格说明书产出规范与校验标准 (SRS Standard v1.1) | 2026-11-08 | 是 | SRS 规范；tests/test_requirements_validator.py:117 按路径读取其内容，迁移会让测试失败 | 保持原位 |
-| `docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md` | D | 软件需求规格说明书：AutoDev 全系统统一网页客户端（需求澄清工作台 + S1~S9 流水线驾驶舱） | 2026-11-07 | 是 | AutoDev 统一网页客户端的 SRS。**docs/requirements/ 是程序读写的目录**（service.py:263、web/api.py:51），测试 test_web_client.py 按路径读取 | 不得迁移 |
-| `docs/requirements/REQ-DEPLOY-WEB_DAEMON-20261108.md` | D | 软件需求规格说明书（部署工程规范）：AutoDev 统一网页客户端本机守护部署与健康自检工程 | 2026-11-08 | 是 | 同上，部署类 SRS | 不得迁移 |
-| `docs/config/agent-registry.example.toml` | D | 教学样例，可用 cockpit.registry --file 校验，不是本机运行清单。 | 2026-11-08 | 否 | 注册表教学样例，被 INDEX 与 MODELS 引用，可用 cockpit.registry 校验 | 保持原位 |
-| `docs/guides/rerun-with-another-agent.md` | F | 换一个 Agent 再跑一遍，并比较差别 | 2026-11-08 | 否 | 操作指南 | 保持 |
-| `docs/modules/requirements/README.md` | B | 需求澄清模块 (Requirements Clarification Module) | 2026-11-09 | 否 | 需求澄清模块入口；代码里出现的 README.md 指目标项目的 README，不是本文件 | 保持 |
-| `docs/modules/requirements/feishu-requirement-bot.md` | B | 需求澄清模块与飞书端沉淀说明书 | 2026-11-09 | 是 | 飞书需求机器人说明书；tests/test_requirements_validator.py:104、119 按路径读取其中的黄金范本，迁移会让测试失败 | 保持原位 |
-| `docs/modules/requirements/usage.md` | B | 需求工作台使用 | 2026-11-09 | 否 | 版本化兼容工作台的使用（D018 兼容入口） | 保持 |
-| `docs/modules/requirements/dev-plan.md` | F | 需求澄清模块 v0.9 开发计划 | 2026-11-08 | 否 | v0.9 开发计划，M1–M5 已执行，是历史计划 | 保持，可后移入归档 |
-| `docs/modules/requirements/verification.md` | F | 需求工作台验证记录 | 2026-11-09 | 否 | 兼容工作台验证记录，已加移除说明 | 保持 |
-| `docs/modules/requirements/web-design.md` | F | 网页工作台设计与本轮范围 | 2026-11-09 | 否 | 旧网页设计，已加移除说明 | 保持，可后移入归档 |
-| `docs/modules/requirements/baselines/v0.8.md` | F | 需求澄清模块：需求与验收 | 2026-11-07 | 否 | 固定需求基线副本（历史确认版本） | 保持，固定副本不改 |
-| `docs/modules/requirements/baselines/v0.9.md` | F | 需求澄清模块：需求与验收 | 2026-11-07 | 否 | 同上 | 保持，固定副本不改 |
-| `docs/modules/requirements/design.md` | E | 需求澄清模块：设计与实现计划（早期草案，已被现行架构取代） | 2026-11-08 | 否 | 标题自称“早期草案，已被现行架构取代”；README 仍列为参考；baselines 里有指向它的相对链接 ../design.md | 移入归档须同步改 v0.8、v0.9 的链接，且基线是固定副本——先决定是否允许改链接 |
-| `docs/archive/2026-11-08-requirements-protocol-early-draft.md` | E | 第一版程序协议（早期草案，已被 `SPEC-REQ-STANDARD-v1.0` 取代） | 2026-11-08 | 否 | 标题自称“已被 SPEC-REQ-STANDARD-v1.0 取代” | **已移入 docs/archive/（2026-11-09）**，README、design.md、dev-plan.md 的引用已同步 |
-| `docs/modules/requirements/requirements.md` | E | 需求澄清模块：需求与验收（早期草案，已被 v0.3.2 标准规范吸收与取代） | 2026-11-08 | 否 | 标题自称“已被 v0.3.2 标准规范吸收与取代”；REQ-WEB-UNIFIED_CLIENT 仍引用它 | 移入归档须同步改 SRS 里的引用，而 SRS 是程序校验过的文档——谨慎 |
-| `docs/reports/2026-11-07-session-report-luna.md` | F | Luna 驾驶员复测报告：真实跑完 S1–S9 并与 Sonnet 对照 | 2026-11-08 | 否 | Luna 复跑报告 | 保持 |
-| `docs/reports/2026-11-07-session-report-sonnet-5-5.md` | F | 一次完整会话的报告：Claude Sonnet 5.5 驾驶，把流水线从 S3 接到 S9 | 2026-11-07 | 否 | Sonnet 会话报告 | 保持 |
-| `docs/spikes/2026-11-04-autoloop-test-report.md` | F | agent-autoloop 验证报告 | 2026-11-05 | 否 | autoloop 验证报告 v1 | 保持 |
-| `docs/spikes/2026-11-05-autoloop-test-report-v2.md` | F | agent-autoloop 补测报告 v2（2026-11-05） | 2026-11-05 | 否 | autoloop 补测 v2 | 保持 |
-| `docs/spikes/2026-11-05-f1-agents-report.md` | F | F1 报告：agent-autoloop 上真实 Agent 无界面各跑一轮（2026-11-05） | 2026-11-05 | 否 | F1 报告 | 保持 |
-| `docs/spikes/2026-11-05-f2-pipeline-report.md` | F | F2 报告：我们的流水线驱动跑在 autoloop 上（2026-11-05） | 2026-11-05 | 否 | F2 报告 | 保持 |
-| `docs/spikes/2026-11-06-f3-real-run-report.md` | F | F3 报告：真实流水线在 Herdr 三格里实时跑（2026-11-06） | 2026-11-06 | 否 | F3 报告 | 保持 |
-| `reference/INDEX.md` | G | 参考资料索引 | 2026-11-09 | 否 | 参考资料索引 | 保持 |
-| `reference/agent-autoloop-classification.md` | G | agent-autoloop 作者自己怎么分类任务（2026-11-06） | 2026-11-06 | 否 | autoloop 作者的分类方法 | 保持 |
-## 4. 关于“被代码引用”的说明
-
-清点时我先用“文件名”搜代码，得到 16 个，其中大部分是误报；改用“完整路径”后只剩 6 个；再补上“路径被分段拼接”的写法（如 `os.path.join(root, "docs", "specs", "X.md")`）才得到真实的 9 个。**迁移前必须按这 9 个核对，用文件名或单一路径搜索都会漏。**
-
-真实被程序按路径读取的文档：
-
-| 文档 | 谁读它 | 迁移的后果 |
+| 文件或目录 | 依赖种类与证据 | 本轮处理 |
 | --- | --- | --- |
-| `docs/DATA_SPEC.md` | `src/cockpit/kinds.py` 的注释指向它 | 只是注释，迁移后注释失效，不影响运行 |
-| `docs/DECISIONS.md`、`docs/MODELS.md` | `config/agents.toml` 的 `evidence` 字段和注释 | 配置里的证据路径失效 |
-| `docs/design/2026-11-06-ticket-model.md` | `src/cockpit/kinds.py` 的注释 | 注释失效 |
-| `docs/design/2026-11-09-v21-mapping.md` | `design-system/rules/classification.toml` 的注释 | 注释失效 |
-| `docs/specs/REQUIREMENT_SPEC_STANDARD.md` | `tests/test_requirements_validator.py:117` 读取内容 | **测试失败** |
-| `docs/modules/requirements/feishu-requirement-bot.md` | `tests/test_requirements_validator.py:104、119` 读取其中的黄金范本 | **测试失败** |
-| `docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md`、`REQ-DEPLOY-WEB_DAEMON-20261108.md` | `tests/test_web_client.py` 多处；且 `docs/requirements/` 本身是 `service.py:263`、`web/api.py:51` 读写需求文档的目录 | **测试失败，运行时需求文档存取失效** |
+| `templates/pipeline/*.json` | pipeline.load_template 读取，build 继承 design | 内容/位置不变 |
+| `templates/requirements/*.md` | 版本化兼容需求模板，由 requirements.agent 读取 | 内容/位置不变，不迁入默认 SRS 阶段 |
+| `design-system/rules/`、`schemas/` | designsys.classify/rules/validate 按路径读取 | 资产内容不变，仅新增 README |
+| `docs/requirements/` | service/context_detector/web.api/web.server 读写；test_web_client 读两份固定 SRS | 两份内容与位置不变 |
+| `docs/specs/REQUIREMENT_SPEC_STANDARD.md`、`docs/modules/requirements/feishu-requirement-bot.md` | test_requirements_validator 按路径读取规范与黄金范本 | 内容/位置不变 |
+| `docs/modules/requirements/baselines/` 及其 `../design.md` | 固定基线有相对链接；SRS 也引用早期 requirements.md | 全部原位保留，不改固定副本或已校验 SRS |
+| `docs/MODELS.md`、`docs/DECISIONS.md` | config/agents.toml 的 evidence/注释，及源码/界面说明 | 保留固定入口；不是全部运行时读取 |
+| `docs/DATA_SPEC.md`、工单模型、V2.1 采用对照 | kinds.py 和 classification.toml 的说明引用 | 保留路径；属于注释证据依赖 |
+| `docs/design/autodev-workflow-prototype.html` | web.ui.html 中的引用 | 原位保留，不当运行设计包 |
+| `workspace/`、目标项目自身文档 | 运行状态/产物、兼容会话、归档、正式项目输入 | 本轮不处理，不合并、不迁移 |
 
-误报的来源（名字相同、含义不同，不算依赖）：
+## 4. 内容迁移与保留清单
 
-- `README.md`：`src/cockpit/pipeline.py:314` 读的是**目标项目**的 README，不是本仓库的。
-- `design.md`、`dev-plan.md`、`prototype.md`：`pipeline.py` 与 `design_view.py` 读的是**每次运行产出的文件**，不是 `docs/modules/requirements/design.md` 这几份。
-- `requirements.md`：`responder.py:61`、`versioned_session.py:302` 是代码里生成的文件名，与文档无关。
+| 原位置 | 当前维护位置 | 信息保留与兼容方式 |
+| --- | --- | --- |
+| stage-bots-design 第 8.2/8.3 节 | [S2 contract](../stages/S2-design/contract.md) | 输入清单、版本/快照与读取范围；原章节保留标题和链接 |
+| 同文第 8.4/8.5 节 | [S2 standard](../stages/S2-design/standard.md)及 contract | 工具分工、工作步骤、完成与交付；依 D026 标出原型旧规则被替代 |
+| 同文第 8.6 节 | [S3 standard](../stages/S3-design-review/standard.md) | D019 分级审核表及证据要求集中维护；当前结果协议另在 contract |
+| 原第 8 节的完整文本 | [历史原文](../archive/2026-11-09-design-bot-work-instructions-v01.md) | 保留独有历史和旧规则；仅修正移动后的相对链接，不成为第二份当前规范 |
+| next.md 的历史目标与追溯 | [整理前快照](../archive/2026-11-09-next-before-stage-docs.md) | 代码块内原文逐字保留；当前 next 只留有效状态、目标与未决事项 |
+| S4 早期设计稿 | 原位，链接到 S4 README | 基于源码标为历史，不把旧“未实现”当成当前事实，也不宣称所有旧实验通过 |
+| 两份旧设计、早期需求协议 | 既有 archive 路径 | 前轮已完成，本轮补归档导航，不重复搬迁 |
 
-**我清点时的错误，订正如下**：
+## 5. 还需要什么
 
-1. 分类表第一版写“`SRS 规范` 被 `test_requirements_validator.py` 按路径读取”，我当时没有证据，只是推测；复核后确认它确实读取，但读的是 `REQUIREMENT_SPEC_STANDARD.md` 和 `feishu-requirement-bot.md`，不是我最初写的 README。已订正。
-2. 第一版把 `docs/modules/requirements/README.md` 也列为“被代码引用”，这是文件名误报，已去掉。
+| 层次 | 结论 | 后续触发条件 |
+| --- | --- | --- |
+| 目录与导航 | 本轮已补总目录职责、十阶段入口、S2/S3 契约/标准、执行资产入口与历史入口 | 新增文件时维护所属入口和本索引，不新增重复事实源 |
+| 其余八阶段的 contract/standard | 当前 README 已承载完整简要契约，不机械拆文件 | 职责内容变长、有独立输入输出协议时再拆 |
+| 阶段 templates/examples | 本轮不建空目录；已有机器模板、兼容模板与结构化 Schema 分别归位 | 用真实设计任务形成稳定需求后，增加匿名案例/反例和必要文档模板 |
+| V2.1 接入与产物 | 缺新模板/受控写范围、关键特征核对、程序验证路由、版本与持久化交接；UI/API 产物和原型检查尚不完整 | 下一轮先评估默认能力与影响清单，再定实施范围；不是文档目录任务未完成 |
+| D019 与人工决定 | 分级放行记录/执行尚缺；D2 默认、模型建议与冲突规则待确认 | 与接入设计一起定，不借目录整理改变运行语义 |
+| 历史与兼容入口 | 固定基线、SRS 仍引用的旧稿有保留理由 | 消费者或协议正式迁移时再处理，不为整齐制造断链 |
 
-## 5. 建议的处理（供你决定，尚未执行）
-
-按风险从低到高：
-
-| 编号 | 动作 | 涉及文件 | 风险 | 前置条件 |
-| --- | --- | --- | --- | --- |
-| 1 | 把已被 D026 取代的两份设计文档移入 `docs/archive/` | `design-exit-and-grading.md`、`design-cases-and-templates.md` | 低：没有代码引用，INDEX 已标注“已被取代” | 同步改 INDEX 与 v21-mapping 中指向它们的链接 |
-| 2 | `docs/modules/requirements/protocol.md` 移入归档 | 一份 | 低：只被 README 与另两份早期文档引用 | 改 README 第 35 行；`design.md` 第 121 行的链接随 `design.md` 一起处理 |
-| 3 | `design.md`、`requirements.md` 移入归档 | 两份 | **中**：`baselines/v0.8.md`、`v0.9.md` 用相对链接指向 `../design.md`，而基线是**固定副本，不应改动**；`REQ-WEB-UNIFIED_CLIENT` 引用了 `requirements.md`，而该文档是程序校验过的 SRS | 先决定：是否允许改固定基线里的链接；是否允许改已校验 SRS 里的引用。**我建议不动这两份**，保留原位并在文件头加“已被取代，见某某”的说明 |
-| 4 | `2026-11-06-s4-code-stage.md` 的去向 | 一份 | 低：状态“提议，未实现”，没有任何文档引用 | 先确认 S4 设计是否仍有效；有效则试点后迁入 `stages/S4-code`，无效则归档 |
-| 5 | `stage-bots-design.md` 把 S2/S3 细节拆到 `stages/` | 一份 | 中：34863 字节，内容交织 | 第 3 步试点时做，不在这一轮动 |
-| 6 | 第 3 步试点 `docs/stages/S2-design/` 与 `S3-design-review/` | 新建 | 中 | 你确认目录方案，以及与 `design-system/` 的关系 |
-
-**不得迁移的**（程序会读）：第 4 节表里那 9 个，以及整个 `docs/requirements/` 目录。
-
-## 6. 需要你决定的
-
-1. 第 5 节 1、2 两项（风险低）可以直接做吗？
-2. 第 5 节 3 项：`design.md` 与 `requirements.md` 是否按我的建议**保留原位、只加“已被取代”说明**，而不是移走？
-3. `2026-11-06-s4-code-stage.md` 是否仍有效？
-4. 提案里“用户反馈阶段分别组织文档的基本方向可以”这一句，我没有直接记录，进入第 3 步试点前需要你再确认目录方案：`docs/stages/` 放契约与说明、`design-system/` 放可执行资产，二者互相引用。
+通用 docsync 的固定路径提示使用项目等价映射：requirements → 本项目需求稿/正式 SRS；architecture → 当前地基与平台设计；implementation → 阶段、模块、工具说明；changelog/next → 根目录同名文件。它未提供本项目全部链接和路径的证明，最终检查范围与结果见执行记录。

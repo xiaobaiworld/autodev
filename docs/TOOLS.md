@@ -72,6 +72,7 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - zsh 不会拆分变量里的命令，也不会展开变量里的通配符。要运行带参数的命令，写成脚本。
 - macOS 没有 `timeout` 命令。
 - `python3 -I` 会忽略 `PYTHONPATH`，跑测试不要加 `-I`。
+- 项目测试使用既有 `.venv`：`PYTHONPATH=src .venv/bin/python -m unittest discover -s tests`。2026-11-09 验证开发 worktree 的 `.venv` 指向部署目录的既有环境；系统 `python3` 缺 `lark_oapi` 会令白名单子进程测试失败，不要为此改业务代码或自动安装依赖（L025）。
 - 模型名一律写完整 ID，别名会被 magpie 映射成别的模型（`docs/MODELS.md`）。
 - 网页抓取：`WebFetch` 打不开 herdr.dev 时用 `curl` 取公开页面，只读。
 

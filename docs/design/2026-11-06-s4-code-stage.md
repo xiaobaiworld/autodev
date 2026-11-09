@@ -1,6 +1,6 @@
 # S4 编码阶段设计（2026-11-06）
 
-状态：**提议，未实现，未验证。** 依据是读了 `src/cockpit/pipeline.py`、`controller.py`、`src/driver/setup.py`、`config.yaml`、`docs/DATA_SPEC.md` 7.3 和 `docs/design/2026-11-02-autodev-design.md` 第 5 到 8 节。写这份时 Bash 不可用，所以没有跑过任何东西。
+状态：**历史设计稿，不再作为当前待实现清单。** 2026-11-09 复核：模板驱动转移、`pipeline/build`、程序步骤、S4 工作目录及差异记录已在现有代码中实现；当前契约见 [S4 阶段入口](../stages/S4-code/README.md)。下文保留 2026-11-06 的原始观察和建议，未逐项复跑当时实验，不将所有旧“未验证”一概改为通过。 依据是读了 `src/cockpit/pipeline.py`、`controller.py`、`src/driver/setup.py`、`config.yaml`、`docs/DATA_SPEC.md` 7.3 和 `docs/design/2026-11-02-autodev-design.md` 第 5 到 8 节。写这份时 Bash 不可用，所以没有跑过任何东西。
 
 ## 1. 现状里 S4 接不上的地方（已读代码确认）
 
