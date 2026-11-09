@@ -23,7 +23,7 @@
 - 设计机器人只读指令（`src/requirements/design_view.py`，列运行、看状态、看设计包）：已写好并通过测试，尚未接入机器人。
 - 统一 Web 客户端常驻：没有脚本，用户说明现阶段不重要。
 - 旧需求工作台的中台 `com.autodev.requirements-hub` 仍在运行，已无调用者（旧飞书桥已于 D024 移除）；8766 网页服务已停用并禁止自启。是否整体停用待用户决定。
-- 文档组织：外部 Agent 的[提案](docs/design/2026-11-09-document-organization-proposal.md)已纳入，我们的审核意见与分步执行见 `docs/design/2026-11-09-doc-organization-review.md`；尚未迁移任何文件。
+- 文档组织：外部 Agent 的[提案](docs/design/2026-11-09-document-organization-proposal.md)已纳入，审核意见与分步执行见 `docs/design/2026-11-09-doc-organization-review.md`。已完成：第 1 步（更新过时索引与 next.md）、第 2 步（清点 53 个文件，见 `docs/design/2026-11-09-doc-inventory.md`）、第 3 步第一版（三份被取代的文档移入 `docs/archive/`；新建 [`docs/stages/`](docs/stages/README.md)，十个阶段各一个入口，S2 只链接 V2.1）。程序读取的 9 个文档均未移动。待办：各阶段按需补 `contract.md`、`standard.md`；`2026-11-06-s4-code-stage.md` 是否仍有效待确认。
 
 **历史与追溯**：本次整理前的完整 `next.md` 已原样归档在 [`docs/archive/2026-11-09-next-before-reorg.md`](docs/archive/2026-11-09-next-before-reorg.md)，此前各阶段（项目登记、设计机器人第一步、阶段机器人讨论等）的细节都在其中，决策以 `docs/DECISIONS.md` 为准。
 

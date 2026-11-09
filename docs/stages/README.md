@@ -1,0 +1,58 @@
+# 阶段总览
+
+状态：入口说明，2026-11-09 建立；依据 [文档组织提案](../design/2026-11-09-document-organization-proposal.md) 与 [审核意见](../design/2026-11-09-doc-organization-review.md)，目录方案经用户确认。**这里只做导航，不是新规则，也没有改变任何运行路径。**
+
+## 这个目录是什么、不是什么
+
+- **是**：每个流水线阶段一个目录，说明该阶段的角色、读什么、产出什么、结论去向、与下游怎么交接、哪些还没实现。
+- **不是**：运行产物。每次运行的实际输入输出在 `workspace/runs/<运行号>/<阶段目录>/round-N/`，这里的目录**只定义契约与说明，不存放运行结果**。
+- **不是**：设计阶段 V2.1 里的 `design/` 设计包目录。那是**每次设计运行的输出**；这里的 `S2-design/` 是**静态说明**。名字相近，用途不同。
+- **不是**：执行模板。程序实际加载的是 [`templates/pipeline/design.json`](../../templates/pipeline/design.json) 与 [`build.json`](../../templates/pipeline/build.json)，阶段目录的目录名与其中的 `dir` 字段一致，但移动模板需要另外修改加载者和回归测试。
+- **不是**：V2.1 的可执行资产。规则、Schema、分类与校验器在 [`design-system/`](../../design-system/) 与 [`src/designsys/`](../../src/designsys/)，本目录只链接它们。
+
+## 阶段总表
+
+| 阶段 | 名称 | 工作区 | 执行方式 | 产物 | 入口 |
+| --- | --- | --- | --- | --- | --- |
+| S1 | 需求分析 | 需求 | Agent | `analysis.md` | [S1-analysis](S1-analysis/README.md) |
+| S2 | 设计 | 设计 | Agent | `design.md`、`dev-plan.md`、`prototype.md` | [S2-design](S2-design/README.md) |
+| S3 | 设计审查 | 设计 | Agent | `review.md` | [S3-design-review](S3-design-review/README.md) |
+| S4 | 编码 | 开发 | Agent | 代码变更、`exec-report.md` | [S4-code](S4-code/README.md) |
+| S5 | 检查 | 测试 | 程序 | `check.log` | [S5-check](S5-check/README.md) |
+| S6 | 代码审查 | 开发 | Agent | `review.md` | [S6-code-review](S6-code-review/README.md) |
+| S7 | 发布候选 | 测试 | 程序 | 候选标签、`release.log` | [S7-release](S7-release/README.md) |
+| S7U | 使用验证 | 测试 | 程序 | `usage.log` | [S7U-usage](S7U-usage/README.md) |
+| S8 | 验收 | 测试 | Agent | `acceptance.md` | [S8-acceptance](S8-acceptance/README.md) |
+| S9 | 正式发布 | 测试 | 程序（前有人工关口） | 正式标签、`CHANGELOG.md` | [S9-publish](S9-publish/README.md) |
+
+流水线实际顺序见模板的 `order`：S1 → S2 → S3 → S4 → S5 → S6 → S7 → S7U → S8 → S9。返工回到 S4（S3 的返工回 S2），各自受轮次上限约束，超限转人工。
+
+**工作区与阶段的对应**（来自 [阶段机器人设计](../design/2026-11-08-stage-bots-design.md)）：需求对应澄清及 S1；设计对应 S2/S3；开发对应 S4/S6；测试对应 S5/S7/S7U/S8/S9。**优化**目前没有独立的执行阶段，继续作为提案与改进记录管理（见 [优化记录](../OPTIMIZATIONS.md)），不为凑齐目录新增阶段。
+
+## 每个阶段入口回答什么
+
+每份入口按提案第 6 节的七个问题组织：开始条件与输入、执行角色与读写范围、必须交付什么、程序验证与模型审查与人工决定各负责什么、哪些结果允许交接、下游消费哪个版本、通过什么证据追溯。其中“修订后哪些旧检查或确认需要作废”目前只在**对代码目录只读**的阶段（S6、S8，模板里 `workdir: readonly`）有明确机制：审查前记录代码指纹，审查后比对，变化则本次审查作废；其余阶段没有，已在对应入口的“尚未实现”里写明，**不当作已具备**。
+
+## 新增一个阶段
+
+后面还会继续加阶段，做法是：
+
+1. 在 `docs/stages/` 下新建一个目录，名字与模板里该阶段的 `dir` 字段一致；
+2. 在目录里放一份 `README.md`，包含上面的各节；
+3. 在本页的阶段总表里加一行，在 [文档索引](../INDEX.md) 里登记；
+4. 不修改其他阶段的目录。
+
+新增阶段本身还需要在流水线模板里定义（角色、输入、产物、转移），那是另一件事，需要同步模板、代码与测试。
+
+## 入口只导航，正文唯一
+
+- 同一份规范只在一处有正文，其他地方引用。跨阶段的规范（安全、数据、测试）保留唯一正文，阶段入口只说明适用部分和验证入口。
+- 阶段入口里写的事实，来源是模板、注册表与源码；与它们不一致时，以后者为准，并修正入口。
+- 未实现、未验证的内容写在各入口的“尚未实现或未验证”一节，不写成事实。
+
+## 当前状态与已知差距
+
+- 这批入口是**第一版**，由清点结果与模板、源码核对后生成，没有逐阶段做过运行验证。
+- 设计阶段（S2/S3）当前运行的契约仍是旧的三份 Markdown 产物；V2.1 的目标规范与它尚未衔接，见 [S2-design](S2-design/README.md)。
+- S4、S5、S7、S7U、S9 里涉及的演示项目假设（使用脚本、版本号、检查命令写死在 `build.json`）在各入口中已标明。
+- 每阶段还没有 `contract.md`、`standard.md`、`templates/`、`examples/`，按需再建。
