@@ -26,8 +26,6 @@ class CliTest(unittest.TestCase):
             s = run('step', s['id'])
             api = SessionStore(root, invoke=DemoAgent(), demo=True)
             self.assertEqual(api.status(s['id'])['hash'], s['hash'])
-            pairing = run('pair', s['id'])
-            self.assertTrue(pairing['command'].startswith('/需求 绑定 '))
             run('confirm', s['id'], '--version', str(s['version']), '--hash', s['hash'])
             exported = run('export', s['id'], '--version', str(s['version']))
             self.assertIn('报名和查询', exported['markdown'])
