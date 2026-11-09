@@ -16,7 +16,7 @@ PY="$REPO_DIR/.venv/bin/python"
 PLIST_DIR="$HOME/Library/LaunchAgents"
 
 if [ ! -x "$PY" ]; then
-  echo "❌ 找不到虚拟环境 python：$PY" >&2
+  echo "❌ 找不到虚拟环境 python：${PY}" >&2
   echo "   请先执行：python3.11 -m venv .venv && .venv/bin/pip install lark_oapi" >&2
   exit 1
 fi
@@ -74,9 +74,9 @@ cat > "$PLIST" <<PLISTEOF
 PLISTEOF
 
 chmod 600 "$PLIST"
-echo "✅ 已写入 $PLIST"
+echo "✅ 已写入 ${PLIST}"
 launchctl unload "$PLIST" 2>/dev/null || true
 launchctl load "$PLIST"
-echo "✅ 已加载并启动服务：$LABEL（机器人：$NAME，目录：$REPO_DIR）"
-echo "   状态：launchctl list | grep $LABEL"
-echo "   日志：tail -f \"$REPO_DIR/logs/${LABEL}.err\""
+echo "✅ 已加载并启动服务：${LABEL}（机器人：${NAME}，目录：${REPO_DIR}）"
+echo "   状态：launchctl list | grep ${LABEL}"
+echo "   日志：tail -f \"${REPO_DIR}/logs/${LABEL}.err\""

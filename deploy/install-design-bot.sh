@@ -17,7 +17,7 @@ if [ ! -x "$PY" ]; then
   exit 1
 fi
 if [ ! -f "$REPO_DIR/$CONFIG_FILE" ]; then
-  echo "❌ 找不到 $REPO_DIR/$CONFIG_FILE，请先配置（含 [feishu] 凭证和 [allow] users 白名单）。"
+  echo "❌ 找不到 $REPO_DIR/${CONFIG_FILE}，请先配置（含 [feishu] 凭证和 [allow] users 白名单）。"
   exit 1
 fi
 # 白名单为空且未开发现模式时，机器人自己会拒绝启动；这里提前拦住，避免 launchd 反复拉起。
@@ -67,6 +67,6 @@ chmod 600 "$PLIST"
 echo "✅ 已写入 $PLIST"
 launchctl unload "$PLIST" 2>/dev/null || true
 launchctl load "$PLIST"
-echo "✅ 已加载并启动服务：$LABEL（目录：$REPO_DIR）"
+echo "✅ 已加载并启动服务：${LABEL}（目录：${REPO_DIR}）"
 echo "   状态：launchctl list | grep $LABEL"
 echo "   日志：tail -f \"$REPO_DIR/logs/${LABEL}.err\""

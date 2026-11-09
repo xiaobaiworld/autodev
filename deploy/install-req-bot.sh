@@ -33,7 +33,7 @@ if [ ! -x "$PY" ]; then
   exit 1
 fi
 if [ ! -f "$REPO_DIR/$CONFIG_FILE" ]; then
-  echo "❌ 找不到 $REPO_DIR/$CONFIG_FILE，请先配置。"
+  echo "❌ 找不到 $REPO_DIR/${CONFIG_FILE}，请先配置。"
   exit 1
 fi
 
