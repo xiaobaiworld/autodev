@@ -1,6 +1,6 @@
 # 文档与关键文件索引
 
-更新日期：2026-11-08 ｜ 当前版本：`v0.3.3`
+更新日期：2026-11-09 ｜ 当前版本：`v0.3.3`
 
 本索引按用途列出当前有效的入口、设计与参考资料。状态描述的是 AutoDev 自身资料的权威性；外部参考不能覆盖项目决策。已被取代的文档在 `docs/archive/`，只供追溯。
 
@@ -30,6 +30,7 @@
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
 | `docs/design/2026-11-08-stage-bots-requirements.md` | 需求、设计、开发、测试、优化阶段机器人的用户目标与建议验收 | 目标已接受；S2/S3 输入输出契约已接入 |
 | `docs/design/2026-11-08-stage-bots-design.md` | 五工作区、角色上下文、交接与协作展示；第 8 节为渠道独立的设计机器人工作说明 v0.1 | 项目上下文快照与 prototype.md 下游交付已实现；渠道交互、D019 执行与条件式原型确认待续 |
+| [`docs/design/2026-11-09-document-organization-proposal.md`](design/2026-11-09-document-organization-proposal.md) | 文档组织检查、阶段目录与输入输出契约建议、LobeHub 组织方法借鉴及后续验收 | 提案；用户认可阶段目录基本方向，未实施迁移，不改变现有阶段协议 |
 | `docs/design/2026-11-09-design-exit-and-grading.md` | 设计阶段的出口、复杂度分级、按类型的完成条件与定稿流程 | D025 方向已接受，未实现 |
 | `docs/design/2026-11-09-design-cases-and-templates.md` | 设计阶段的典型需求、判定标准、判定结果与各类型模板（由程序按当前规则生成，供逐项查看） | 初版，规则未校准 |
 | `docs/design/2026-11-08-agent-model-registry.md`、`config/agents.toml`、`docs/config/agent-registry.example.toml` | 本机执行器/模型能力、任务限制、角色默认值与环境变量凭证 | D021 第一版已实现；docs/config 为默认禁用教学样例 |
