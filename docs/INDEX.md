@@ -36,8 +36,8 @@
 | `docs/Agent自动化设计阶段规范_V2.1.md` | 设计阶段主规范：设计等级 D0–D3、产物注册表、工程规则库、四层验证、设计包与交接协议、模板与规则成熟度 | **当前主规范**（D026），实现按 MVP 1/2/3 推进 |
 | `docs/design/2026-11-09-v21-mapping.md` | 采用 V2.1 的对照、融合方案、需求类型并列维度、人工确认位置、与已有决定的张力 | 当前，D026 的详细说明 |
 | `design-system/`、`src/designsys/` | V2.1 的可执行资产：规则数据、产物 Schema，及 D 档分类与最小 Schema 校验器 | MVP 1 进行中，尚未接入流水线 |
-| `docs/design/2026-11-09-design-exit-and-grading.md` | 设计阶段的出口、复杂度分级、按类型的完成条件与定稿流程 | **已被 D026 取代**，仅留作历史；当前依据见 v21-mapping |
-| `docs/design/2026-11-09-design-cases-and-templates.md` | 设计阶段的典型需求、判定标准、判定结果与各类型模板（按已取代的三档规则生成） | **已被 D026 取代**，仅留作历史 |
+| `docs/archive/2026-11-09-design-exit-and-grading.md` | 设计阶段的出口、复杂度分级、按类型的完成条件与定稿流程 | **已被 D026 取代**，仅留作历史；当前依据见 v21-mapping |
+| `docs/archive/2026-11-09-design-cases-and-templates.md` | 设计阶段的典型需求、判定标准、判定结果与各类型模板（按已取代的三档规则生成） | **已被 D026 取代**，仅留作历史 |
 | `docs/design/2026-11-08-agent-model-registry.md`、`config/agents.toml`、`docs/config/agent-registry.example.toml` | 本机执行器/模型能力、任务限制、角色默认值与环境变量凭证 | D021 第一版已实现；docs/config 为默认禁用教学样例 |
 | `docs/design/2026-11-02-autodev-design.md` | 九阶段流水线、角色、产物、人工参与、Web 界面、复盘、规则 | 当前设计基线；第 3.2、3.3、5 节的执行与调度部分已被地基方案部分取代，各节顶部有说明 |
 | `docs/OPTIMIZATIONS.md` | 流程优化记录：每次小优化改了什么、为什么、怎么回退、效果量到多少；只追加，回退和反复都如实记 | 只记优化这一件事；没量过写“未测” |

@@ -49,8 +49,8 @@
 | `docs/design/2026-11-09-v21-mapping.md` | B | 设计阶段：采用 V2.1 的对照与补充 | 2026-11-09 | 是 | 采用 V2.1 的对照，D026 详细说明；被 design-system 规则文件引用 | 保持原位 |
 | `docs/design/2026-11-09-doc-organization-review.md` | B | 文档组织提案的审核意见与分步执行 | 2026-11-09 | 否 | 本次文档整理的审核与步骤 | 保持 |
 | `docs/design/2026-11-09-document-organization-proposal.md` | B | AutoDev 文档组织检查与阶段目录提案 | 2026-11-09 | 否 | 外部 Agent 的提案 | 保持 |
-| `docs/design/2026-11-09-design-exit-and-grading.md` | E | 设计阶段的出口、复杂度分级与按类型的完成条件 | 2026-11-09 | 否 | 已被 D026 取代（三档复杂度、五个事实、已定稿出口） | 移入 docs/archive/，在 INDEX 保留指向 v21-mapping 的说明 |
-| `docs/design/2026-11-09-design-cases-and-templates.md` | E | 设计阶段：典型需求、判定标准、结果与模板 | 2026-11-09 | 否 | 按已取代的三档规则生成 | 移入 docs/archive/ |
+| `docs/archive/2026-11-09-design-exit-and-grading.md` | E | 设计阶段的出口、复杂度分级与按类型的完成条件 | 2026-11-09 | 否 | 已被 D026 取代（三档复杂度、五个事实、已定稿出口） | **已移入 docs/archive/（2026-11-09）**，INDEX 已同步 |
+| `docs/archive/2026-11-09-design-cases-and-templates.md` | E | 设计阶段：典型需求、判定标准、结果与模板 | 2026-11-09 | 否 | 按已取代的三档规则生成 | **已移入 docs/archive/（2026-11-09）** |
 | `docs/design/autodev-workflow-prototype.html` | D | — | 2026-11-04 | 否 | 静态原型，被 src/web/ui.html 引用 | 保持原位 |
 | `docs/specs/REQUIREMENT_SPEC_STANDARD.md` | D | 软件与部署需求规格说明书产出规范与校验标准 (SRS Standard v1.1) | 2026-11-08 | 是 | SRS 规范；tests/test_requirements_validator.py:117 按路径读取其内容，迁移会让测试失败 | 保持原位 |
 | `docs/requirements/REQ-WEB-UNIFIED_CLIENT-20261107.md` | D | 软件需求规格说明书：AutoDev 全系统统一网页客户端（需求澄清工作台 + S1~S9 流水线驾驶舱） | 2026-11-07 | 是 | AutoDev 统一网页客户端的 SRS。**docs/requirements/ 是程序读写的目录**（service.py:263、web/api.py:51），测试 test_web_client.py 按路径读取 | 不得迁移 |
@@ -66,7 +66,7 @@
 | `docs/modules/requirements/baselines/v0.8.md` | F | 需求澄清模块：需求与验收 | 2026-11-07 | 否 | 固定需求基线副本（历史确认版本） | 保持，固定副本不改 |
 | `docs/modules/requirements/baselines/v0.9.md` | F | 需求澄清模块：需求与验收 | 2026-11-07 | 否 | 同上 | 保持，固定副本不改 |
 | `docs/modules/requirements/design.md` | E | 需求澄清模块：设计与实现计划（早期草案，已被现行架构取代） | 2026-11-08 | 否 | 标题自称“早期草案，已被现行架构取代”；README 仍列为参考；baselines 里有指向它的相对链接 ../design.md | 移入归档须同步改 v0.8、v0.9 的链接，且基线是固定副本——先决定是否允许改链接 |
-| `docs/modules/requirements/protocol.md` | E | 第一版程序协议（早期草案，已被 `SPEC-REQ-STANDARD-v1.0` 取代） | 2026-11-08 | 否 | 标题自称“已被 SPEC-REQ-STANDARD-v1.0 取代” | 移入归档，更新 README 的引用 |
+| `docs/archive/2026-11-08-requirements-protocol-early-draft.md` | E | 第一版程序协议（早期草案，已被 `SPEC-REQ-STANDARD-v1.0` 取代） | 2026-11-08 | 否 | 标题自称“已被 SPEC-REQ-STANDARD-v1.0 取代” | **已移入 docs/archive/（2026-11-09）**，README、design.md、dev-plan.md 的引用已同步 |
 | `docs/modules/requirements/requirements.md` | E | 需求澄清模块：需求与验收（早期草案，已被 v0.3.2 标准规范吸收与取代） | 2026-11-08 | 否 | 标题自称“已被 v0.3.2 标准规范吸收与取代”；REQ-WEB-UNIFIED_CLIENT 仍引用它 | 移入归档须同步改 SRS 里的引用，而 SRS 是程序校验过的文档——谨慎 |
 | `docs/reports/2026-11-07-session-report-luna.md` | F | Luna 驾驶员复测报告：真实跑完 S1–S9 并与 Sonnet 对照 | 2026-11-08 | 否 | Luna 复跑报告 | 保持 |
 | `docs/reports/2026-11-07-session-report-sonnet-5-5.md` | F | 一次完整会话的报告：Claude Sonnet 5.5 驾驶，把流水线从 S3 接到 S9 | 2026-11-07 | 否 | Sonnet 会话报告 | 保持 |

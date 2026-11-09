@@ -32,7 +32,7 @@ AutoDev 需求澄清模块是整个研发流水线（S1~S9）的源头枢纽。�
 ### 本目录早期设计草案（保留备查与后续阶段合入）
 - [`requirements.md`](requirements.md)：早期关于通用经验清单、版本基线与逐轮原始交互审计的需求草案；
 - [`design.md`](design.md)：早期本机 CLI 小状态循环与 `workspace/requirements/` 目录结构设计草案；
-- [`protocol.md`](protocol.md)：早期 CLI 命令、草稿 JSON 及逐轮调用计时约定草案（尚未在飞书守护进程中全量实现，供后续迭代参考）。
+- [`protocol.md`](../../archive/2026-11-08-requirements-protocol-early-draft.md)（已归档）：早期 CLI 命令、草稿 JSON 及逐轮调用计时约定草案（尚未在飞书守护进程中全量实现，供后续迭代参考）。
 
 ---
 

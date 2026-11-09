@@ -4,7 +4,7 @@
 
 > 2026-11-08 整合说明：本文件对应版本化兼容工作台（`requirements.versioned_session.SessionStore`），不作为默认统一网页、`ReqSessionStore` 或九章节 SRS 的契约。两套会话不自动同步；端口、launchd 与真实试用记录是当时证据，本次未复核运行服务。入口与边界见 [模块说明](README.md)。
 
-日期：2026-11-07。状态：M1～M5 已实现并验证，M6 真实双模型匿名案例已走到人工确认前；具体证据及未验证项见 verification.md。需求依据为 [v0.9 固定基线](baselines/v0.9.md)，设计见 [design.md](design.md)，数据与调用约定见 [protocol.md](protocol.md)。
+日期：2026-11-07。状态：M1～M5 已实现并验证，M6 真实双模型匿名案例已走到人工确认前；具体证据及未验证项见 verification.md。需求依据为 [v0.9 固定基线](baselines/v0.9.md)，设计见 [design.md](design.md)，数据与调用约定见 [protocol.md（已归档）](../../archive/2026-11-08-requirements-protocol-early-draft.md)。
 
 ## 1. 本次交付与边界
 
