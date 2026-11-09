@@ -136,9 +136,6 @@ class Handler(BaseHTTPRequestHandler):
                 result = store.submit(sid, body.get('text'), body.get('message_id'))
             elif action == 'confirm':
                 result = store.confirm(sid, body.get('version'), body.get('hash'))
-            elif action == 'pair':
-                from .messaging import issue_pairing
-                result = issue_pairing(store, sid)
             elif action in {'retry', 'reopen'}:
                 result = getattr(store, action)(sid)
             else:

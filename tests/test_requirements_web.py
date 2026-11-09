@@ -86,13 +86,6 @@ class WebTest(unittest.TestCase):
         self.assertNotIn('innerHTML', js)
         self.assertEqual(self.request('/api/config')['demo'], True)
 
-    def test_web_can_pair_existing_session_without_model_call(self):
-        s=self.store.create('anonymous','idea')
-        result=self.request(f'/api/sessions/{s["id"]}/pair',{})
-        self.assertTrue(result['command'].startswith('/需求 绑定 '))
-        self.assertEqual(self.store.status(s['id'])['calls'],[])
-        self.assertGreater(result['expires_at'],time.time())
-
     def test_autodev_web_port_env_support(self):
         # 1. 验证 requirements.web.make_server 在未指定 port 时读取 AUTODEV_WEB_PORT
         orig = os.environ.get("AUTODEV_WEB_PORT")

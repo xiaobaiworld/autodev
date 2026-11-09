@@ -25,7 +25,7 @@ def parser():
     create.add_argument('--analyst'); create.add_argument('--reviewer')
     create.add_argument('--review-limit', type=int)
     sub.add_parser('list')
-    for name in ['show', 'step', 'retry', 'reopen', 'reply', 'confirm', 'export', 'pair']:
+    for name in ['show', 'step', 'retry', 'reopen', 'reply', 'confirm', 'export']:
         cmd = sub.add_parser(name)
         cmd.add_argument('id')
         if name == 'reply':
@@ -83,15 +83,10 @@ def main(argv=None):
             result = store.confirm(args.id, args.version, args.hash)
         elif cmd == 'export':
             result = store.export(args.id, args.version)
-        elif cmd == 'pair':
-            from .messaging import issue_pairing
-            result = issue_pairing(store, args.id)
         else:
             result = getattr(store, cmd)(args.id)
         if args.json:
             print(json.dumps(result, ensure_ascii=False, indent=2))
-        elif cmd == 'pair':
-            print('5 分钟内，在你的飞书机器人会话中发送：\n' + result['command'])
         elif cmd == 'export':
             print(result['markdown'], end='')
         elif isinstance(result, list):

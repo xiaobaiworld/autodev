@@ -162,9 +162,6 @@ for(const key of ['document','review','calls']){
   $('tab-'+key).onclick=()=>showTab(key);
   $('tab-'+key).onkeydown=e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const keys=['document','review','calls'];const next=keys[(keys.indexOf(key)+(e.key==='ArrowRight'?1:2))%3];showTab(next);$('tab-'+next).focus();};
 }
-$('pair').onclick=()=>guarded(async()=>{const id=current.id;const value=await api(`/api/sessions/${id}/pair`,{});if(current?.id!==id)return;$('pair-command').textContent=value.command;$('copy-pair').textContent='复制命令';$('pair-dialog').showModal();});
-$('close-pair').onclick=()=>$('pair-dialog').close();
-$('copy-pair').onclick=()=>guarded(async()=>{await navigator.clipboard.writeText($('pair-command').textContent);$('copy-pair').textContent='已复制';});
 for(const [file,target] of [['initial-file','initial'],['reply-file','answer']])$(file).onchange=()=>guarded(async()=>{const f=$(file).files[0];if(!f)return;if(f.size>128000)throw new Error('资料不能超过 128KB');$(target).value=await f.text();$(file).value='';});
 guarded(async()=>{
   config=await api('/api/config');$('mode').textContent=config.demo?'无费用演示':'真实工作空间';
