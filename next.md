@@ -6,14 +6,12 @@
 
 **已完成（有证据）**
 - V2.1 纳入仓库；D026 取代 D025，旧的三档复杂度、五个事实规则标为已取代。
-- MVP 1 已做：D0–D3 分类（`design-system/rules/classification.toml` + `src/designsys/classify.py`）；最小 JSON Schema 校验器（`src/designsys/schema.py`，路线 C，不支持的关键字一律报错）；plan/technical/data/security/handoff 五个产物 Schema；**工程规则库**（`design-system/rules/library.toml`，V2.1 第 5 节 18 条基线，全部 R1，无验证器）与规则选择器（`src/designsys/rules.py`，覆盖率分母为全部适用规则）；**设计包验证**（`src/designsys/validate.py`：V1 文件与 Schema、V2 引用与规则覆盖、V3 隔离一致性，输出遵循 V2.1 第 15.1 节统一契约，`error` 不当通过，`ready_for_coding` 由程序计算、不采信设计包自述）。全量 451 项测试通过。
+- MVP 1 已做：D0–D3 分类（`design-system/rules/classification.toml` + `src/designsys/classify.py`）；最小 JSON Schema 校验器（`src/designsys/schema.py`，路线 C，不支持的关键字一律报错）；plan/technical/data/security/handoff 五个产物 Schema；**工程规则库**（`design-system/rules/library.toml`，V2.1 第 5 节 18 条基线，全部 R1，无验证器）与规则选择器（`src/designsys/rules.py`，覆盖率分母为全部适用规则）；**设计包验证**（`src/designsys/validate.py`：V1 文件与 Schema、V2 引用与规则覆盖、V2 的 D0 检查、V3 隔离一致性，输出遵循 V2.1 第 15.1 节统一契约，`error` 不当通过，`ready_for_coding` 由程序计算、不采信设计包自述）；**D0 一页文档**（`src/designsys/d0doc.py`，由程序从 `plan.json`、`handoff.json` 生成 `d0-summary.md`，非 D0 的计划拒绝渲染）。旧的 `design_rules` 三档规则及其测试已删除。
 - 需求机器人、设计机器人已由统一脚本装成常驻服务（`com.autodev.req-bot`、`com.autodev.design-bot`，D023），部署目录 `/Users/bai/code/autodev`（只用于运行，开发在 `/Users/bai/code/autodev-dev`）；用户确认需求机器人回复正常，设计机器人能回复固定说明。
 - 文档整理第 1–3 步第一版完成：见 `docs/design/2026-11-09-doc-organization-review.md`、`docs/stages/README.md`。
 
-**下一步（MVP 1 剩余，按顺序）**
-1. D0 的一页极简文档：由程序从 `plan.json` 生成。
-2. 清理已被取代的 `config/design-rules.toml`、`src/requirements/design_rules.py` 及其测试（D026 已取代它们）。
-3. 把设计包验证接到流水线或设计机器人上（当前只是独立模块，没有接入）；这需要先定设计 Agent 写产物的权限与新流水线类型，见下面的待确认。
+**下一步（MVP 1 的代码部分已做完，剩下的是接入）**
+1. 把设计包验证接到流水线或设计机器人上（当前只是独立模块，没有接入）；这需要先定设计 Agent 写产物的权限与新流水线类型，见下面的待确认。
 
 **待用户确认**（详见采用对照第 9 节）：D2 默认不需要人工确认是否可以；模型判断“需要人工确认”的把握阈值；V2.1 目录（规则库、模板库、验证器）是否独立成模块；设计 Agent 写原型与结构化文件的权限范围；新旧设计流水线并存期间的类型命名。
 

@@ -285,6 +285,42 @@ class MetricsTests(PackTestCase):
         ui = report["metrics"]["core_interactions"]
         self.assertIsNone(ui["ratio"])
         self.assertEqual(ui["status"], "not_applicable")
+class D0ConsistencyTests(PackTestCase):
+    def d0_plan(self, **kw):
+        base = dict(design_level="D0", project_type="script", features=[], risks=[], required_artifacts=["A01", "A07", "A08"], mandatory_rules=["CODE-001", "SEC-001"], classification_rationale=["需求明确"], open_questions=[])
+        base.update(kw)
+        return plan(**base)
+
+    def d0_pack(self, p):
+        ids = ["CODE-001", "SEC-001"]
+        rules = [dict(rule_id=i, reason="适用", targets=["s"], design_refs=[], implementation_tasks=["TASK-1"], verification_ids=["T-" + i]) for i in ids]
+        sec = dict(schema_version="1.0", applicable_rules=rules, not_applicable=[])
+        task = dict(task_id="TASK-1", title="t", requirement_ids=["R1"], design_refs=[], mandatory_rule_ids=ids, acceptance_ids=["T-1"], dependencies=[])
+        ho = handoff(tasks=[task])
+        return {"plan.json": p, "artifacts/security.json": sec, "handoff.json": ho, "artifacts/technical.json": None, "artifacts/data.json": None}
+
+    def test_a_clean_d0_pack_passes(self):
+        report = self.run_pack(**self.d0_pack(self.d0_plan()))
+        self.assertEqual(self.failed(report), [], report["blocking"])
+
+    def test_d0_with_open_questions_fails_because_the_requirement_is_not_clear(self):
+        p = self.d0_plan(open_questions=["输出目录是否固定？"])
+        report = self.run_pack(**self.d0_pack(p))
+        rows = self.failed(report, "V2-D0")
+        self.assertTrue(rows)
+        self.assertIn("输出目录是否固定？", rows[0]["evidence"]["open_questions"])
+        self.assertFalse(report["ready_for_coding"])
+
+    def test_open_questions_do_not_fail_a_non_d0_pack(self):
+        report = self.run_pack(**{"plan.json": plan(open_questions=["谁来审批？"])})
+        self.assertEqual(self.failed(report, "V2-D0"), [])
+
+    def test_d0_check_is_not_applicable_for_other_levels(self):
+        report = self.run_pack()
+        rows = [x for x in report["results"] if x["rule_id"] == "V2-D0"]
+        self.assertEqual({x["status"] for x in rows}, {"not_applicable"})
+
+
 
 
 if __name__ == "__main__":

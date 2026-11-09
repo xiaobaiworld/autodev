@@ -189,6 +189,19 @@ def check_v2_coverage(pack: Pack, ctx: dict) -> list:
     return [result("check_v2_coverage", "failed", "V2-COVERAGE", "handoff.json", "mandatory_rule_ids", f"{len(cov['missing'])} 条适用规则没有绑定到任何开发任务", evidence=dict(missing=cov["missing"]), hint="把这些规则绑到对应任务和验收用例")]
 
 
+def check_v2_d0(pack: Pack, ctx: dict) -> list:
+    """V2.1 第 3.2 节：D0 的前提是需求明确、无关键技术风险。D0 计划里带着未决问题，说明需求并不明确，按规则不能是 D0。"""
+    plan = pack.docs.get("A01")
+    if not isinstance(plan, dict):
+        return []
+    if plan.get("design_level") != "D0":
+        return [result("check_v2_d0", "not_applicable", "V2-D0", "plan.json", "design_level", "设计等级不是 D0，本检查不适用")]
+    questions = list(plan.get("open_questions", []))
+    if questions:
+        return [result("check_v2_d0", "failed", "V2-D0", "plan.json", "open_questions", "D0 计划里仍有未决问题：需求不够明确，不能跳过独立设计", evidence=dict(open_questions=questions), hint="先澄清未决问题，或把设计等级提到 D1 及以上")]
+    return [result("check_v2_d0", "passed", "V2-D0", "plan.json", "open_questions", "D0 计划没有未决问题")]
+
+
 OWNER_FIELDS = ("project_id", "tenant_id", "workspace_id", "org_id", "owner_id")
 
 
@@ -215,6 +228,7 @@ CHECKS = [
     ("check_v1", check_v1),
     ("check_v2_refs", check_v2_refs),
     ("check_v2_rules", check_v2_rules),
+    ("check_v2_d0", check_v2_d0),
     ("check_v2_security", check_v2_security),
     ("check_v2_coverage", check_v2_coverage),
     ("check_v3_isolation", check_v3_isolation),
