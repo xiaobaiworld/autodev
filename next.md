@@ -1,40 +1,76 @@
 # next.md
 
-## 当前目标：设计阶段按 V2.1 落地（2026-11-09）
+## 接手须知（2026-11-09 晚，为新 session 写）
 
-设计阶段的主规范是 [Agent 自动化设计阶段规范 V2.1](docs/Agent自动化设计阶段规范_V2.1.md)，决策见 D026，对照与补充见 [采用对照](docs/design/2026-11-09-v21-mapping.md)。系统处于早期，当前开发都在设计阶段，对运行中的机器人没有影响。
+**先读这几处，按顺序：** 本节 → `docs/design/2026-11-09-v21-mapping.md`（采用 V2.1 的对照与待定事项）→ `docs/TOOLS.md` 第 15 节（新模块怎么用）→ `docs/lessons.md` L023。工具与服务相关先查 `docs/TOOLS.md`，不要用 `herdr --help`（见 L011、L012）。
 
-**已完成（有证据）**
-- V2.1 纳入仓库；D026 取代 D025，旧的三档复杂度、五个事实规则标为已取代。
-- MVP 1 已做：D0–D3 分类（`design-system/rules/classification.toml` + `src/designsys/classify.py`）；最小 JSON Schema 校验器（`src/designsys/schema.py`，路线 C，不支持的关键字一律报错）；plan/technical/data/security/handoff 五个产物 Schema；**工程规则库**（`design-system/rules/library.toml`，V2.1 第 5 节 18 条基线，全部 R1，无验证器）与规则选择器（`src/designsys/rules.py`，覆盖率分母为全部适用规则）；**设计包验证**（`src/designsys/validate.py`：V1 文件与 Schema、V2 引用与规则覆盖、V2 的 D0 检查、V3 隔离一致性，输出遵循 V2.1 第 15.1 节统一契约，`error` 不当通过，`ready_for_coding` 由程序计算、不采信设计包自述）；**D0 一页文档**（`src/designsys/d0doc.py`，由程序从 `plan.json`、`handoff.json` 生成 `d0-summary.md`，非 D0 的计划拒绝渲染）。旧的 `design_rules` 三档规则及其测试已删除。
-- 需求机器人、设计机器人已由统一脚本装成常驻服务（`com.autodev.req-bot`、`com.autodev.design-bot`，D023），部署目录 `/Users/bai/code/autodev`（只用于运行，开发在 `/Users/bai/code/autodev-dev`）；用户确认需求机器人回复正常，设计机器人能回复固定说明。
-- 文档整理第 1–3 步第一版完成：见 `docs/design/2026-11-09-doc-organization-review.md`、`docs/stages/README.md`。
+### 目录与环境（最容易踩的）
 
-**下一步（MVP 1 的代码部分已做完，剩下的是接入）**
-1. 把设计包验证接到流水线或设计机器人上（当前只是独立模块，没有接入）；这需要先定设计 Agent 写产物的权限与新流水线类型，见下面的待确认。
+| 目录 | 分支 | 用途 |
+| --- | --- | --- |
+| `/Users/bai/code/autodev` | `deploy`，与远端 `main` 一致（`8218a43`） | **只用于运行服务**。两个机器人的 launchd 服务指向这里，里面有本机私有文件（`config.req.toml`、`config.design.toml`、`.req_session.json`、`.venv`、`workspace/`、`requests/`），均被 git 忽略。**不要在这里开发或切分支** |
+| `/Users/bai/code/autodev-dev` | 开发分支（`git worktree`） | 所有开发在这里做，与部署目录共用同一个 `.venv`。**不要在这里起机器人**，它没有凭证 |
 
-**待用户确认**（详见采用对照第 9 节）：D2 默认不需要人工确认是否可以；模型判断“需要人工确认”的把握阈值；V2.1 目录（规则库、模板库、验证器）是否独立成模块；设计 Agent 写原型与结构化文件的权限范围；新旧设计流水线并存期间的类型命名。
+- 开发流程：在 `autodev-dev` 里从 `origin/main` 切分支 → 测试通过 → 提交 → 推送并快进合并 `main` → 部署目录 `git merge --ff-only origin/main`。推送与合并前先问用户，推送前扫描有没有密钥与本机文件。
+- 部署目录里有一个**不是我们创建的未跟踪文件 `paseo.json`**，来源不明（疑似外部工具生成），没有动它，也没有提交。
+- 全量测试：`PYTHONPATH=src python3 -m unittest discover -s tests`，当前 **456 项通过**。
+- **写 Python 的方法**：不要手敲缩进。把代码写成 `(层级数, 文本)` 的行表，用几行的生成器按“层级 × 4 空格”输出并先 `ast.parse` 再写盘（见 L023）。这次会话里手写缩进反复出错，这是已验证有效的做法。
+- 本机没有 `timeout` 命令；zsh 不展开变量里的通配符；`python3 -I` 会忽略 `PYTHONPATH`。
 
-**其他仍未做的事**
-- 机器人遇到“找不到会话”时自动清旧 ID 重试：未做（迁移时曾因旧机器的会话 ID 导致“Agent 退出码异常”，手工清除后恢复，见 lessons L021 之后的记录）。
-- 职责范围守卫（各机器人只做分内事、拿不准时向对话人确认）：只有设想，尚未立项。
-- 设计机器人只读指令（`src/requirements/design_view.py`，列运行、看状态、看设计包）：已写好并通过测试，尚未接入机器人。
+### 现在的真实状态（核对于 2026-11-09，有证据）
+
+- **服务**：`com.autodev.req-bot`（需求机器人，pid 72054）、`com.autodev.design-bot`（设计机器人，pid 71387）由统一脚本装成常驻，应用凭证各自独立；`com.autodev.requirements-hub`（旧需求工作台的中台）仍在运行但已无调用者。旧飞书桥已移除（D024），8766 网页服务已停用并禁止自启。
+- **设计机器人目前只回一段固定说明**，没有任何业务能力；`src/requirements/design_view.py`（列运行、看状态、看设计包）写好了、测试通过，**没有接进机器人**。
+- **设计阶段 V2.1 的 MVP 1 代码部分已合入 main**（`design-system/`、`src/designsys/`）：D0–D3 分类、最小 JSON Schema 校验器、五个产物 Schema、18 条基线规则库与选择器、设计包验证、D0 一页文档。**它们全是独立模块，没有接入流水线或机器人，也没有任何真实设计包跑过。**
+- **流水线的 S2/S3 仍是旧契约**（三份 Markdown 产物，模板在 `templates/pipeline/design.json`），与 V2.1 尚未衔接。
+- 文档整理：第 1–3 步第一版已完成（索引、`docs/stages/` 十个阶段入口、清点清单 `docs/design/2026-11-09-doc-inventory.md`、三份被取代文档已归档）。
+
+### 下一步（按优先级）
+
+**A. 先请用户定两件事（它们挡住了接入，之前一直没回答）：**
+1. 设计 Agent 写原型和结构化文件的权限范围。现在模板 `scope` 写的是“只读输入、只产出设计文档”，V2.1 要求它生成可运行原型和 JSON 产物，需要受控写权限，不放宽到可修改目标项目代码。
+2. 新旧设计流水线并存期间的类型命名（沿用 `src/cockpit/kinds.py` 的登记方式，新增一个类型，旧运行保留旧模板）。
+
+**B. 用户定了以后，接入 MVP 1：**
+- 新增流水线类型与模板，让 S2 产出设计包目录、S3 之后程序调用 `designsys.validate.validate_pack`，通过才算设计完成；D0 的 `d0-summary.md` 由程序生成。
+- 接入前必须先给出对**旧模板、旧测试、旧运行**的影响清单，用户确认后再动，不改已验证资产。
+- 先写测试，再改模板与代码；用假 Agent（`tests/fake_stage_agent.py`、`tests/f2_pipeline.py`）验证，不花额度。
+
+**C. MVP 1 里没做完的：**
+- **关键特征的程序独立核对**：验证器现在只认 `plan.json` 自己声明的特征，设计方把特征写少则验证不出来（V2.1 没有解决“特征由谁取”）。缓解办法是敏感数据、触碰真实环境、认证、跨租户、高影响操作这几项由程序再从需求文本里用确定性规则扫一遍，不一致取更严的一边并转人工。
+- 需求类型的三处补充：项目类型加“部署与脚本工程”“设备接入工程”，功能特征加“触碰真实环境”“硬件设备”，规则库补对应条目（预检、幂等、回滚；断线重连、模拟器）。**用户同意先不预设，等有真实需求再加**。
+- 人工确认的位置：D3 才可能需要，规则引擎先判，拿不准由大模型建议；D2 默认不需要是否可以、模型判断的把握阈值，待用户确认（见采用对照第 6、9 节）。
+
+**D. MVP 2（V2.1 第 11 节）**：A02/A03 可运行 UI 原型、原型构建与交互检查、截图评审。依赖上面 A 的权限问题。
+
+**E. 其他仍未做的事（不阻塞设计线）：**
+- 机器人遇到“找不到会话”时自动清旧 claude 会话 ID 并重试（迁移时因旧机器的 ID 导致“Agent 退出码异常 (code=1)”，手工清除后恢复）；需要改业务代码。
+- 职责范围守卫（各机器人只做分内事、拿不准时向对话人确认）：只有设想，**尚未立项、没有决策与代码**；设想要点是一份统一的范围配置加共用守卫，放进 `config/bots.toml` 同一份清单。
+- 设计机器人只读指令接入（`design_view.py`）。
+- 文档整理第 4 步起：各阶段按需补 `contract.md`、`standard.md`；`docs/design/2026-11-06-s4-code-stage.md`（S4 设计稿，状态“提议，未实现”）是否仍有效待用户确认；`design.md`、`requirements.md` 两份早期草案因被固定基线与已校验 SRS 引用而留在原位。
+- 旧中台 `com.autodev.requirements-hub` 是否整体停用，待用户决定。
 - 统一 Web 客户端常驻：没有脚本，用户说明现阶段不重要。
-- 旧需求工作台的中台 `com.autodev.requirements-hub` 仍在运行，已无调用者（旧飞书桥已于 D024 移除）；8766 网页服务已停用并禁止自启。是否整体停用待用户决定。
-- 文档组织：外部 Agent 的[提案](docs/design/2026-11-09-document-organization-proposal.md)已纳入，审核意见与分步执行见 `docs/design/2026-11-09-doc-organization-review.md`。已完成：第 1 步（更新过时索引与 next.md）、第 2 步（清点 53 个文件，见 `docs/design/2026-11-09-doc-inventory.md`）、第 3 步第一版（三份被取代的文档移入 `docs/archive/`；新建 [`docs/stages/`](docs/stages/README.md)，十个阶段各一个入口，S2 只链接 V2.1）。程序读取的 9 个文档均未移动。待办：各阶段按需补 `contract.md`、`standard.md`；`2026-11-06-s4-code-stage.md` 是否仍有效待确认。
 
-**历史与追溯**：本次整理前的完整 `next.md` 已原样归档在 [`docs/archive/2026-11-09-next-before-reorg.md`](docs/archive/2026-11-09-next-before-reorg.md)，此前各阶段（项目登记、设计机器人第一步、阶段机器人讨论等）的细节都在其中，决策以 `docs/DECISIONS.md` 为准。
+### 安全提醒
 
+- 对话里出现过设计机器人与需求机器人两个飞书应用的 App Secret，**用户尚未重置**。重置后需要更新部署目录的 `config.design.toml`、`config.req.toml`（权限 600，不入库），再重启对应服务（`launchctl kickstart -k gui/$(id -u)/com.autodev.design-bot` 与 `com.autodev.req-bot`）。
+- 校验器与规则库的所有“已验证”都只指单元测试；没有任何真实设计 Agent、真实设计包、真实飞书消息参与过，不要把它们写成已经在生产验证。
+
+### 历史与追溯
+
+整理前的完整 `next.md` 原样归档在 [`docs/archive/2026-11-09-next-before-reorg.md`](docs/archive/2026-11-09-next-before-reorg.md)；项目登记、设计机器人第一步、阶段机器人讨论等细节都在其中，决策以 `docs/DECISIONS.md` 为准（当前到 D026），经验以 `docs/lessons.md` 为准（当前到 L023）。
+
+> 以下从“更新：2026-11-08”起是**更早的遗留章节**，保留作追溯，**其中的版本号、测试数、服务状态、“下一步”等可能已过时**，以上面的“接手须知”为准。
 
 更新：2026-11-08 ｜ 当前版本：`v0.3.5` ｜ 阶段：流水线 S1 到 S9、飞书与全系统统一 Web 客户端已全部连通；确立全链路项目与需求双身份不变量（`D022`），落地交接强核验与分级处置（拒绝交接 / 人工介入）；全系统统一网页客户端与工作台统一支持 `AUTODEV_WEB_PORT` 环境变量覆盖与端口冲突友好拦截；守护进程安装脚本（`deploy/install-req-bot.sh`）支持多检出与多项目实例标签隔离（支持参数与环境变量）；全量 316 个单元测试全部通过
 
 ## 恢复上下文时先读
 
-1. 本文件（尤其是下面的“换窗口接手时要知道”）
+1. 本文件最上面的“接手须知”，再看下面的“换窗口接手时要知道”
 2. `docs/OPTIMIZATIONS.md`：每次流程优化改了什么、效果量到多少（O001 到 O008）和“待定”事项
 3. `docs/design/2026-11-05-autoloop-foundation.md`：地基方案（F0 到 F6、结构、待决）
-4. `docs/DECISIONS.md`：D001 到 D020（D014 用 autoloop 做地基，D015 验收者先绑 Claude）
-5. `docs/lessons.md`：L001 到 L012，开始新功能前先扫一遍
+4. `docs/DECISIONS.md`：D001 到 D026（D014 用 autoloop 做地基，D015 验收者先绑 Claude，D019 分级审查，D023 多机器人统一部署，D026 设计阶段采用 V2.1）
+5. `docs/lessons.md`：L001 到 L023，开始新功能前先扫一遍
 6. `docs/MODELS.md`：模型名只写完整 ID
 7. `docs/design/2026-11-02-autodev-design.md`：流程设计（第 3.2、3.3、5 节已被地基方案部分取代，见各节顶部说明）
 8. `docs/DATA_SPEC.md`、`config.yaml`

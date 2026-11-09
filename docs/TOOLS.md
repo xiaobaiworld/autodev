@@ -138,3 +138,17 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - 旧脚本 `install-req-bot.sh`、`install-design-bot.sh` 暂保留；新装请用统一脚本。
 - 验证范围：清单模块与命令行入口有 13 项测试，需求机器人空白名单拒启动有子进程测试；统一安装脚本 2026-11-09 首次真实安装设计机器人，暴露并修复了提示语变量未加花括号的问题（lessons L022）；服务本身安装正确。幂等重装、崩溃拉起等验证见下一条记录。
 - 令牌说明：`claude` 在服务里能用，是因为它读取 `~/.claude/settings.json`；无需把令牌写进 plist（2026-11-09 实测）。
+
+## 15. 设计阶段 V2.1 的可执行资产（D026，2026-11-09）
+
+- 位置：规则数据在 `design-system/rules/`（`classification.toml` 是 D0–D3 判定规则，`library.toml` 是 18 条基线规则），产物 Schema 在 `design-system/schemas/`（plan、technical、data、security、handoff）；代码在 `src/designsys/`。这些**还没有接入流水线与机器人**，也没有任何真实设计包跑过。
+- 模块与入口（均为纯函数，不连模型，不改状态，在项目根用 `PYTHONPATH=src` 调用）：
+  - `designsys.classify`：`load_rules()`、`classify(rules, {features, risks, requirements_clear, multi_module})` → `level`、`reasons`、`security_override`。取满足条件的最高一档；输入里出现未登记的特征或非布尔值会报错，不猜。
+  - `designsys.rules`：`load_library()`、`select(lib, {features, risks, level}, security_override)` → `applicable`（带理由）与 `deferred`（适用性取决于设计产物内容，暂无法判定）、`coverage(selection, bound_rule_ids)`（分母为全部适用规则，分母为零是 `not_applicable`）。
+  - `designsys.schema`：`validate(value, schema)`，标准库实现的最小 JSON Schema 校验器；遇到不支持的关键字、未知类型、无法解析的引用一律报 `SchemaError`，对整份 Schema 递归检查。
+  - `designsys.validate`：`validate_pack(设计包目录)` → `ready_for_coding`、`blocking`、`open_questions`、`results`（每条遵循 V2.1 第 15.1 节统一契约）、`metrics`。`ready_for_coding` 由程序按结果计算，**不采信设计包自己声称的值**；校验器自己出错记为 `error`，不当通过。
+  - `designsys.d0doc`：`write(设计包目录)` 生成 `d0-summary.md`；非 D0 的计划拒绝渲染。
+- 设计包目录期望的布局（V2.1 第 8 节）：`plan.json`、`handoff.json`、`artifacts/technical.json`、`artifacts/data.json`、`artifacts/security.json`；必需哪些由 `plan.json` 的 `required_artifacts` 决定，A01/A07/A08 恒定要求。
+- 测试：`PYTHONPATH=src python3 -m unittest tests.test_designsys_classify tests.test_designsys_schema tests.test_designsys_schema_files tests.test_designsys_rules tests.test_designsys_validate tests.test_designsys_d0doc`；全量 `PYTHONPATH=src python3 -m unittest discover -s tests`（456 项，2026-11-09）。
+- 已知限制（不要当作已解决）：验证器只认 `plan.json` 自己声明的特征，设计方把特征写少则验证不出来；SEC-005 的检查只认 `project_id`、`tenant_id` 等固定归属字段名，等效隔离机制需人判断；规则库全部是 R1（没有验证器与测试样例），安全类靠人工确认兜底；部署类、设备类规则未入库。
+- 开发与部署分开：部署目录 `/Users/bai/code/autodev` 只用于运行服务（分支 `deploy`，与 main 同步），开发在 `/Users/bai/code/autodev-dev`（`git worktree`，共用同一个 `.venv`）。**不要在开发目录起机器人**，它没有凭证。
