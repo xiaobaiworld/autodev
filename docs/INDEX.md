@@ -30,6 +30,7 @@
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
 | `docs/design/2026-11-08-stage-bots-requirements.md` | 需求、设计、开发、测试、优化阶段机器人的用户目标与建议验收 | 目标已接受；S2/S3 输入输出契约已接入 |
 | `docs/design/2026-11-08-stage-bots-design.md` | 五工作区、角色上下文、交接与协作展示；第 8 节为渠道独立的设计机器人工作说明 v0.1 | 项目上下文快照与 prototype.md 下游交付已实现；渠道交互、D019 执行与条件式原型确认待续 |
+| `docs/design/2026-11-09-doc-inventory.md` | 文档清点清单：53 个文件的类别、判定理由、被代码引用情况与建议处理 | 待用户逐项审核；未移动任何文件 |
 | `docs/design/2026-11-09-doc-organization-review.md` | 对文档组织提案的审核意见、事实核对、需补充的三处与分步执行状态 | 当前；第 0、1 步已完成，第 2 步起待做 |
 | [`docs/design/2026-11-09-document-organization-proposal.md`](design/2026-11-09-document-organization-proposal.md) | 文档组织检查、阶段目录与输入输出契约建议、LobeHub 组织方法借鉴及后续验收 | 提案；用户认可阶段目录基本方向，未实施迁移，不改变现有阶段协议 |
 | `docs/Agent自动化设计阶段规范_V2.1.md` | 设计阶段主规范：设计等级 D0–D3、产物注册表、工程规则库、四层验证、设计包与交接协议、模板与规则成熟度 | **当前主规范**（D026），实现按 MVP 1/2/3 推进 |
