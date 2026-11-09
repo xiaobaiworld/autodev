@@ -30,16 +30,20 @@
 | `docs/design/2026-11-06-ticket-model.md` | 工单分类、拆解、确定化、成熟工具：用户的要求与待讨论问题 | 提议，只记录，未实现未验证 |
 | `docs/design/2026-11-08-stage-bots-requirements.md` | 需求、设计、开发、测试、优化阶段机器人的用户目标与建议验收 | 目标已接受；S2/S3 输入输出契约已接入 |
 | `docs/design/2026-11-08-stage-bots-design.md` | 五工作区、角色上下文、交接与协作展示；第 8 节为渠道独立的设计机器人工作说明 v0.1 | 项目上下文快照与 prototype.md 下游交付已实现；渠道交互、D019 执行与条件式原型确认待续 |
+| `docs/design/2026-11-09-doc-organization-review.md` | 对文档组织提案的审核意见、事实核对、需补充的三处与分步执行状态 | 当前；第 0、1 步已完成，第 2 步起待做 |
 | [`docs/design/2026-11-09-document-organization-proposal.md`](design/2026-11-09-document-organization-proposal.md) | 文档组织检查、阶段目录与输入输出契约建议、LobeHub 组织方法借鉴及后续验收 | 提案；用户认可阶段目录基本方向，未实施迁移，不改变现有阶段协议 |
-| `docs/design/2026-11-09-design-exit-and-grading.md` | 设计阶段的出口、复杂度分级、按类型的完成条件与定稿流程 | D025 方向已接受，未实现 |
-| `docs/design/2026-11-09-design-cases-and-templates.md` | 设计阶段的典型需求、判定标准、判定结果与各类型模板（由程序按当前规则生成，供逐项查看） | 初版，规则未校准 |
+| `docs/Agent自动化设计阶段规范_V2.1.md` | 设计阶段主规范：设计等级 D0–D3、产物注册表、工程规则库、四层验证、设计包与交接协议、模板与规则成熟度 | **当前主规范**（D026），实现按 MVP 1/2/3 推进 |
+| `docs/design/2026-11-09-v21-mapping.md` | 采用 V2.1 的对照、融合方案、需求类型并列维度、人工确认位置、与已有决定的张力 | 当前，D026 的详细说明 |
+| `design-system/`、`src/designsys/` | V2.1 的可执行资产：规则数据、产物 Schema，及 D 档分类与最小 Schema 校验器 | MVP 1 进行中，尚未接入流水线 |
+| `docs/design/2026-11-09-design-exit-and-grading.md` | 设计阶段的出口、复杂度分级、按类型的完成条件与定稿流程 | **已被 D026 取代**，仅留作历史；当前依据见 v21-mapping |
+| `docs/design/2026-11-09-design-cases-and-templates.md` | 设计阶段的典型需求、判定标准、判定结果与各类型模板（按已取代的三档规则生成） | **已被 D026 取代**，仅留作历史 |
 | `docs/design/2026-11-08-agent-model-registry.md`、`config/agents.toml`、`docs/config/agent-registry.example.toml` | 本机执行器/模型能力、任务限制、角色默认值与环境变量凭证 | D021 第一版已实现；docs/config 为默认禁用教学样例 |
 | `docs/design/2026-11-02-autodev-design.md` | 九阶段流水线、角色、产物、人工参与、Web 界面、复盘、规则 | 当前设计基线；第 3.2、3.3、5 节的执行与调度部分已被地基方案部分取代，各节顶部有说明 |
 | `docs/OPTIMIZATIONS.md` | 流程优化记录：每次小优化改了什么、为什么、怎么回退、效果量到多少；只追加，回退和反复都如实记 | 只记优化这一件事；没量过写“未测” |
-| `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D022 | 决策事实源；D019 分级审查优先，D020 阶段机器人，D021 能力注册表，D022 项目与需求双身份 |
+| `docs/DECISIONS.md` | 重要方向及决策依据，D001 到 D026 | 决策事实源；D019 分级审查优先，D020 阶段机器人，D021 能力注册表，D022 项目与需求双身份，D023 多机器人统一部署，D024 移除旧飞书桥，D025 已被 D026 取代，D026 采用设计阶段规范 V2.1 |
 | `docs/DATA_SPEC.md` | 数据目录、实体与文件格式 | 设计规范；`state.json`、`done.json` 已在代码里使用 |
 | `docs/MODELS.md` | 完整 ID、机器注册表、默认值及各 CLI 的指定方式 | 改模型登记或写启动命令前必读 |
-| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L020 | 开始新功能前先读 |
+| `docs/lessons.md` | 已踩的坑与验证过的做法，L001 到 L022 | 开始新功能前先读 |
 | `docs/design/autodev-workflow-prototype.html` | 工作流界面原型 | 静态讨论稿，示例数据，不代表可运行系统 |
 
 ## 版本化需求工作台兼容入口
