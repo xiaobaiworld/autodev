@@ -5,6 +5,7 @@
 workspace/cockpit.json
 __pycache__/
 workspace/runs/
+workspace/archive/
 workspace/requests/
 workspace/projects/
 workspace/.lock

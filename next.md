@@ -1,5 +1,10 @@
 # next.md
 
+## 进行中：设计机器人接入与多工作区收敛（2026-11-09）
+
+- 设计机器人飞书入口已连通（白名单用户发消息可收到回复，手动进程）；常驻安装脚本已写好，选定部署目录 `/Users/bai/code/autodev`，尚未用 launchd 安装。业务能力（设计讨论、状态查询）未接入；职责范围守卫（D023）待设计。
+- 工作区收敛：Luna 复跑的 `workspace/` 已整份归档到 `workspace/archive/luna-rerun-R20261107-001/`（不合并，见 TOOLS.md 第 13 节）。待办：把主目录更新到最新 main、迁移 `.venv` 与 `config.design.toml`、安装常驻服务、确认后删除其余三个 worktree。
+
 ## 已完成：项目登记（网页与飞书共用）及本机分支收敛到 main（2026-11-08）
 
 - 实现范围：`cockpit.projects.register_project` 是唯一写入入口；验证名称、绝对路径、项目名/路径唯一性、Git 初始化确认、配置 expected_hash、原子写和写后回读恢复。

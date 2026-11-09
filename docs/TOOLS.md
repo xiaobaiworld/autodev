@@ -122,3 +122,9 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - 凭证文件 `config.design.toml` 已被 `.gitignore` 忽略，只存在于本机，权限 600；`[allow] users` 为空且未开 `discover` 时机器人拒绝启动。首次取 open_id：临时设 `discover = true`，机器人只记录发送者、不回复。
 - **以后换环境或换目录部署**：脚本按自身位置确定目录，不需要改脚本内容。步骤：在旧位置执行卸载脚本 → 在新目录取得代码、建 `.venv` 并安装 `lark_oapi`、放入 `config.design.toml` → 在新目录执行安装脚本 → 同步修改本节“当前选定的部署目录”。需要同时跑多份时用环境变量 `AUTODEV_DESIGN_LABEL` 换标签，避免互相覆盖；同一应用凭证只能有一个长连接在线，否则消息会被分走。
 - 已验证：长连接可建立；白名单用户发消息能收到回复（手动进程，2026-11-09）。未验证：launchd 重启后自动恢复、崩溃自动拉起。
+
+## 13. 多工作区收敛与运行证据归档（2026-11-09）
+
+- 背景：本机曾有 `autodev`、`autodev-merge-workbench`、`autodev-project-registry`、`autodev-rerun-luna` 四个 git worktree，均登记在 `autodev` 名下。统一以 `/Users/bai/code/autodev` 为主目录，其余待确认后用 `git worktree remove` 清理（不要直接 `rm -rf`，否则 git 里仍留着登记）。
+- Luna 复跑的原始运行记录（`workspace/` 整份，115 个文件，含 `runs/R20261107-001` 与演示项目 `projects/toy` 的独立 git 仓库）已整份复制到主目录 `workspace/archive/luna-rerun-R20261107-001/`，逐文件比对与源目录一致。**没有与主目录的 `workspace/runs/` 合并**：两边都有 `R20261107-001`，但主目录那份是停在 S6 第 3 轮的另一次运行，Luna 那份是 S9 已完成的重跑，合并会互相覆盖。Luna 复跑的报告与代码提交已在 git（`docs/reports/2026-11-07-session-report-luna.md`、提交 `6b7a41e`）。
+- 归档约定见 `docs/DATA_SPEC.md` 的“归档目录”。归档不入 git，删除前先确认已不需要。
