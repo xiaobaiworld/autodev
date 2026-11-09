@@ -81,14 +81,14 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - 不收费集成：`python3 tests/f_requirements_hub.py`，隔离中台 + 假 command Agent；收费试用须显式 `python3 tests/f_requirements_real.py --real --root <新的数据目录>`。
 - 模块不复用会清空旧规则的 build_rules；规则带会话命名空间、tell=never，模型文本回复由后台校验落盘，不给模型确认文件写权限。
 - Codex 用户 MCP 配置可能先于 enabled=false 校验失败；模块使用临时 CODEX_HOME，仅复制 provider/auth 配置，排除用户工具/钩子，见 L013。不能把请求的模型 ID 当成独立验证的实际模型。
-- 手机端现有飞书能力先查全局 SYSTEM_CAPABILITY_INDEX 的 feishu-agent-bridge（autosys）；本次只新增通用内部路由，未接真实平台。
+- （历史，已移除）手机端曾经借用 autosys 的 feishu-agent-bridge；该适配层已于 2026-11-09 删除（D024），手机端改用独立机器人，见本文第 14 节。
 
 ## 7. 兼容适配器飞书入口（历史部署记录）
 
 - 已复用 autosys 现有机器人，手机发 `/需求` 获取命令；原消息白名单和 App 不变，不另起同 App 长连接。
 - 后端中台 home=`~/.local/state/autodev/requirements-hub`，本机 launchd 服务 `com.autodev.requirements-hub`；旧 `/tmp/autodev-demo/home` 本次检查不可达，不依赖它。
-- CLI/网页会话接手机：`PYTHONPATH=src python3 -m requirements pair ID`，飞书用一次性码绑定。平台按 message_id 去重。
-- 源码在 AutoDev 的 channels.feishu / requirements.feishu 与 autosys 的 bridge.requirements_client。详细运行、停用及证据见模块 channels.md；飞书 SDK 格式以 https://open.feishu.cn/document/server-docs/im-v1/message/events/receive 为准。
+- （历史，已移除）CLI/网页会话的 `pair` 配对码已删除，不再有对应命令或网页按钮。
+- （历史，已移除）上述适配层的源码与 autosys 侧对接均已删除；证据保留在 verification.md。
 
 ## 8. 兼容网页入口（历史部署记录）
 

@@ -1,5 +1,7 @@
 # 网页工作台设计与本轮范围
 
+> 2026-11-09 旧飞书桥适配层（`src/channels/`、`requirements.feishu`、`requirements.messaging`）与配对码功能已移除，见 D024；下文涉及它们的内容仅作历史证据，对应命令和接口已不存在。
+
 > 2026-11-08 整合说明：本文件对应版本化兼容工作台（`requirements.versioned_session.SessionStore`），不作为默认统一网页、`ReqSessionStore` 或九章节 SRS 的契约。两套会话不自动同步；端口、launchd 与真实试用记录是当时证据，本次未复核运行服务。入口与边界见 [模块说明](README.md)。
 
 2026-11-07，用户要求确认网页版能执行并优化网页设计。沿用现有需求后端和标准库网页，不引入框架、远程部署或新的业务流程。

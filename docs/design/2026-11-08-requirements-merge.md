@@ -7,7 +7,7 @@
 ## 设计与数据边界
 
 - main 的 requirements.session.ReqSessionStore 与 .req_session.json 格式保持不变。版本化后端独立放在 requirements.versioned_session，保留顶层 requirements.SessionStore/SessionError；旧 requirements.session.SessionStore/SessionError 导入兼容。
-- requirements CLI、requirements.web 与 requirements.feishu 是版本化兼容入口；默认统一网页仍为 python3 -m web.server，默认飞书仍为 requirements.feishu_daemon。两套入口不自动同步或转换数据、不自动启动、不修改任何运行服务。
+- requirements CLI 与 requirements.web 是版本化兼容入口（原 requirements.feishu 消息适配已于 2026-11-09 移除，D024）；默认统一网页仍为 python3 -m web.server，默认飞书仍为 requirements.feishu_daemon。两套入口不自动同步或转换数据、不自动启动、不修改任何运行服务。
 - 版本化 JSON 草稿与 main 九章节 SRS 不可互当完成依据；旧确认结果不自动提交 S2。workspace/requirements、workspace/channels 与 .req_session.json 均忽略提交。历史基线和运行记录明确适用入口，不能用旧端口/服务记录声称当前运行状态。
 
 ## 执行与验收

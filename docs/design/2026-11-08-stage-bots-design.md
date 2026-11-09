@@ -135,7 +135,7 @@ S2 沿用设计与开发计划的产出职责，在本次设计中补清原型�
 | --- | --- | --- |
 | requirements.handoff / ReqSessionStore | 默认 SRS 已可校验并生成 S1 基线直通 S2，Web/独立飞书共用服务 | 直接复用；核对设计任务绑定与重复启动控制，不重复实现交接 |
 | requirements.versioned_session.SessionStore / messaging | 兼容 API 有需求版本确认及渠道绑定，与默认 SRS 不互转 | 若接此入口再定义固定版到 SRS/运行的转换与授权关联 |
-| channels.MessageGateway | 身份白名单、应用路由、消息去重 | 阶段操作适配，复用身份绑定；不跨对话默认放权 |
+| channels.MessageGateway（已移除，D024） | 原身份白名单、应用路由、消息去重 | 不再可复用；阶段操作适配改在各机器人入口内，白名单与环境规则见 D023 |
 | cockpit.Controller / driver.reply | resume 仅接受 needs-human | 在途操作收件、安全边界暂停、版本校验与恢复 |
 | driver.run / setup | 命令执行期间持有全局锁；project 固定 toy；规则安装会替换配置 | 项目映射、控制请求不抢执行锁、避免覆盖需求规则；共享中台前专项验证 |
 | pipeline 模板 / workdir | 有阶段转移、轮次上限、快照与审查 | 保持旧语义，增量关联需求版本；明确使用脚本配置 |

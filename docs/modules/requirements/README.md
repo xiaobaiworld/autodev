@@ -99,7 +99,7 @@ tail -f logs/req_daemon.out
 
 - [整合设计与验收](../../design/2026-11-08-requirements-merge.md)：两套存储、接口和数据边界。
 - [兼容工作台使用](usage.md)：CLI、演示和可选独立网页入口。
-- [兼容消息适配](channels.md)：旧 `/需求` 适配与配对协议，不自动接入默认飞书守护。
+- 旧 `/需求` 消息适配与配对协议已于 2026-11-09 移除（D024）；默认飞书入口只有 `requirements.feishu_daemon`。
 - [验证记录](verification.md)、[原开发计划](dev-plan.md)、[网页设计](web-design.md)：兼容入口的历史与整合验证。
 - [v0.8](baselines/v0.8.md) / [v0.9](baselines/v0.9.md)：原工作台需求基线，不代表 AutoDev 发布版本。
 
