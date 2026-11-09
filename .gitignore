@@ -19,3 +19,4 @@ config.req.toml
 # Platform message deduplication and private channel bindings
 workspace/channels/
 workspace/agent-registry.toml
+config.design.toml
