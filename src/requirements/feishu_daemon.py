@@ -62,6 +62,9 @@ def main() -> None:
         sys.exit(1)
 
     cfg = load_req_config(config_path)
+    if not cfg.allow_users:
+        log.error("%s 的 [allow] users 为空：需求机器人不允许对所有人开放（D023），请先填写白名单", config_path)
+        sys.exit(1)
     responder = FeishuResponder(cfg.app_id, cfg.app_secret)
     session_file = os.environ.get("AUTODEV_REQ_SESSION", ".req_session.json")
     store = ReqSessionStore(

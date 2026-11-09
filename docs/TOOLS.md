@@ -128,3 +128,13 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - 背景：本机曾有 `autodev`、`autodev-merge-workbench`、`autodev-project-registry`、`autodev-rerun-luna` 四个 git worktree，均登记在 `autodev` 名下。统一以 `/Users/bai/code/autodev` 为主目录，其余待确认后用 `git worktree remove` 清理（不要直接 `rm -rf`，否则 git 里仍留着登记）。
 - Luna 复跑的原始运行记录（`workspace/` 整份，115 个文件，含 `runs/R20261107-001` 与演示项目 `projects/toy` 的独立 git 仓库）已整份复制到主目录 `workspace/archive/luna-rerun-R20261107-001/`，逐文件比对与源目录一致。**没有与主目录的 `workspace/runs/` 合并**：两边都有 `R20261107-001`，但主目录那份是停在 S6 第 3 轮的另一次运行，Luna 那份是 S9 已完成的重跑，合并会互相覆盖。Luna 复跑的报告与代码提交已在 git（`docs/reports/2026-11-07-session-report-luna.md`、提交 `6b7a41e`）。
 - 归档约定见 `docs/DATA_SPEC.md` 的“归档目录”。归档不入 git，删除前先确认已不需要。
+
+## 14. 多机器人统一安装（D023，2026-11-09）
+
+- 清单：`config/bots.toml`（可提交，无密钥），每个机器人一段：入口模块、本机配置文件名及其环境变量、launchd 标签、负责阶段、`runs_on`。现有 `req`（需求，标签沿用 `com.autodev.req-bot`）、`design`（设计）。新增机器人先加一段，再让对应的本机配置文件就位。
+- 安装：在部署目录执行 `deploy/install-bot.sh <名称>`；卸载：`deploy/uninstall-bot.sh <名称>`；查看清单：`PYTHONPATH=src python3 -m requirements.bots list`。安装只动指定的这一个机器人。
+- 安装前检查：机器人声明的 `runs_on` 必须等于本机环境名（`AUTODEV_ENV`，默认 `home-mac`），否则拒绝；本机配置文件必须存在；`[allow] users` 为空一律拒绝（仅 `discover = true` 例外，用于首次取 open_id）。同一飞书应用同一时间只能有一个长连接，换机器时先在旧机器停并禁用。
+- 需求机器人启动时同样拒绝空白名单，这是对旧行为（空=所有人可用）的有意收紧。
+- 旧脚本 `install-req-bot.sh`、`install-design-bot.sh` 暂保留；新装请用统一脚本。
+- 验证范围：清单模块与命令行入口有 13 项测试，需求机器人空白名单拒启动有子进程测试；统一安装脚本只通过 `bash -n` 语法检查，**尚未实际安装过**，以首次安装为准。
+- 令牌说明：`claude` 在服务里能用，是因为它读取 `~/.claude/settings.json`；无需把令牌写进 plist（2026-11-09 实测）。

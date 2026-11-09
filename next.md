@@ -2,6 +2,10 @@
 
 ## 进行中：设计机器人接入与多工作区收敛（2026-11-09）
 
+- 需求机器人已迁到这台 Mac（部署目录 `/Users/bai/code/autodev`，服务 `com.autodev.req-bot`），用户确认回复正常。迁移时旧机器的会话带着失效的 claude 会话 ID，导致“Agent 退出码异常 (code=1)”，清空该 ID 后恢复。
+- D023 多机器人统一注册与部署：`config/bots.toml`、`requirements.bots`、`deploy/install-bot.sh`/`uninstall-bot.sh` 已实现，需求机器人加空白名单拒启动；统一脚本待首次真实安装验证（设计机器人目前仍是手动进程）。
+- 待办：机器人遇到“找不到会话”时自动清旧 ID 重试（需改业务代码，未做）；职责范围守卫另立决策；旧飞书桥适配层删除在本地分支 `chore/remove-old-bridge`，文档未同步、未合并。
+
 - 设计机器人飞书入口已连通（白名单用户发消息可收到回复，手动进程）；常驻安装脚本已写好，选定部署目录 `/Users/bai/code/autodev`，尚未用 launchd 安装。业务能力（设计讨论、状态查询）未接入；职责范围守卫（D023）待设计。
 - 工作区收敛：Luna 复跑的 `workspace/` 已整份归档到 `workspace/archive/luna-rerun-R20261107-001/`（不合并，见 TOOLS.md 第 13 节）。待办：把主目录更新到最新 main、迁移 `.venv` 与 `config.design.toml`、安装常驻服务、确认后删除其余三个 worktree。
 
