@@ -1,0 +1,42 @@
+# 设计等级判定规则（V2.1 第 3 节，融合方案见 docs/design/2026-11-09-v21-mapping.md）。
+# 可提交，不含密钥。阈值是初版，需用真实需求校准；由 src/designsys/classify.py 读取。
+version = "0.1.0"
+
+[features]
+ui     = "有用户界面"
+persistence          = "持久化或复杂数据流"
+api    = "存在 HTTP API"
+auth          = "身份认证或授权"
+sensitive_data       = "涉及敏感数据"
+file_upload          = "文件上传或文件处理"
+ai     = "AI 或 Agent 功能"
+async_task    = "异步任务"
+external_integration = "外部集成（含非 HTTP 的对外接口）"
+real_env      = "触碰真实环境（会改动运行中的服务或系统）"
+hardware_device      = "硬件设备接入"
+
+[risks]
+cross_tenant        = "跨项目或跨租户访问"
+high_impact_operation = "高影响操作（关键修改、审批、不可逆动作）"
+tech_uncertainty    = "重大技术不确定性"
+high_risk_business  = "高风险业务"
+
+# 取满足条件的最高一档；都不满足为 D0（前提是需求明确）。
+[levels.D3]
+any_features = ["real_env", "hardware_device"]
+any_risks    = ["tech_uncertainty", "high_risk_business"]
+
+[levels.D2]
+any_features = ["ui", "auth", "sensitive_data"]
+any_risks    = ["cross_tenant", "high_impact_operation"]
+all_features = [["persistence", "api"]]
+multi_module = true
+
+[levels.D1]
+any_features = ["persistence", "api", "file_upload", "ai", "async_task", "external_integration"]
+unclear_requirements = true
+
+# 命中任一项，安全规则一律启用，D0 也不豁免（V2.1 第 3.2 节风险覆盖等级）。
+[security_override]
+any_features = ["auth", "sensitive_data"]
+any_risks    = ["cross_tenant", "high_impact_operation"]

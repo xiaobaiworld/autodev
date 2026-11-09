@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "entities"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "entities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "required": [
+          "id",
+          "fields",
+          "primary_key"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "primary_key": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "unique": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "fields": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "object",
+              "required": [
+                "name",
+                "type",
+                "nullable"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "nullable": {
+                  "type": "boolean"
+                },
+                "enum": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "sensitive": {
+                  "type": "boolean"
+                },
+                "time_rule": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "relations": {
+            "type": "array",
+            "items": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "object",
+              "required": [
+                "to",
+                "kind",
+                "on_delete"
+              ],
+              "properties": {
+                "to": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "one_to_one",
+                    "one_to_many",
+                    "many_to_many"
+                  ]
+                },
+                "on_delete": {
+                  "type": "string",
+                  "enum": [
+                    "restrict",
+                    "cascade",
+                    "set_null",
+                    "none"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "retention": {
+            "type": "string"
+          },
+          "migration": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

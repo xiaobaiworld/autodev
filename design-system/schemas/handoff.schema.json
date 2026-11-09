@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "design_version",
+    "requirements_baseline",
+    "tasks",
+    "blocking_issues",
+    "ready_for_coding"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "design_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "requirements_baseline": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "required": [
+          "task_id",
+          "title",
+          "requirement_ids",
+          "design_refs",
+          "mandatory_rule_ids",
+          "acceptance_ids",
+          "dependencies"
+        ],
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "pattern": "^TASK-[0-9]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requirement_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "design_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mandatory_rule_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "acceptance_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "blocking_issues": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ready_for_coding": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

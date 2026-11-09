@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "project_type",
+    "design_level",
+    "features",
+    "required_artifacts",
+    "mandatory_rules",
+    "classification_rationale",
+    "open_questions"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "need_type": {
+      "type": "string",
+      "enum": [
+        "SOFTWARE",
+        "DEPLOYMENT",
+        "HARDWARE",
+        "HYBRID"
+      ]
+    },
+    "project_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "design_level": {
+      "type": "string",
+      "enum": [
+        "D0",
+        "D1",
+        "D2",
+        "D3"
+      ]
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^A[0-9]{2}$"
+      }
+    },
+    "mandatory_rules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "classification_rationale": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "strategy": {
+      "type": "object"
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}
