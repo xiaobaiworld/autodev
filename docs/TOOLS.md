@@ -153,3 +153,9 @@ hc exec hc send <t> "<命令>"                     # 往 shell 窗格发命令
 - 测试：`PYTHONPATH=src python3 -m unittest tests.test_designsys_classify tests.test_designsys_schema tests.test_designsys_schema_files tests.test_designsys_rules tests.test_designsys_validate tests.test_designsys_d0doc`；全量 `PYTHONPATH=src python3 -m unittest discover -s tests`（456 项，2026-11-09）。
 - 已知限制（不要当作已解决）：验证器只认 `plan.json` 自己声明的特征，设计方把特征写少则验证不出来；SEC-005 的检查只认 `project_id`、`tenant_id` 等固定归属字段名，等效隔离机制需人判断；规则库全部是 R1（没有验证器与测试样例），安全类靠人工确认兜底；部署类、设备类规则未入库。
 - 开发与部署分开：部署目录 `/Users/bai/code/autodev` 只用于运行服务（分支 `deploy`，与 main 同步），开发在 `/Users/bai/code/autodev-dev`（`git worktree`，共用同一个 `.venv`）。**不要在开发目录起机器人**，它没有凭证。
+
+## 法律工作台显式整合入口（2026-11-10）
+
+`tests/f_legal_workbench_design.py --real --root <独立目标项目> requirements|design|review|validate`，运行前加`PYTHONPATH=src .venv/bin/python`。requirements/design/review会真实调用配置模型并花额度；validate仅读当前包并写验证结果，不调模型。只用于本轮匿名目标项目验证，配置在目标workspace；不是常驻机器人升级命令。复跑先查目标已有状态和产物，避免重复付费或覆盖固定交付。
+
+设计生成禁模型工具，返回路径经parse_files限定后程序写入。review按合同/前端/编排完整专项调用并保留输入哈希，结果确定性合并；未决critical/high必REWORK。完整原型浏览器测试在目标tests/test_prototype.py；固定包只读校验用tests/validate_delivery.py。macOS/.venv和浏览器允许路径限制继续适用；不向共享环境安装包。OpenAPI标准检查用隔离`uv tool run --from openapi-spec-validator==0.9.0 openapi-spec-validator <openapi.yaml>`。

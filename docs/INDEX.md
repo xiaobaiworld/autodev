@@ -1,6 +1,6 @@
 # 文档与关键文件索引
 
-更新日期：2026-11-09 ｜ 本轮完成目录职责与 S2/S3 契约整理；实现状态逐项标注
+更新日期：2026-11-10 ｜ 文档目录整理与法律工作台真实整合测试完成；机器人未部署
 
 本索引按用途列出当前有效的入口、设计与参考资料。状态描述的是 AutoDev 自身资料的权威性；外部参考不能覆盖项目决策。已被取代的文档在 `docs/archive/`，只供追溯。
 
@@ -58,6 +58,8 @@
 | `config.yaml`、`config/agents.toml` | 项目/轮次、注册表引用与角色覆盖；执行器、模型能力及角色默认值 | 运行配置；本机覆盖与模型规则见 `docs/MODELS.md` |
 | `docs/guides/rerun-with-another-agent.md` | 想用别的 Agent 或模型再跑一遍并比较：分清驾驶员、流水线里的 Agent、模型三层；怎么换、先跑哪些不花额度的验证、怎么比较、已知的坑 | 操作指南 |
 | `docs/reports/2026-11-07-session-report-sonnet-5-5.md`、`docs/reports/2026-11-07-session-report-luna.md` | Sonnet 基线与 Luna S1–S9 复跑报告，记录代码/阶段/证据对照及比较限制 | 报告，只追加新报告，不改旧的 |
+
+| [法律工作台整合报告](reports/2026-11-10-legal-workbench-integration.md) | 真实SRS→D3设计→HTML原型，462测试与17AC证据、限制及后续；独立集成适配，未部署到机器人 |
 
 ## 设计与决策
 

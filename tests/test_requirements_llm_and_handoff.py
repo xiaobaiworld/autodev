@@ -129,6 +129,16 @@ class TestRequirementsLlmAndHandoff(unittest.TestCase):
             self.assertEqual(s1["session_id"], "")
             self.assertEqual(len(s1["history"]), 1)
 
+    def test_claude_markdown_prompt_cannot_be_parsed_as_options(self):
+        spec = load_model_registry()["claude-opus"]
+        for prompt in ("---\nproject: demo\n---\nDesign this", "--help"):
+            for mode in ("cli_session", "cli_stateless"):
+                with self.subTest(prompt=prompt, mode=mode):
+                    argv = build_model_argv(spec, prompt, "/tmp", "sid-123", mode=mode)
+                    self.assertEqual(argv[-2:], ["--", prompt])
+                    self.assertIn("--permission-mode", argv[:-2])
+                    self.assertEqual("--resume" in argv[:-2], mode == "cli_session")
+
     def test_handoff_rejects_invalid_srs(self):
         with tempfile.TemporaryDirectory() as tmp:
             bad_srs = Path(tmp) / "REQ-bad.md"

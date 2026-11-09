@@ -139,12 +139,13 @@ def build_model_argv(
         argv = [
             "claude",
             "--model", spec.model,
-            "-p", effective_prompt,
+            "-p",
             "--permission-mode", "plan",
             "--output-format", "json",
         ]
         if use_session and session_id:
             argv.extend(["--resume", session_id])
+        argv.extend(["--", effective_prompt])
         return [spec.executable or spec.cli, *argv[1:]]
 
     if spec.cli == "codex":
